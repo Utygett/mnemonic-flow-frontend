@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-primary: #4A6FA5;
+  --color-primary-dark: #3a5a8a;
+  --color-accent: #FF9A76;
+  --color-accent-dark: #ff8559;
+  --color-bg-light: #F5F7FA;
+  --color-bg-white: #FFFFFF;
+  --color-text-primary: #2D3748;
+  --color-text-secondary: #718096;
+  --color-success: #38A169;
+  --color-error: #E53E3E;
+  --color-warning: #F6AD55;
+
+  /* Shadows */
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', 'Roboto', sans-serif;
+  background: var(--color-bg-light);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1 {
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1.2;
+}
+
+h2 {
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+h3 {
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+p {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+input, textarea {
+  font-family: inherit;
+  font-size: 16px;
+}
