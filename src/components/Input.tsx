@@ -19,15 +19,10 @@ export function Input({
   rows = 3,
   disabled = false,
 }: InputProps) {
-  const baseStyles = 'w-full px-4 py-3 rounded-lg border-2 border-[#2D3548] focus:border-[#4A6FA5] focus:outline-none transition-colors bg-[#1A1F2E] text-[#E8EAF0] placeholder:text-[#9CA3AF]';
-  
   return (
-    <div className="w-full">
-      {label && (
-        <label className="block mb-2 text-sm text-[#E8EAF0]">
-          {label}
-        </label>
-      )}
+    <div className="form-row">
+      {label && <label className="form-label">{label}</label>}
+
       {multiline ? (
         <textarea
           value={value}
@@ -35,7 +30,7 @@ export function Input({
           placeholder={placeholder}
           rows={rows}
           disabled={disabled}
-          className={`${baseStyles} resize-none`}
+          className={`input input--textarea`}
         />
       ) : (
         <input
@@ -44,7 +39,7 @@ export function Input({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={baseStyles}
+          className={`input`}
         />
       )}
     </div>

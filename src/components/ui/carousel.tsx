@@ -3,8 +3,8 @@
 import * as React from "react";
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
-} from "embla-carousel-react@8.6.0";
-import { ArrowLeft, ArrowRight } from "lucide-react@0.487.0";
+} from "embla-carousel-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { cn } from "./utils";
 import { Button } from "./button";
@@ -120,7 +120,7 @@ function Carousel({
     >
       <div
         onKeyDownCapture={handleKeyDown}
-        className={cn("relative", className)}
+        className={cn("carousel", className)}
         role="region"
         aria-roledescription="carousel"
         data-slot="carousel"
@@ -136,15 +136,11 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
   const { carouselRef, orientation } = useCarousel();
 
   return (
-    <div
-      ref={carouselRef}
-      className="overflow-hidden"
-      data-slot="carousel-content"
-    >
+    <div ref={carouselRef} className="carousel__overflow" data-slot="carousel-content">
       <div
         className={cn(
-          "flex",
-          orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+          "carousel__track",
+          orientation === "horizontal" ? "carousel__track--horizontal" : "carousel__track--vertical",
           className,
         )}
         {...props}
@@ -162,8 +158,8 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       aria-roledescription="slide"
       data-slot="carousel-item"
       className={cn(
-        "min-w-0 shrink-0 grow-0 basis-full",
-        orientation === "horizontal" ? "pl-4" : "pt-4",
+        "carousel__item",
+        orientation === "horizontal" ? "carousel__item--horizontal" : "carousel__item--vertical",
         className,
       )}
       {...props}
@@ -185,17 +181,15 @@ function CarouselPrevious({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "top-1/2 -left-12 -translate-y-1/2"
-          : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+        "carousel__nav carousel__nav--prev",
+        orientation === "horizontal" ? "carousel__nav--horizontal" : "carousel__nav--vertical",
         className,
       )}
       disabled={!canScrollPrev}
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft />
+      <ArrowLeft className="icon" />
       <span className="sr-only">Previous slide</span>
     </Button>
   );
@@ -215,17 +209,15 @@ function CarouselNext({
       variant={variant}
       size={size}
       className={cn(
-        "absolute size-8 rounded-full",
-        orientation === "horizontal"
-          ? "top-1/2 -right-12 -translate-y-1/2"
-          : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+        "carousel__nav carousel__nav--next",
+        orientation === "horizontal" ? "carousel__nav--horizontal" : "carousel__nav--vertical",
         className,
       )}
       disabled={!canScrollNext}
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight />
+      <ArrowRight className="icon" />
       <span className="sr-only">Next slide</span>
     </Button>
   );

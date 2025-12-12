@@ -48,44 +48,26 @@ export function InstallPrompt() {
   return (
     <AnimatePresence>
       {showPrompt && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-20 left-4 right-4 z-50 max-w-[390px] mx-auto"
-        >
-          <div className="bg-[#252B3D] rounded-2xl shadow-2xl p-4 border border-[#2D3548]">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-12 h-12 bg-[#4A6FA5] rounded-xl flex items-center justify-center">
+        <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="install-prompt">
+          <div className="install-prompt__card">
+            <div className="install-prompt__row">
+              <div className="install-prompt__icon">
                 <Download size={24} className="text-white" />
               </div>
-              
-              <div className="flex-1">
-                <h3 className="text-base mb-1 text-[#E8EAF0]">Установить приложение</h3>
-                <p className="text-sm text-[#9CA3AF] mb-3">
+
+              <div style={{ flex: 1 }}>
+                <h3 style={{ color: '#E8EAF0', marginBottom: '0.25rem' }}>Установить приложение</h3>
+                <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
                   Добавьте AdaptiveRecall на главный экран для быстрого доступа
                 </p>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleInstall}
-                    className="flex-1 bg-[#4A6FA5] text-white px-4 py-2 rounded-lg text-sm active:bg-[#3a5a8a] transition-colors"
-                  >
-                    Установить
-                  </button>
-                  <button
-                    onClick={handleDismiss}
-                    className="px-4 py-2 text-[#9CA3AF] text-sm"
-                  >
-                    Позже
-                  </button>
+
+                <div className="install-prompt__actions">
+                  <button onClick={handleInstall} className="btn-primary small">Установить</button>
+                  <button onClick={handleDismiss} className="btn-ghost small">Позже</button>
                 </div>
               </div>
-              
-              <button
-                onClick={handleDismiss}
-                className="flex-shrink-0 text-[#9CA3AF]"
-              >
+
+              <button onClick={handleDismiss} style={{ background: 'transparent', border: 0, color: '#9CA3AF' }}>
                 <X size={20} />
               </button>
             </div>

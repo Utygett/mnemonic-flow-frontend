@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as RechartsPrimitive from "recharts@2.15.2";
+import * as RechartsPrimitive from "recharts";
 
 import { cn } from "./utils";
 
@@ -13,24 +13,18 @@ export type ChartConfig = {
     label?: React.ReactNode;
     icon?: React.ComponentType;
   } & (
-    | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  );
-};
-
-type ChartContextProps = {
-  config: ChartConfig;
-};
-
-const ChartContext = React.createContext<ChartContextProps | null>(null);
-
-function useChart() {
-  const context = React.useContext(ChartContext);
-
-  if (!context) {
-    throw new Error("useChart must be used within a <ChartContainer />");
-  }
-
+                    <div
+                      className={cn("chart__indicator", {
+                        "chart__indicator--dot": indicator === "dot",
+                        "chart__indicator--line": indicator === "line",
+                        "chart__indicator--dashed": indicator === "dashed",
+                        "chart__indicator--dashed-nest": nestLabel && indicator === "dashed",
+                      })}
+                      style={{
+                        ["--color-bg" as any]: indicatorColor,
+                        ["--color-border" as any]: indicatorColor,
+                      } as React.CSSProperties}
+                    />
   return context;
 }
 
@@ -51,15 +45,7 @@ function ChartContainer({
 
   return (
     <ChartContext.Provider value={{ config }}>
-      <div
-        data-slot="chart"
-        data-chart={chartId}
-        className={cn(
-          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
-          className,
-        )}
-        {...props}
-      >
+      <div data-slot="chart" data-chart={chartId} className={cn("chart__container", className)} {...props}>
         <ChartStyle id={chartId} config={config} />
         <RechartsPrimitive.ResponsiveContainer>
           {children}
@@ -172,10 +158,7 @@ function ChartTooltipContent({
 
   return (
     <div
-      className={cn(
-        "border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
-        className,
-      )}
+      className={cn("chart__tooltip", className)}
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
@@ -188,7 +171,7 @@ function ChartTooltipContent({
             <div
               key={item.dataKey}
               className={cn(
-                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
+                "chart__row flex w-full flex-wrap items-stretch gap-2",
                 indicator === "dot" && "items-center",
               )}
             >
@@ -199,26 +182,25 @@ function ChartTooltipContent({
                   {itemConfig?.icon ? (
                     <itemConfig.icon />
                   ) : (
-                    !hideIndicator && (
-                      <div
-                        className={cn(
-                          "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
-                          {
-                            "h-2.5 w-2.5": indicator === "dot",
-                            "w-1": indicator === "line",
-                            "w-0 border-[1.5px] border-dashed bg-transparent":
-                              indicator === "dashed",
-                            "my-0.5": nestLabel && indicator === "dashed",
-                          },
-                        )}
-                        style={
-                          {
-                            "--color-bg": indicatorColor,
-                            "--color-border": indicatorColor,
-                          } as React.CSSProperties
-                        }
-                      />
-                    )
+                    !hideIndicator && (() => {
+                      const indicatorClass = ["chart__indicator"]
+                        .concat(indicator === "dot" ? ["chart__indicator--dot"] : [])
+                        .concat(indicator === "line" ? ["chart__indicator--line"] : [])
+                        .concat(indicator === "dashed" ? ["chart__indicator--dashed"] : [])
+                        .concat(nestLabel && indicator === "dashed" ? ["chart__indicator--dashed-nest"] : [])
+                        .join(" ");
+
+                      return (
+                        <div
+                          className={indicatorClass}
+                          style={{
+                            // Use CSS variables for colors
+                            ["--color-bg" as any]: indicatorColor,
+                            ["--color-border" as any]: indicatorColor,
+                          } as React.CSSProperties}
+                        />
+                      );
+                    })()
                   )}
                   <div
                     className={cn(
@@ -282,9 +264,7 @@ function ChartLegendContent({
         return (
           <div
             key={item.value}
-            className={cn(
-              "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
-            )}
+            className={cn("chart__legend-item flex items-center gap-1.5")}
           >
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />

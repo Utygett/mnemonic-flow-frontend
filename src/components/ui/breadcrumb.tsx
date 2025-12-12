@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot@1.1.2";
-import { ChevronRight, MoreHorizontal } from "lucide-react@0.487.0";
+import { Slot } from "@radix-ui/react-slot";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "./utils";
 
@@ -12,10 +12,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
   return (
     <ol
       data-slot="breadcrumb-list"
-      className={cn(
-        "text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-2.5",
-        className,
-      )}
+      className={cn("breadcrumb__list", className)}
       {...props}
     />
   );
@@ -72,10 +69,10 @@ function BreadcrumbSeparator({
       data-slot="breadcrumb-separator"
       role="presentation"
       aria-hidden="true"
-      className={cn("[&>svg]:size-3.5", className)}
+      className={cn("svg--xs", className)}
       {...props}
     >
-      {children ?? <ChevronRight />}
+      {children ?? <ChevronRight className="icon icon--xs" />}
     </li>
   );
 }
@@ -85,14 +82,8 @@ function BreadcrumbEllipsis({
   ...props
 }: React.ComponentProps<"span">) {
   return (
-    <span
-      data-slot="breadcrumb-ellipsis"
-      role="presentation"
-      aria-hidden="true"
-      className={cn("flex size-9 items-center justify-center", className)}
-      {...props}
-    >
-      <MoreHorizontal className="size-4" />
+    <span data-slot="breadcrumb-ellipsis" role="presentation" aria-hidden="true" className={cn("breadcrumb__ellipsis", className)} {...props}>
+      <MoreHorizontal className="icon icon--sm" />
       <span className="sr-only">More</span>
     </span>
   );

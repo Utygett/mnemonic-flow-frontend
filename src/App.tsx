@@ -48,32 +48,20 @@ function PWAUpdatePrompt() {
   if (!showReload) return null;
 
   return (
-    <div className="fixed top-4 right-4 left-4 z-50 bg-[#252B3D] p-4 rounded-lg shadow-lg border border-[#2D3548] animate-slide-down">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-8 h-8 bg-[#4A6FA5] rounded-full flex items-center justify-center">
-            <span className="text-white text-sm">🔄</span>
-          </div>
+    <div className="update-prompt">
+      <div className="update-prompt__inner">
+        <div className="update-prompt__row">
+          <div className="update-prompt__icon">🔄</div>
           <div>
-            <p className="text-[#E8EAF0] font-medium">Доступно обновление!</p>
-            <p className="text-[#9CA3AF] text-sm mt-1">
+            <p style={{ color: '#E8EAF0', fontWeight: 500 }}>Доступно обновление!</p>
+            <p style={{ color: '#9CA3AF', fontSize: '0.875rem', marginTop: '0.25rem' }}>
               Новая версия приложения загружена. Обновите для получения новых функций.
             </p>
           </div>
-        </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            onClick={() => setShowReload(false)}
-            className="px-4 py-2 text-sm font-medium text-[#9CA3AF] hover:text-[#E8EAF0] transition-colors"
-          >
-            Позже
-          </button>
-          <button
-            onClick={reloadPage}
-            className="px-4 py-2 bg-[#4A6FA5] text-white rounded-lg hover:bg-[#3A5A85] transition-colors text-sm font-medium flex-1 sm:flex-none"
-          >
-            Обновить
-          </button>
+          <div className="update-prompt__actions">
+            <button onClick={() => setShowReload(false)} className="btn-ghost">Позже</button>
+            <button onClick={reloadPage} className="btn-primary">Обновить</button>
+          </div>
         </div>
       </div>
     </div>
@@ -100,10 +88,10 @@ function OfflineStatus() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed bottom-24 right-4 left-4 z-40 bg-[#FF9A76]/10 border border-[#FF9A76]/20 p-3 rounded-lg backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-sm">
-        <div className="w-2 h-2 bg-[#FF9A76] rounded-full animate-pulse"></div>
-        <span className="text-[#FF9A76]">Работаем в офлайн-режиме</span>
+    <div className="offline-status">
+      <div className="offline-status__inner">
+        <div className="pulse-dot" />
+        <span style={{ color: '#FF9A76' }}>Работаем в офлайн-режиме</span>
       </div>
     </div>
   );
@@ -123,7 +111,7 @@ export default function App() {
     // Проверка на установку как PWA
     const checkPWA = () => {
       if (window.matchMedia('(display-mode: standalone)').matches || 
-          window.navigator.standalone ||
+          (window.navigator as any).standalone ||
           document.referrer.includes('android-app://')) {
         setIsPWA(true);
       }
@@ -349,7 +337,7 @@ export default function App() {
       {/* PWA Badge (только если установлено как PWA) */}
       {isPWA && (
         <div className="fixed top-4 left-4 z-30">
-          <div className="bg-[#4A6FA5]/20 text-[#4A6FA5] text-xs px-2 py-1 rounded-full border border-[#4A6FA5]/30">
+          <div className="pwa-badge">
             PWA
           </div>
         </div>
@@ -365,39 +353,35 @@ export default function App() {
       )}
       
       {activeTab === 'study' && (
-        <div className="min-h-screen bg-[#1A1F2E] pb-24">
-          <div className="bg-[#252B3D] px-4 pt-12 pb-6 shadow-sm border-b border-[#2D3548]">
-            <div className="max-w-[390px] mx-auto">
-              <h1 className="mb-6 text-[#E8EAF0]">Обучение</h1>
+        <div className="min-h-screen bg-dark pb-24">
+          <header className="page__header">
+            <div className="page__header-inner">
+              <h1 className="page__title">Обучение</h1>
             </div>
-          </div>
-          <div className="px-4 py-6 max-w-[390px] mx-auto">
+          </header>
+
+          <main className="container-centered max-w-390 py-6">
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">📖</div>
-              <h2 className="mb-4 text-[#E8EAF0]">Создайте свою первую карточку</h2>
-              <p className="text-[#9CA3AF] mb-6">
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📖</div>
+              <h2 style={{ marginBottom: '1rem', color: '#E8EAF0' }}>Создайте свою первую карточку</h2>
+              <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>
                 Начните изучение с создания карточек
               </p>
-              <button
-                onClick={() => setIsCreatingCard(true)}
-                className="bg-[#4A6FA5] text-white px-6 py-3 rounded-lg hover:bg-[#3A5A85] transition-colors"
-              >
-                Создать карточку
-              </button>
-              
+              <button onClick={() => setIsCreatingCard(true)} className="btn-primary">Создать карточку</button>
+
               {/* PWA Installation Hint */}
               {!isPWA && (
-                <div className="mt-8 p-4 bg-[#252B3D] rounded-lg border border-[#2D3548]">
-                  <p className="text-sm text-[#9CA3AF] mb-2">
+                <div className="mt-8 card">
+                  <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
                     💡 Установите приложение для работы офлайн
                   </p>
-                  <p className="text-xs text-[#6B7280]">
+                  <p style={{ color: '#6B7280', fontSize: '0.75rem' }}>
                     Нажмите "Установить" в меню браузера
                   </p>
                 </div>
               )}
             </div>
-          </div>
+          </main>
         </div>
       )}
       
@@ -406,17 +390,15 @@ export default function App() {
       )}
       
       {activeTab === 'profile' && (
-        <div className="min-h-screen bg-[#1A1F2E] pb-24">
-          <div className="bg-[#252B3D] px-4 pt-12 pb-6 shadow-sm border-b border-[#2D3548]">
-            <div className="max-w-[390px] mx-auto">
-              <h1 className="mb-6 text-[#E8EAF0]">Профиль</h1>
+        <div className="min-h-screen bg-dark pb-24">
+          <div className="page__header px-4 pt-12 pb-6">
+            <div className="page__header-inner">
+              <h1 className="page__title">Профиль</h1>
             </div>
           </div>
-          <div className="px-4 py-6 max-w-[390px] mx-auto">
-            <div className="bg-[#252B3D] rounded-xl p-6 text-center border border-[#2D3548]">
-              <div className="w-24 h-24 bg-[#4A6FA5] rounded-full mx-auto mb-4 flex items-center justify-center text-white text-3xl">
-                У
-              </div>
+          <div className="p-4 container-centered max-w-390">
+            <div className="card card--center">
+              <div className="avatar avatar--xl avatar--accent">У</div>
               <h2 className="mb-2 text-[#E8EAF0]">Пользователь</h2>
               <p className="text-[#9CA3AF]">user@example.com</p>
               
@@ -430,7 +412,7 @@ export default function App() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-[#9CA3AF]">Режим</span>
-                    <span className="text-sm text-[#4A6FA5]">
+                    <span className="text-sm text-accent">
                       {isPWA ? 'Установлено как PWA' : 'Веб-версия'}
                     </span>
                   </div>

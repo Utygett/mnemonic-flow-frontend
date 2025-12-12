@@ -44,15 +44,15 @@ export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }
   }
   
   return (
-    <div className="min-h-screen bg-[#1A1F2E] flex flex-col">
+    <div className="study-page">
       {/* Header */}
-      <div className="bg-[#252B3D] px-4 pt-12 pb-4 shadow-sm border-b border-[#2D3548]">
-        <div className="max-w-[390px] mx-auto">
+      <div className="page__header py-4">
+  <div className="page__header-inner">
           <div className="flex justify-between items-center mb-4">
-            <button onClick={onClose} className="text-[#9CA3AF]">
+            <button onClick={onClose} className="text-muted">
               <X size={24} />
             </button>
-            <span className="text-sm text-[#9CA3AF]">
+            <span className="text-sm text-muted">
               {currentIndex + 1} / {cards.length}
             </span>
           </div>
@@ -61,7 +61,7 @@ export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }
       </div>
       
       {/* Card Area */}
-      <div className="flex-1 flex items-center justify-center py-8">
+      <div className="study__card-area">
         <FlipCard
           card={currentCard}
           isFlipped={isFlipped}
@@ -70,21 +70,21 @@ export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }
       </div>
       
       {/* Actions */}
-      <div className="px-4 pb-8 max-w-[390px] mx-auto w-full">
+  <div className="study__actions">
         {!isFlipped ? (
           <Button onClick={handleFlip} variant="primary" size="large" fullWidth>
             Показать ответ
           </Button>
         ) : (
-          <div className="space-y-4">
+          <div className="study__actions-inner">
             {/* Level Up Button */}
             {canLevelUp && (
               <Button
                 onClick={handleLevelUp}
-                variant="warning"
+                variant="secondary"
                 size="medium"
                 fullWidth
-                className="flex items-center justify-center gap-2"
+                className="btn--centered"
               >
                 <ArrowUp size={20} />
                 Попробовать сложнее
@@ -92,7 +92,7 @@ export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }
             )}
             
             {/* Rating Buttons */}
-            <div className="flex justify-between items-center gap-3">
+            <div className="rating-row">
               <RatingButton
                 rating="again"
                 label="Снова"
@@ -116,7 +116,7 @@ export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }
             </div>
             
             {/* Next Review Info */}
-            <div className="text-center text-sm text-[#9CA3AF]">
+            <div className="text-center text-sm text-muted">
               Следующее повторение через 3 дня
             </div>
           </div>

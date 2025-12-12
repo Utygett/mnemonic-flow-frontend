@@ -9,25 +9,25 @@ interface OnboardingProps {
 
 export function Onboarding({ onComplete }: OnboardingProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   const steps = [
     {
-      title: 'Добро пожаловать в AdaptiveRecall',
+      title: 'Добро пожаловать в MnemonicFlow',
       description: 'Учитесь эффективно с карточками, которые растут вместе с вами',
       image: '📚',
     },
     {
-      title: '4 уровня мастерства',
+      title: 'Уровни мастерства',
       description: 'Каждая карточка проходит путь от знакомства до полного освоения',
       image: '🎯',
     },
     {
       title: 'Начните прямо сейчас',
-      description: 'Создайте свою первую колоду и начните путь к знаниям',
+      description: 'Создайте свою или выберите первую колоду и начните путь к знаниям',
       image: '🚀',
     },
   ];
-  
+
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -35,28 +35,12 @@ export function Onboarding({ onComplete }: OnboardingProps) {
       onComplete();
     }
   };
-  
-  const handleSkip = () => {
-    onComplete();
-  };
-  
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Skip Button */}
-      <div className="px-4 pt-12 pb-4">
-        <div className="max-w-[390px] mx-auto flex justify-end">
-          <button
-            onClick={handleSkip}
-            className="text-[#718096] text-sm"
-          >
-            Пропустить
-          </button>
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4">
-        <div className="max-w-[390px] w-full">
+    <div className="min-h-screen bg-dark layout-vertical-between">
+      {/* Контент */}
+      <div className="flex-1 center-vertical px-4">
+  <div className="max-w-390 w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -67,26 +51,21 @@ export function Onboarding({ onComplete }: OnboardingProps) {
               className="text-center"
             >
               {/* Illustration */}
-              <div className="text-8xl mb-8">
-                {steps[currentStep].image}
-              </div>
-              
+
+              <div className="onboarding__image mb-8">{steps[currentStep].image}</div>
+
               {/* Title */}
-              <h1 className="mb-4">
-                {steps[currentStep].title}
-              </h1>
-              
+              <h1 className="onboarding__title mb-4">{steps[currentStep].title}</h1>
+
               {/* Description */}
-              <p className="text-[#718096] mb-8">
-                {steps[currentStep].description}
-              </p>
-              
-              {/* Level Demo (only on step 1) */}
+              <p className="onboarding__desc mb-8">{steps[currentStep].description}</p>
+
+              {/* Level Demo (только на шаге 1) */}
               {currentStep === 1 && (
-                <div className="bg-[#F5F7FA] rounded-xl p-6 mb-8">
+                <div className="onboarding__demo mb-8">
                   <div className="space-y-4">
                     {[0, 1, 2, 3].map((level) => (
-                      <div key={level} className="flex items-center justify-between">
+                      <div key={level} className="onboarding__level-row">
                         <span className="text-sm">Уровень {level}</span>
                         <LevelIndicator currentLevel={level as 0 | 1 | 2 | 3} size="medium" />
                       </div>
@@ -98,30 +77,22 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           </AnimatePresence>
         </div>
       </div>
-      
-      {/* Bottom Navigation */}
-      <div className="px-4 pb-8">
-        <div className="max-w-[390px] mx-auto">
-          {/* Dots Indicator */}
-          <div className="flex justify-center gap-2 mb-6">
-            {steps.map((_, index) => (
-              <div
-                key={index}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentStep
-                    ? 'bg-[#4A6FA5] w-8'
-                    : 'bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-          
-          {/* Next Button */}
-          <Button onClick={handleNext} variant="primary" size="large" fullWidth>
-            {currentStep < steps.length - 1 ? 'Далее' : 'Начать'}
-          </Button>
-        </div>
+
+  <div className="px-4 pb-8">
+    <div className="container-centered">
+      <div className="dots">
+        {steps.map((_, index) => (
+          <div key={index} className={`dot ${index === currentStep ? 'dot--active' : ''}`} />
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <Button onClick={handleNext} variant="primary" size="large" fullWidth>
+          {currentStep < steps.length - 1 ? 'Далее' : 'Начать'}
+        </Button>
       </div>
     </div>
+  </div>
+</div>
   );
 }
