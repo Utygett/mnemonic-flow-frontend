@@ -6,6 +6,8 @@ import { StudySession } from './screens/StudySession';
 import { CreateCard } from './screens/CreateCard';
 import { Statistics } from './screens/Statistics';
 import { Onboarding } from './screens/Onboarding/Onboarding';
+import { AuthProvider } from './auth/AuthContext';
+import { AuthGate } from './auth/AuthGate';
 import { CardType, Card, Deck, Statistics as StatsType, DifficultyRating } from './types';
 import { useDecks, useStatistics, useStudySession } from './hooks';
 import { ApiClient } from './api/client';

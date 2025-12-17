@@ -1,0 +1,660 @@
+==============================
+FILE: src/screens/Dashboard.tsx
+==============================
+
+import React from 'react';
+import { Statistics, Deck } from '../types';
+import { Button } from '../components/Button/Button';
+import { DeckCard } from '../components/DeckCard';
+import { Clock, BookOpen, Flame } from 'lucide-react';
+
+interface DashboardProps {
+  statistics: Statistics;
+  decks: Deck[];
+  onStartStudy: () => void;
+  onDeckClick: (deckId: string) => void;
+}
+
+export function Dashboard({ statistics, decks, onStartStudy, onDeckClick }: DashboardProps) {
+  return (
+    <div className="min-h-screen bg-dark pb-24">
+      {/* Header */}
+      <div className="page__header px-4 pt-12 pb-6">
+  <div className="page__header-inner">
+          <h1 className="page__title mb-6">AdaptiveRecall</h1>
+          
+          {/* Today's Stats */}
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-card__label">
+                <BookOpen size={16} className="text-accent" />
+                <span className="stat-card__meta">Изучено</span>
+              </div>
+              <p className="stat-value">{statistics.cardsStudiedToday}</p>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-card__label">
+                <Clock size={16} className="text-accent-2" />
+                <span className="stat-card__meta">Минут</span>
+              </div>
+              <p className="stat-value">{statistics.timeSpentToday}</p>
+            </div>
+            
+            <div className="stat-card">
+              <div className="stat-card__label">
+                <Flame size={16} className="text-accent-2" />
+                <span className="stat-card__meta">Дней</span>
+              </div>
+              <p className="stat-value">{statistics.currentStreak}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main CTA */}
+  <div className="p-4 py-6 container-centered max-w-390">
+        <Button onClick={onStartStudy} variant="primary" size="large" fullWidth>
+          Начать обучение
+        </Button>
+      </div>
+      
+      {/* Active Decks */}
+  <div className="p-4 container-centered max-w-390">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-[#E8EAF0]">Мои колоды</h2>
+          <button className="text-sm text-accent">
+            Все
+          </button>
+        </div>
+        
+        <div className="space-y-3">
+          {decks.map((deck) => (
+            <DeckCard
+              key={deck.id}
+              deck={deck}
+              onClick={() => onDeckClick(deck.id)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+==============================
+FILE: src/screens/Statistics.tsx
+==============================
+
+import React from 'react';
+import { Statistics as StatsType, Deck } from '../types';
+import { ProgressBar } from '../components/ProgressBar';
+import { Trophy, Target, Zap } from 'lucide-react';
+
+interface StatisticsProps {
+  statistics: StatsType;
+  decks: Deck[];
+}
+
+export function Statistics({ statistics, decks }: StatisticsProps) {
+  const totalProgress = decks.reduce((acc, deck) => acc + deck.progress, 0) / decks.length;
+  
+  return (
+    <div className="stats-page">
+      {/* Header */}
+      <div className="page__header px-4 pt-12 pb-6">
+  <div className="page__header-inner">
+          <h1 className="page__title mb-6">Статистика</h1>
+          
+          {/* Overall Progress Circle */}
+          <div className="stats__progress-wrap">
+            <div className="stats__progress-circle">
+              <svg className="stats__svg">
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="70"
+                  stroke="#E5E7EB"
+                  strokeWidth="12"
+                  fill="none"
+                />
+                <circle
+                  cx="80"
+                  cy="80"
+                  r="70"
+                  stroke="#FF9A76"
+                  strokeWidth="12"
+                  fill="none"
+                  strokeDasharray={`${2 * Math.PI * 70}`}
+                  strokeDashoffset={`${2 * Math.PI * 70 * (1 - totalProgress / 100)}`}
+                  strokeLinecap="round"
+                  className="transition-all duration-500"
+                />
+              </svg>
+              <div className="stats__progress-center">
+                <div className="text-center">
+                  <div className="stats__progress-value">{Math.round(totalProgress)}%</div>
+                  <div className="stats__progress-label">Общий прогресс</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+  <div className="p-4 py-6 container-centered stats__content">
+        {/* Weekly Activity */}
+        <div className="card">
+          <h3 className="mb-4">Активность за неделю</h3>
+          <div className="stats__bars">
+            {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, index) => {
+              const value = statistics.weeklyActivity[index] || 0;
+              const maxValue = Math.max(...statistics.weeklyActivity, 1);
+              const height = (value / maxValue) * 100;
+              
+              return (
+                <div key={day} className="stats__bar-col">
+                  <div className="stats__bar-track" style={{ height: '100px' }}>
+                    <div
+                      className="stats__bar-fill"
+                      style={{ height: `${height}%` }}
+                    />
+                  </div>
+                  <span className="stats__bar-label">{day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Decks Progress */}
+        <div>
+          <h3 className="mb-4">Прогресс по темам</h3>
+          <div className="space-y-3">
+            {decks.map((deck) => (
+              <div key={deck.id} className="card">
+                <div className="deck-row">
+                  <div>
+                    <h3 className="text-base">{deck.name}</h3>
+                    <p className="text-sm text-muted">{deck.cardsCount} карточек</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg">{deck.progress}%</div>
+                  </div>
+                </div>
+
+                <ProgressBar progress={deck.progress} color={deck.color} />
+
+                <div className="mt-3 deck-levels">
+                  <span className="text-muted">Уровни:</span>
+                  <div className="deck-levels__list">
+                    <span>0: {Math.round(deck.cardsCount * 0.3)}</span>
+                    <span>1: {Math.round(deck.cardsCount * 0.3)}</span>
+                    <span>2: {Math.round(deck.cardsCount * 0.2)}</span>
+                    <span>3: {Math.round(deck.cardsCount * 0.2)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Achievements */}
+        <div>
+          <h3 className="mb-4">Достижения</h3>
+          <div className="achievements-grid">
+            {statistics.achievements.map((achievement) => (
+              <div
+                key={achievement.id}
+                className={`achievement ${achievement.unlocked ? '' : 'achievement--locked'}`}
+              >
+                <div className="achievement__icon">
+                  {achievement.icon === 'trophy' && <Trophy size={24} className="text-white" />}
+                  {achievement.icon === 'target' && <Target size={24} className="text-white" />}
+                  {achievement.icon === 'zap' && <Zap size={24} className="text-white" />}
+                </div>
+                <span className="text-xs">{achievement.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+==============================
+FILE: src/screens/CreateCard.tsx
+==============================
+
+import React, { useState } from 'react';
+import { Input } from '../components/Input';
+import { Button } from '../components/Button/Button';
+import { LevelIndicator } from '../components/LevelIndicator';
+import { X, Plus, Trash2 } from 'lucide-react';
+
+interface CreateCardProps {
+  onSave: (cardData: any) => void;
+  onCancel: () => void;
+}
+
+export function CreateCard({ onSave, onCancel }: CreateCardProps) {
+  const [term, setTerm] = useState('');
+  const [activeLevel, setActiveLevel] = useState(0);
+  const [levels, setLevels] = useState<string[]>(['']); // Начинаем с одного уровня
+  
+  const levelDescriptions = [
+    'Простое определение',
+    'Развернутое определение',
+    'Контекстный вопрос',
+    'Сложная задача',
+    'Применение на практике',
+    'Анализ и синтез',
+    'Критическое мышление',
+    'Экспертный уровень',
+    'Мастерство',
+    'Инновации',
+  ];
+  
+  const handleAddLevel = () => {
+    if (levels.length < 10) {
+      setLevels([...levels, '']);
+      setActiveLevel(levels.length);
+    }
+  };
+  
+  const handleRemoveLevel = (index: number) => {
+    if (levels.length > 1) {
+      const newLevels = levels.filter((_, i) => i !== index);
+      setLevels(newLevels);
+      if (activeLevel >= newLevels.length) {
+        setActiveLevel(newLevels.length - 1);
+      }
+    }
+  };
+  
+  const handleLevelChange = (index: number, value: string) => {
+    const newLevels = [...levels];
+    newLevels[index] = value;
+    setLevels(newLevels);
+  };
+  
+  const handleSave = () => {
+    // Проверяем, что хотя бы первый уровень заполнен
+    if (term && levels[0]) {
+      onSave({ term, levels: levels.filter(l => l.trim() !== '') });
+    }
+  };
+  
+  return (
+    <div className="min-h-screen bg-dark pb-24">
+      {/* Header */}
+      <div className="page__header" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+        <div className="page__header-inner">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button onClick={onCancel} style={{ color: '#9CA3AF', background: 'transparent', border: 0 }}>
+              <X size={24} />
+            </button>
+            <h2 style={{ color: '#E8EAF0' }}>Новая карточка</h2>
+            <div style={{ width: 24 }} />
+          </div>
+        </div>
+  </div>
+  <main className="container-centered max-w-390 space-y-6 py-6">
+        {/* Term Input */}
+        <Input
+          value={term}
+          onChange={setTerm}
+          label="Термин / Вопрос"
+          placeholder="Например: Фотосинтез"
+        />
+        
+        {/* Level Tabs */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
+              Уровни сложности ({levels.length})
+            </label>
+            {levels.length < 10 && (
+              <button onClick={handleAddLevel} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}>
+                <Plus size={16} />
+                Добавить уровень
+              </button>
+            )}
+          </div>
+
+          <div className="level-tabs">
+            {levels.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveLevel(index)}
+                className={`level-tab ${activeLevel === index ? 'level-tab--active' : 'level-tab--inactive'}`}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          
+          {/* Level Content */}
+          <div className="card">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <span className="text-sm text-[#9CA3AF]">
+                  {levelDescriptions[activeLevel] || `Уровень ${activeLevel + 1}`}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <LevelIndicator currentLevel={Math.min(activeLevel, 3) as 0 | 1 | 2 | 3} size="small" />
+                {levels.length > 1 && (
+                  <button onClick={() => handleRemoveLevel(activeLevel)} style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <Input
+              value={levels[activeLevel]}
+              onChange={(value) => handleLevelChange(activeLevel, value)}
+              placeholder={`Введите содержание для уровня ${activeLevel + 1}`}
+              multiline
+              rows={5}
+            />
+          </div>
+        </div>
+        
+        {/* Preview */}
+        <div>
+          <label style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#E8EAF0' }}>Предпросмотр</label>
+          <div className="card" style={{ padding: '1.5rem', minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            {term ? (
+              <>
+                <LevelIndicator currentLevel={0} size="medium" />
+                <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '1.125rem', color: '#E8EAF0' }}>{term}</p>
+                {levels[0] && (
+                  <p style={{ marginTop: '0.5rem', textAlign: 'center', fontSize: '0.875rem', color: '#9CA3AF' }}>
+                    {levels[0].substring(0, 50)}{levels[0].length > 50 ? '...' : ''}
+                  </p>
+                )}
+                <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{levels.filter(l => l.trim() !== '').length} уровней</span>
+                </div>
+              </>
+            ) : (
+              <p style={{ color: '#9CA3AF', fontSize: '0.875rem' }}>Предпросмотр появится после заполнения</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
+          <Button onClick={onCancel} variant="secondary" size="large" fullWidth>
+            Отмена
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="primary"
+            size="large"
+            fullWidth
+            disabled={!term || !levels[0]}
+          >
+            Сохранить
+          </Button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+
+
+==============================
+FILE: src/screens/StudySession.tsx
+==============================
+
+import React, { useState } from 'react';
+import { Card, DifficultyRating } from '../types';
+import { FlipCard } from '../components/FlipCard';
+import { RatingButton } from '../components/RatingButton';
+import { Button } from '../components/Button/Button';
+import { ProgressBar } from '../components/ProgressBar';
+import { X, ArrowUp } from 'lucide-react';
+
+interface StudySessionProps {
+  cards: Card[];
+  currentIndex: number;
+  onRate: (rating: DifficultyRating) => void;
+  onLevelUp: () => void;
+  onClose: () => void;
+}
+
+export function StudySession({ cards, currentIndex, onRate, onLevelUp, onClose }: StudySessionProps) {
+  const [isFlipped, setIsFlipped] = useState(false);
+  
+  const currentCard = cards[currentIndex];
+  if (!currentCard) {
+    return (
+      <div className="study-page flex items-center justify-center">
+        <div className="text-muted">Карточки закончились</div>
+      </div>
+    );
+  }
+  const progress = ((currentIndex) / cards.length) * 100;
+  const canLevelUp = currentCard.currentLevel < currentCard.levels.length - 1; // Проверяем по длине массива
+  
+  const handleRate = (rating: DifficultyRating) => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      onRate(rating);
+    }, 300);
+  };
+  
+  const handleLevelUp = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      onLevelUp();
+    }, 300);
+  };
+  
+  const handleFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+  
+  if (!currentCard) {
+    return null;
+  }
+  
+  return (
+    <div className="study-page">
+      {/* Header */}
+      <div className="page__header py-4">
+  <div className="page__header-inner">
+          <div className="flex justify-between items-center mb-4">
+            <button onClick={onClose} className="text-muted">
+              <X size={24} />
+            </button>
+            <span className="text-sm text-muted">
+              {currentIndex + 1} / {cards.length}
+            </span>
+          </div>
+          <ProgressBar progress={progress} color="#FF9A76" />
+        </div>
+      </div>
+      
+      {/* Card Area */}
+      <div className="study__card-area">
+        <FlipCard
+          card={currentCard}
+          isFlipped={isFlipped}
+          onFlip={handleFlip}
+        />
+      </div>
+      
+      {/* Actions */}
+  <div className="study__actions">
+        {!isFlipped ? (
+          <Button onClick={handleFlip} variant="primary" size="large" fullWidth>
+            Показать ответ
+          </Button>
+        ) : (
+          <div className="study__actions-inner">
+            {/* Level Up Button */}
+            {canLevelUp && (
+              <Button
+                onClick={handleLevelUp}
+                variant="secondary"
+                size="medium"
+                fullWidth
+                className="btn--centered"
+              >
+                <ArrowUp size={20} />
+                Попробовать сложнее
+              </Button>
+            )}
+            
+            {/* Rating Buttons */}
+            <div className="rating-row">
+              <RatingButton
+                rating="again"
+                label="Снова"
+                onClick={() => handleRate('again')}
+              />
+              <RatingButton
+                rating="hard"
+                label="Трудно"
+                onClick={() => handleRate('hard')}
+              />
+              <RatingButton
+                rating="good"
+                label="Хорошо"
+                onClick={() => handleRate('good')}
+              />
+              <RatingButton
+                rating="easy"
+                label="Легко"
+                onClick={() => handleRate('easy')}
+              />
+            </div>
+            
+            {/* Next Review Info */}
+            <div className="text-center text-sm text-muted">
+              Следующее повторение через 3 дня
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+==============================
+FILE: src/screens/Onboarding/Onboarding.tsx
+==============================
+
+import React, { useState } from 'react';
+import { Button } from '../../components/Button/Button';
+import { LevelIndicator } from '../../components/LevelIndicator';
+import { motion, AnimatePresence } from 'motion/react';
+
+interface OnboardingProps {
+  onComplete: () => void;
+}
+
+export function Onboarding({ onComplete }: OnboardingProps) {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    {
+      title: 'Добро пожаловать в MnemonicFlow',
+      description: 'Учитесь эффективно с карточками, которые растут вместе с вами',
+      image: '📚',
+    },
+    {
+      title: 'Уровни мастерства',
+      description: 'Каждая карточка проходит путь от знакомства до полного освоения',
+      image: '🎯',
+    },
+    {
+      title: 'Начните прямо сейчас',
+      description: 'Создайте свою или выберите первую колоду и начните путь к знаниям',
+      image: '🚀',
+    },
+  ];
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      onComplete();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-dark layout-vertical-between">
+      {/* Контент */}
+      <div className="flex-1 center-vertical px-4">
+  <div className="max-w-390 w-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="text-center"
+            >
+              {/* Illustration */}
+
+              <div className="onboarding__image mb-8">{steps[currentStep].image}</div>
+
+              {/* Title */}
+              <h1 className="onboarding__title mb-4">{steps[currentStep].title}</h1>
+
+              {/* Description */}
+              <p className="onboarding__desc mb-8">{steps[currentStep].description}</p>
+
+              {/* Level Demo (только на шаге 1) */}
+              {currentStep === 1 && (
+                <div className="onboarding__demo mb-8">
+                  <div className="space-y-4">
+                    {[0, 1, 2, 3].map((level) => (
+                      <div key={level} className="onboarding__level-row">
+                        <span className="text-sm">Уровень {level}</span>
+                        <LevelIndicator currentLevel={level as 0 | 1 | 2 | 3} size="medium" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+  <div className="px-4 pb-8">
+    <div className="container-centered">
+      <div className="dots">
+        {steps.map((_, index) => (
+          <div key={index} className={`dot ${index === currentStep ? 'dot--active' : ''}`} />
+        ))}
+      </div>
+
+      <div className="mt-4">
+        <Button onClick={handleNext} variant="primary" size="large" fullWidth>
+          {currentStep < steps.length - 1 ? 'Далее' : 'Начать'}
+        </Button>
+      </div>
+    </div>
+  </div>
+</div>
+  );
+}
+
+
+
