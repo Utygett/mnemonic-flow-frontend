@@ -4,7 +4,7 @@ import { ApiClient } from '../api/client';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { LevelIndicator } from '../components/LevelIndicator';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 type LevelQA = { question: string; answer: string };
 type CardSummary = {
@@ -20,11 +20,21 @@ interface Props {
   onDone: () => void;
 }
 
+function moveItem<T>(arr: T[], from: number, to: number): T[] {
+  const next = [...arr];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
 export function EditCardFlow({ decks, onCancel, onDone }: Props) {
   const defaultDeckId = useMemo(() => decks?.[0]?.deck_id ?? '', [decks]);
   const [deckId, setDeckId] = useState(defaultDeckId);
 
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
   const [cards, setCards] = useState<CardSummary[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string>('');
 
@@ -36,16 +46,28 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
   const [activeLevel, setActiveLevel] = useState(0);
   const [levels, setLevels] = useState<LevelQA[]>([{ question: '', answer: '' }]);
 
-  // загрузка карточек колоды
+  // если decks пришли позже и deckId пустой — выставим дефолт
+  useEffect(() => {
+    if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
+  }, [deckId, defaultDeckId]);
+
+  // загрузка карточек выбранной колоды
   useEffect(() => {
     if (!deckId) return;
 
     (async () => {
       setLoading(true);
+      setErrorText(null);
       try {
         const data = await ApiClient.getDeckWithCards(deckId); // DeckWithCards[]
         const deck = data?.[0];
         setCards(deck?.cards ?? []);
+        setSelectedCardId('');
+        setLevels([{ question: '', answer: '' }]);
+        setActiveLevel(0);
+      } catch (e: any) {
+        setErrorText(e?.message ?? 'Ошибка загрузки карточек');
+        setCards([]);
         setSelectedCardId('');
       } finally {
         setLoading(false);
@@ -53,11 +75,12 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
     })();
   }, [deckId]);
 
-  // когда выбрали карточку — заполняем уровни
+  // когда выбрали карточку — заполняем уровни (по индексу)
   useEffect(() => {
     if (!selectedCard) return;
 
     const sorted = [...(selectedCard.levels ?? [])].sort((a, b) => a.level_index - b.level_index);
+
     const mapped: LevelQA[] =
       sorted.length > 0
         ? sorted.map(l => ({
@@ -71,9 +94,11 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
   }, [selectedCardId]);
 
   const patchLevel = (index: number, patch: Partial<LevelQA>) => {
-    const next = [...levels];
-    next[index] = { ...next[index], ...patch };
-    setLevels(next);
+    setLevels(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...patch };
+      return next;
+    });
   };
 
   const addLevel = () => {
@@ -84,25 +109,61 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
 
   const removeLevel = (index: number) => {
     if (levels.length <= 1) return;
-    const next = levels.filter((_, i) => i !== index);
-    setLevels(next);
-    if (activeLevel >= next.length) setActiveLevel(next.length - 1);
+    setLevels(prev => prev.filter((_, i) => i !== index));
+    setActiveLevel(prev => {
+      const nextLen = levels.length - 1;
+      return Math.min(prev, nextLen - 1);
+    });
   };
 
-  const canSave = selectedCard && levels.some(l => l.question.trim() && l.answer.trim());
+  // Перемещение уровня с корректной поправкой activeLevel
+  const moveLevel = (from: number, to: number) => {
+    if (to < 0 || to >= levels.length || from === to) return;
 
-    const save = async () => {
+    setLevels(prev => moveItem(prev, from, to));
+
+    setActiveLevel(prev => {
+      // если активный — двигаем вместе с ним
+      if (prev === from) return to;
+
+      // если активный оказался "перекрыт" перемещением — корректируем
+      // from -> to вниз: элементы между (from+1..to) сдвигаются вверх на 1
+      if (from < to && prev > from && prev <= to) return prev - 1;
+
+      // from -> to вверх: элементы между (to..from-1) сдвигаются вниз на 1
+      if (to < from && prev >= to && prev < from) return prev + 1;
+
+      return prev;
+    });
+  };
+
+  const cleaned = useMemo(
+    () =>
+      levels
+        .map(l => ({ question: l.question.trim(), answer: l.answer.trim() }))
+        .filter(l => l.question && l.answer),
+    [levels]
+  );
+
+  const canSave = Boolean(selectedCard) && cleaned.length > 0 && !saving;
+
+  const save = async () => {
     if (!selectedCard) return;
 
-    const cleaned = levels
-        .map(l => ({ question: l.question.trim(), answer: l.answer.trim() }))
-        .filter(l => l.question && l.answer);
+    setSaving(true);
+    setErrorText(null);
 
-    await ApiClient.replaceCardLevels(selectedCard.card_id, cleaned);
+    try {
+      await ApiClient.replaceCardLevels(selectedCard.card_id, cleaned);
+      onDone();
+    } catch (e: any) {
+      setErrorText(e?.message ?? 'Ошибка сохранения');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    onDone();
-    };
-
+  const active = levels[activeLevel];
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -119,13 +180,28 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
       </div>
 
       <main className="container-centered max-w-390 space-y-6 py-6">
+        {errorText && (
+          <div className="card" style={{ border: '1px solid rgba(229,62,62,0.4)' }}>
+            <div style={{ color: '#FEB2B2' }}>{errorText}</div>
+          </div>
+        )}
+
         {/* Deck */}
         <div className="form-row">
           <label className="form-label">Колода</label>
-          <select value={deckId} onChange={(e) => setDeckId(e.target.value)} className="input">
-            {decks.map(d => (
-              <option key={d.deck_id} value={d.deck_id}>{d.title}</option>
-            ))}
+          <select
+            value={deckId}
+            onChange={(e) => setDeckId(e.target.value)}
+            className="input"
+            disabled={decks.length === 0}
+          >
+            {decks.length === 0 ? (
+              <option value="">Нет доступных колод</option>
+            ) : (
+              decks.map(d => (
+                <option key={d.deck_id} value={d.deck_id}>{d.title}</option>
+              ))
+            )}
           </select>
         </div>
 
@@ -153,33 +229,114 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
                 <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
                   Уровни ({levels.length})
                 </label>
+
                 {levels.length < 10 && (
-                  <button onClick={addLevel} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}>
+                  <button
+                    onClick={addLevel}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
+                  >
                     <Plus size={16} />
                     Добавить уровень
                   </button>
                 )}
               </div>
 
+              {/* Вкладки + перемещение прямо на вкладках */}
               <div className="level-tabs">
-                {levels.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveLevel(index)}
-                    className={`level-tab ${activeLevel === index ? 'level-tab--active' : 'level-tab--inactive'}`}
-                  >
-                    <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
-                  </button>
-                ))}
+                {levels.map((_, index) => {
+                  const isActive = activeLevel === index;
+
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => setActiveLevel(index)}
+                      className={`level-tab ${isActive ? 'level-tab--active' : 'level-tab--inactive'}`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setActiveLevel(index);
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
+                    >
+                      <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span
+                          onClick={(e) => { e.stopPropagation(); moveLevel(index, index - 1); }}
+                          title="Вверх"
+                          style={{
+                            display: 'inline-flex',
+                            padding: 4,
+                            color: '#9CA3AF',
+                            opacity: index === 0 ? 0.35 : 1,
+                            pointerEvents: index === 0 ? 'none' : 'auto',
+                          }}
+                        >
+                          <ChevronUp size={16} />
+                        </span>
+
+                        <span
+                          onClick={(e) => { e.stopPropagation(); moveLevel(index, index + 1); }}
+                          title="Вниз"
+                          style={{
+                            display: 'inline-flex',
+                            padding: 4,
+                            color: '#9CA3AF',
+                            opacity: index === levels.length - 1 ? 0.35 : 1,
+                            pointerEvents: index === levels.length - 1 ? 'none' : 'auto',
+                          }}
+                        >
+                          <ChevronDown size={16} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
+              {/* Редактор активного уровня */}
               <div className="card">
                 <div className="flex items-center justify-between">
                   <div />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={() => moveLevel(activeLevel, activeLevel - 1)}
+                      disabled={activeLevel === 0}
+                      style={{
+                        color: '#9CA3AF',
+                        padding: 4,
+                        background: 'transparent',
+                        border: 0,
+                        opacity: activeLevel === 0 ? 0.35 : 1,
+                      }}
+                      title="Вверх"
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => moveLevel(activeLevel, activeLevel + 1)}
+                      disabled={activeLevel === levels.length - 1}
+                      style={{
+                        color: '#9CA3AF',
+                        padding: 4,
+                        background: 'transparent',
+                        border: 0,
+                        opacity: activeLevel === levels.length - 1 ? 0.35 : 1,
+                      }}
+                      title="Вниз"
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+
                     <LevelIndicator currentLevel={Math.min(activeLevel, 3) as 0 | 1 | 2 | 3} size="small" />
+
                     {levels.length > 1 && (
-                      <button onClick={() => removeLevel(activeLevel)} style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}>
+                      <button
+                        onClick={() => removeLevel(activeLevel)}
+                        style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}
+                        title="Удалить уровень"
+                      >
                         <Trash2 size={16} />
                       </button>
                     )}
@@ -187,28 +344,38 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
                 </div>
 
                 <Input
-                  value={levels[activeLevel].question}
+                  value={active.question}
                   onChange={(v) => patchLevel(activeLevel, { question: v })}
                   label={`Вопрос (уровень ${activeLevel + 1})`}
                   multiline
                   rows={3}
                 />
+
                 <Input
-                  value={levels[activeLevel].answer}
+                  value={active.answer}
                   onChange={(v) => patchLevel(activeLevel, { answer: v })}
                   label={`Ответ (уровень ${activeLevel + 1})`}
                   multiline
                   rows={5}
                 />
               </div>
+
+              {/* Подсказка про пустые уровни */}
+              {levels.length !== cleaned.length && (
+                <div className="card">
+                  <div style={{ color: '#9CA3AF', fontSize: '0.875rem' }}>
+                    Пустые уровни (без вопроса или ответа) не будут сохранены.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
-              <Button onClick={onCancel} variant="secondary" size="large" fullWidth>
+              <Button onClick={onCancel} variant="secondary" size="large" fullWidth disabled={saving}>
                 Отмена
               </Button>
               <Button onClick={save} variant="primary" size="large" fullWidth disabled={!canSave}>
-                Сохранить
+                {saving ? 'Сохранение…' : 'Сохранить'}
               </Button>
             </div>
           </>
