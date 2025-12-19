@@ -1,5 +1,5 @@
 // src/api/client.ts
-import { Card, Deck, Statistics, DifficultyRating, CardType } from '../types';
+import { Deck, Statistics, DifficultyRating} from '../types';
 import { DeckSummary } from '../types';
 
 

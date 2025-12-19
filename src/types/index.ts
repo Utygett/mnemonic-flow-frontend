@@ -1,9 +1,3 @@
-export enum CardType {
-  Flashcard = 'flashcard',
-  Cloze = 'cloze',
-  MultipleChoice = 'multiple-choice'
-}
-
 export interface CardLevel {
   level_index: number;
   content: { question: string; answer: string };
@@ -18,18 +12,6 @@ export interface StudyCard {
   activeLevel: number;     // текущий уровень пользователя (CardProgress.active_level)
 }
 
-export interface Card {
-  id: string;
-  term: string;
-  levels: string[]; // Динамический массив уровней (от 1 до неограниченного количества)
-  currentLevel: number; // Текущий уровень (индекс в массиве)
-  nextReview: Date;
-  lastReviewed?: Date;
-  streak: number;
-  deckId: string;
-  cardType: CardType;
-}
-
 export interface Deck {
   id: string;
   name: string;
@@ -38,13 +20,6 @@ export interface Deck {
   progress: number; // 0-100
   averageLevel: number; // 0-3
   color: string;
-}
-
-export interface StudySession {
-  cards: Card[];
-  currentIndex: number;
-  correctCount: number;
-  totalCount: number;
 }
 
 export interface Statistics {

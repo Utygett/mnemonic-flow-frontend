@@ -994,4 +994,26 @@ h1, h2, h3, h4, h5, h6, p {
 
 
 
+/* Icon button replacement for Tailwind w-9 h-9 rounded-full */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: #9CA3AF;
+
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.icon-btn:active {
+  transform: scale(0.96);
+}

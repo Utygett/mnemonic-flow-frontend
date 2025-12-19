@@ -11,10 +11,12 @@ import { Onboarding } from './screens/Onboarding/Onboarding';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
-import { CardType, Card, Deck, Statistics as StatsType, DifficultyRating, StudyCard } from './types';
+import { DifficultyRating, StudyCard } from './types';
 import { useStatistics, useStudySession } from './hooks';
 import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
+import { loadLastSession, loadSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
+
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -120,6 +122,9 @@ function MainAppContent() {
   // Используем хуки для получения данных с API
   const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } = useDecks();
   const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
+  const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
+  const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
+  const [sessionIndex, setSessionIndex] = useState(0);
   const {
     cards,
     currentIndex,
@@ -127,12 +132,18 @@ function MainAppContent() {
     isCompleted,
     rateCard,
     resetSession
-  } = useStudySession(deckCards);
+  } = useStudySession(deckCards, sessionIndex);
   const [isEditingCard, setIsEditingCard] = useState(false);
+  const [resumeCandidate, setResumeCandidate] = useState<null | PersistedSession>(null);
+  const dashboardStats = statistics ?? {
+  cardsStudiedToday: 0,
+  timeSpentToday: 0,
+  currentStreak: 0,
+  totalCards: 0,
+  weeklyActivity: [0,0,0,0,0,0,0],
+  achievements: [],
+};
 
-  
-
-  
   // Проверяем, было ли приложение установлено как PWA
   useEffect(() => {
     // Проверка на установку как PWA
@@ -168,7 +179,62 @@ function MainAppContent() {
     
     checkApiHealth();
   }, []);
-  
+
+  useEffect(() => {
+    if (!isStudying) return;
+    setSessionIndex(currentIndex);
+  }, [currentIndex, isStudying]);
+
+  useEffect(() => {
+    if (!isStudying) return;
+    if (loadingDeckCards) return;
+    if (deckCards.length === 0) return;
+
+    saveSession({
+      key: sessionKey,
+      mode: sessionMode,
+      activeDeckId,
+      deckCards,
+      currentIndex,
+      isStudying: true,
+      savedAt: Date.now(),
+    });
+
+    setResumeCandidate(loadLastSession());
+  }, [isStudying, loadingDeckCards, sessionKey, sessionMode, activeDeckId, deckCards, currentIndex]);
+
+
+    useEffect(() => {
+    const saved = loadLastSession();
+    if (!saved || !saved.isStudying) {
+      setResumeCandidate(null);
+      return;
+    }
+    setResumeCandidate(saved);
+  }, []);
+
+    const handleResume = () => {
+    const saved = resumeCandidate;
+    if (!saved) return;
+
+    setSessionMode(saved.mode);
+    setSessionKey(saved.key);
+    setActiveDeckId(saved.activeDeckId);
+
+    setSessionIndex(saved.currentIndex ?? 0);
+    setDeckCards(saved.deckCards ?? []);
+
+    setIsStudying(true);
+    setResumeCandidate(null);
+  };
+
+    const handleDiscardResume = () => {
+    if (!resumeCandidate) return;
+    clearSession(resumeCandidate.key);
+    setResumeCandidate(null);
+  };
+
+
 
   const handleLevelUp = async () => {
     const card = cards[currentIndex];
@@ -207,6 +273,9 @@ function MainAppContent() {
       setDeckCards(toStudyCards(items));                  // <-- и тут используем
       setActiveDeckId(null);
       setIsStudying(true);
+      setSessionMode('review');
+      setSessionKey('review');
+      setSessionIndex(0);
     } finally {
       setLoadingDeckCards(false);
     }
@@ -222,6 +291,7 @@ function MainAppContent() {
       
       // Если сессия завершена
       if (isCompleted) {
+        clearSession(sessionKey);
         setIsStudying(false);
         resetSession();
       }
@@ -231,9 +301,27 @@ function MainAppContent() {
   };
   
   const handleCloseStudy = () => {
+    if (deckCards.length > 0) {
+      const snap: PersistedSession = {
+        key: sessionKey,
+        mode: sessionMode,
+        activeDeckId,
+        deckCards,
+        currentIndex,
+        isStudying: true,
+        savedAt: Date.now(),
+      };
+      saveSession(snap);
+      setResumeCandidate(snap);
+    }
+
     setIsStudying(false);
-    resetSession();
+    setDeckCards([]);        // чтобы очередь "сбросилась" в хуке
+    setSessionIndex(0);      // необязательно, но ок
+    setActiveTab('home');
   };
+
+
   
   const handleSaveCard = async (cardData: { deckId: string; term: string; levels: Array<{question: string; answer: string}> }) => {
     await ApiClient.createCard({
@@ -250,18 +338,41 @@ function MainAppContent() {
 
   
   const handleDeckClick = async (deckId: string) => {
+    const key = `deck:${deckId}` as const;
+
+    // 1) если есть сохранённая сессия именно этой колоды — сразу продолжаем
+    const saved = loadSession(key);
+    if (saved && saved.deckCards.length > 0) {
+      setSessionMode('deck');
+      setSessionKey(saved.key);
+      setActiveDeckId(saved.activeDeckId);
+
+      setSessionIndex(saved.currentIndex ?? 0);
+      setDeckCards(saved.deckCards ?? []);
+
+      setIsStudying(true);
+      setResumeCandidate(saved); // чтобы на Home тоже была “продолжить”
+      return;
+    }
+
+    // 2) иначе грузим с сервера как раньше
     try {
       setLoadingDeckCards(true);
 
-      const items = await ApiClient.getDeckSession(deckId); // GET /decks/{deckId}/session
-      setDeckCards(toStudyCards(items));                   // <-- вот тут используем
+      const items = await ApiClient.getDeckSession(deckId);
+      setDeckCards(toStudyCards(items));
+
       setActiveDeckId(deckId);
+      setSessionMode('deck');
+      setSessionKey(key);
+      setSessionIndex(0);
 
       if (items.length > 0) setIsStudying(true);
     } finally {
       setLoadingDeckCards(false);
     }
   };
+
 
 
 
@@ -449,19 +560,25 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-            <Dashboard
-              statistics={statistics || {
-                cardsStudiedToday: 0,
-                timeSpentToday: 0,
-                currentStreak: 0,
-                totalCards: 0,
-                weeklyActivity: [0, 0, 0, 0, 0, 0, 0],
-                achievements: [],
-              }}
-              decks={decks}
-              onStartStudy={handleStartStudy}
-              onDeckClick={handleDeckClick}
-            />
+          <Dashboard
+            statistics={dashboardStats}
+            decks={decks}
+            onStartStudy={handleStartStudy}
+            onDeckClick={handleDeckClick}
+            resumeSession={
+              resumeCandidate
+                ? {
+                    title: 'Продолжить сессию',
+                    subtitle:
+                      resumeCandidate.mode === 'review'
+                        ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
+                        : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
+                    onResume: handleResume,
+                    onDiscard: handleDiscardResume,
+                  }
+                : undefined
+            }
+          />
           )}
           
           {activeTab === 'study' && (

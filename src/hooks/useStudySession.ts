@@ -2,11 +2,18 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { StudyCard, DifficultyRating } from '../types';
 import { ApiClient } from '../api/client';
 
-export function useStudySession(deckCards: StudyCard[] | null) {
-  const [cards, setCards] = useState<StudyCard[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-  // Сигнатура очереди: зависит только от id и порядка, а не от activeLevel/levels
+export function useStudySession(deckCards: StudyCard[] | null, initialIndex = 0) {
+  const [cards, setCards] = useState<StudyCard[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+
+  // всегда держим актуальный initialIndex в ref (на случай, если deckCards пришли раньше)
+  const initialIndexRef = useRef(initialIndex);
+  useEffect(() => {
+    initialIndexRef.current = initialIndex;
+  }, [initialIndex]);
+
   const queueSig = useMemo(() => {
     if (!deckCards || deckCards.length === 0) return '';
     return deckCards.map(c => c.id).join('|');
@@ -15,25 +22,24 @@ export function useStudySession(deckCards: StudyCard[] | null) {
   const prevQueueSigRef = useRef<string>('');
 
   useEffect(() => {
-    // Всегда синкаем cards, чтобы UI видел актуальные activeLevel/levels
-    setCards(deckCards ?? []);
+    const nextCards = deckCards ?? [];
+    setCards(nextCards);
 
     const prevSig = prevQueueSigRef.current;
     prevQueueSigRef.current = queueSig;
 
-    // Первичная загрузка очереди: сбрасываем на 0
+    // первичная загрузка очереди
     if (prevSig === '' && queueSig !== '') {
-      setCurrentIndex(0);
+      const idx = clamp(initialIndexRef.current, 0, Math.max(0, nextCards.length - 1));
+      setCurrentIndex(idx);
       return;
     }
-
-    // Если очередь реально изменилась (другая колода/другая сессия) — сброс
+    // если очередь реально изменилась (другая колода/другая сессия)
     if (prevSig !== '' && prevSig !== queueSig) {
-      setCurrentIndex(0);
+      const idx = clamp(initialIndexRef.current, 0, Math.max(0, nextCards.length - 1));
+      setCurrentIndex(idx);
       return;
     }
-
-    // Иначе (та же очередь, просто обновились поля карточек) — индекс сохраняем
   }, [deckCards, queueSig]);
 
   const currentCard = cards[currentIndex] || null;
@@ -54,5 +60,5 @@ export function useStudySession(deckCards: StudyCard[] | null) {
 
   const resetSession = () => setCurrentIndex(0);
 
-  return { cards, currentIndex, currentCard, isCompleted, rateCard, resetSession };
+  return { cards, currentIndex, setCurrentIndex, currentCard, isCompleted, rateCard, resetSession };
 }

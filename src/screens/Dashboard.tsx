@@ -1,17 +1,32 @@
 import React from 'react';
-import { Statistics, DeckSummary } from '../types';
+import { Statistics, DeckSummary, Deck } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
 import { Clock, BookOpen, Flame } from 'lucide-react';
 
-interface DashboardProps {
+type ResumeSessionProps = {
+  title: string;
+  subtitle: string;
+  onResume: () => void;
+  onDiscard: () => void;
+};
+
+export interface DashboardProps {
   statistics: Statistics;
-  decks: DeckSummary[];
+  decks: Deck[];
   onStartStudy: () => void;
   onDeckClick: (deckId: string) => void;
+
+  resumeSession?: ResumeSessionProps; // <-- новое
 }
 
-export function Dashboard({ statistics, decks, onStartStudy, onDeckClick }: DashboardProps) {
+export function Dashboard({
+  statistics,
+  decks,
+  onStartStudy,
+  onDeckClick,
+  resumeSession,
+}: DashboardProps) {
   return (
     <div className="min-h-screen bg-dark pb-24">
       {/* Header */}
@@ -47,7 +62,24 @@ export function Dashboard({ statistics, decks, onStartStudy, onDeckClick }: Dash
           </div>
         </div>
       </div>
-      
+        {resumeSession && (
+          <div className="container-centered max-w-390 mx-auto mb-4">
+            <div className="card text-center">
+              <h3 className="text-[#E8EAF0] mb-1">{resumeSession.title}</h3>
+              <p className="text-[#9CA3AF] mb-3">{resumeSession.subtitle}</p>
+              <div className="flex gap-2 justify-center">
+                <button className="btn-primary" onClick={resumeSession.onResume}>
+                  Продолжить
+                </button>
+                <button className="btn-ghost" onClick={resumeSession.onDiscard}>
+                  Сбросить
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
       {/* Main CTA */}
   <div className="p-4 py-6 container-centered max-w-390">
         <Button onClick={onStartStudy} variant="primary" size="large" fullWidth>

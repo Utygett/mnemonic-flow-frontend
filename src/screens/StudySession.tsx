@@ -55,9 +55,15 @@ export function StudySession({ cards, currentIndex, onRate, onClose, onLevelUp, 
       <div className="page__header py-4">
   <div className="page__header-inner">
           <div className="flex justify-between items-center mb-4">
-            <button onClick={onClose} className="text-muted">
-              <X size={24} />
+            <button
+              onClick={onClose}
+              className="icon-btn"
+              aria-label="Закрыть сессию"
+              type="button"
+            >
+              <X size={18} />
             </button>
+
             <span className="text-sm text-muted">
               {currentIndex + 1} / {cards.length}
             </span>

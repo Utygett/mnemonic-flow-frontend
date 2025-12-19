@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ApiClient } from '../api/client';
-import { Card, Deck, Statistics } from '../types';
+import { Statistics } from '../types';
 
 export function useApiData<T>() {
   const [data, setData] = useState<T | null>(null);
