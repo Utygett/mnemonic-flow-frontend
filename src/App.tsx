@@ -230,6 +230,22 @@ const [isCreatingDeck, setIsCreatingDeck] = useState(false);
     setResumeCandidate(null);
   };
 
+
+    useEffect(() => {
+    if (!isStudying) return;
+    if (!isCompleted) return;
+
+    clearSession(sessionKey);
+    setResumeCandidate(null);
+
+    setIsStudying(false);
+    setDeckCards([]);
+    setSessionIndex(0);
+
+    resetSession();
+  }, [isCompleted, isStudying, sessionKey, resetSession]);
+
+
     const handleDiscardResume = () => {
     if (!resumeCandidate) return;
     clearSession(resumeCandidate.key);
@@ -284,23 +300,14 @@ const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   };
 
   
-  const handleRate = async (rating: DifficultyRating) => {
-    try {
-      await rateCard(rating);
-      
-      // Обновляем статистику после ответа
-      refreshStats();
-      
-      // Если сессия завершена
-      if (isCompleted) {
-        clearSession(sessionKey);
-        setIsStudying(false);
-        resetSession();
-      }
-    } catch (error) {
-      console.error('Error rating card:', error);
-    }
-  };
+const handleRate = async (rating: DifficultyRating) => {
+  try {
+    await rateCard(rating);
+    refreshStats();
+  } catch (error) {
+    console.error('Error rating card:', error);
+  }
+};
   
   const handleCloseStudy = () => {
     if (deckCards.length > 0) {
