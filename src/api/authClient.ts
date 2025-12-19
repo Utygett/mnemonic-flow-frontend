@@ -1,5 +1,5 @@
 // src/api/authClient.ts
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 
 export async function getMe(token: string) {
   const res = await fetch(`${API_URL}/auth/me`, {

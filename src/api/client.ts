@@ -4,7 +4,7 @@ import { DeckSummary } from '../types';
 
 
 export class ApiClient {
-  static API_BASE_URL = 'http://localhost:8000/api';
+  static API_BASE_URL = '/api';
 
   // Получаем колоды пользователя
   static async getUserDecks(token: string): Promise<DeckSummary[]> {
