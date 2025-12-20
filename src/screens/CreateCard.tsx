@@ -5,6 +5,9 @@ import { Button } from '../components/Button/Button';
 import { LevelIndicator } from '../components/LevelIndicator';
 import { X, Plus, Trash2 } from 'lucide-react';
 import type { DeckSummary } from '../types';
+import MDEditor from '@uiw/react-md-editor';
+import { MarkdownView } from '../components/MarkdownView';
+
 
 type LevelQA = { question: string; answer: string };
 
@@ -35,6 +38,8 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
     'Мастерство',
     'Инновации',
   ];
+  const [qMode, setQMode] = useState<'edit' | 'preview'>('edit');
+  const [aMode, setAMode] = useState<'edit' | 'preview'>('edit');
 
   const handleAddLevel = () => {
     if (levels.length < 10) {
@@ -167,23 +172,62 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
               </div>
             </div>
 
-            <Input
-              value={active.question}
-              onChange={(v) => patchLevel(activeLevel, { question: v })}
-              label={`Вопрос (уровень ${activeLevel + 1})`}
-              placeholder="Например: Объясни фотосинтез простыми словами"
-              multiline
-              rows={3}
-            />
+            {/* Question */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label">{`Вопрос (уровень ${activeLevel + 1})`}</label>
 
-            <Input
-              value={active.answer}
-              onChange={(v) => patchLevel(activeLevel, { answer: v })}
-              label={`Ответ (уровень ${activeLevel + 1})`}
-              placeholder="Ответ для этого уровня"
-              multiline
-              rows={5}
-            />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setQMode('edit')} className="icon-btn">
+                    Редактирование
+                  </button>
+                  <button type="button" onClick={() => setQMode('preview')} className="icon-btn">
+                    Предпросмотр
+                  </button>
+                </div>
+              </div>
+
+              {qMode === 'edit' ? (
+                <MDEditor
+                  value={active.question}
+                  onChange={(v) => patchLevel(activeLevel, { question: v ?? '' })}
+                  preview="edit"
+                  extraCommands={[]}
+                  visibleDragbar={false}
+                />
+              ) : (
+                <MarkdownView value={active.question || '*Пусто*'} />
+              )}
+            </div>
+
+            {/* Answer */}
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="form-label">{`Ответ (уровень ${activeLevel + 1})`}</label>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setAMode('edit')} className="icon-btn">
+                    Редактирование
+                  </button>
+                  <button type="button" onClick={() => setAMode('preview')} className="icon-btn">
+                    Предпросмотр
+                  </button>
+                </div>
+              </div>
+
+              {aMode === 'edit' ? (
+                <MDEditor
+                  value={active.answer}
+                  onChange={(v) => patchLevel(activeLevel, { answer: v ?? '' })}
+                  preview="edit"
+                  extraCommands={[]}
+                  visibleDragbar={false}
+                />
+              ) : (
+                <MarkdownView value={active.answer || '*Пусто*'} />
+              )}
+            </div>
+
           </div>
         </div>
 

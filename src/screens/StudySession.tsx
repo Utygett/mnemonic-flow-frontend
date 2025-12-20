@@ -1,3 +1,4 @@
+// src/screens/StudySession.tsx
 import React, { useState } from 'react';
 import { StudyCard, DifficultyRating } from '../types';
 import { FlipCard } from '../components/FlipCard';

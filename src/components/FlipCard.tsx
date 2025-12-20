@@ -1,6 +1,9 @@
+// src/components/FlipCard.tsx
 import React from 'react';
 import { StudyCard } from '../types';
 import { motion } from 'motion/react';
+import { MarkdownView } from './MarkdownView';
+
 
 interface FlipCardProps {
   card: StudyCard;
@@ -38,7 +41,9 @@ export function FlipCard({ card, isFlipped, onFlip, onLevelUp, onLevelDown }: Fl
           transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
           <div className="flipcard__side flipcard__front">
-            <p className="flipcard__text">{frontText}</p>
+            <div className="flipcard__text">
+              <MarkdownView value={frontText} />
+            </div>
             <div className="flipcard__hint">Нажмите, чтобы увидеть ответ</div>
           </div>
           {/* Back Side */}
@@ -62,7 +67,9 @@ export function FlipCard({ card, isFlipped, onFlip, onLevelUp, onLevelDown }: Fl
                 )}
               </div>
             )}
-            <p className="flipcard__text">{backText}</p>
+            <div className="flipcard__text">
+              <MarkdownView value={backText} />
+            </div>
             <div className="flipcard__hint">
               Уровень {card.activeLevel + 1} из {card.levels.length}
             </div>
