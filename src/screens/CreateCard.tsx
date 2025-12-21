@@ -1,5 +1,5 @@
 // src/screens/CreateCard.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { LevelIndicator } from '../components/LevelIndicator';
@@ -17,12 +17,16 @@ interface CreateCardProps {
   onCancel: () => void;
 }
 
+const LAST_DECK_KEY = 'mnemonicFlow:lastDeckId';
+
 export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
   const [term, setTerm] = useState('');
   const [activeLevel, setActiveLevel] = useState(0);
 
-  const defaultDeckId = useMemo(() => decks?.[0]?.deck_id ?? '', [decks]);
-  const [deckId, setDeckId] = useState<string>(defaultDeckId);
+  const [deckId, setDeckId] = useState<string>(() => {
+    const saved = localStorage.getItem(LAST_DECK_KEY);
+    return saved ?? '';
+  });
 
   const [levels, setLevels] = useState<LevelQA[]>([{ question: '', answer: '' }]);
   const [qPreview, setQPreview] = useState(false);
@@ -65,6 +69,21 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
   };
 
   const active = levels[activeLevel];
+
+  
+  useEffect(() => {
+    if (!decks || decks.length === 0) return;
+    // если сохранённая колода есть в списке — оставляем
+    if (deckId && decks.some(d => d.deck_id === deckId)) return;
+    // иначе ставим первую доступную
+    setDeckId(decks[0].deck_id);
+  }, [decks, deckId]);
+
+  useEffect(() => {
+    if (!deckId) return;
+    localStorage.setItem(LAST_DECK_KEY, deckId);
+  }, [deckId]);
+
 
   return (
     <div className="min-h-screen bg-dark pb-24">
