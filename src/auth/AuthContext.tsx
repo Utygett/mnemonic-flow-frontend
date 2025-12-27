@@ -1,4 +1,3 @@
-// src/auth/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
@@ -9,9 +8,11 @@ interface User {
 
 interface AuthContextType {
   token: string | null;
+  refreshToken: string | null;
   currentUser: User | null;
-  login: (token: string) => Promise<void>;
+  login: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
+  refreshAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -20,8 +21,9 @@ const API_URL = '/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('access_token'));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refresh_token'));
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // для первого монтирования
+  const [loading, setLoading] = useState(true);
 
   const fetchMe = async (jwtToken: string) => {
     const res = await fetch(`${API_URL}/auth/me`, {
@@ -40,36 +42,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(user);
   };
 
+  // Обновить access token через refresh
+  const refreshAccessToken = async (): Promise<string | null> => {
+    if (!refreshToken) {
+      logout();
+      return null;
+    }
 
-  // Логин с токеном
-  const login = async (newToken: string) => {
-    localStorage.setItem('access_token', newToken);
-    setToken(newToken);
-    await fetchMe(newToken);
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${refreshToken}` },
+      });
+
+      if (!res.ok) {
+        logout();
+        return null;
+      }
+
+      const data = await res.json();
+      const newAccessToken = data.access_token;
+      localStorage.setItem('access_token', newAccessToken);
+      setToken(newAccessToken);
+      return newAccessToken;
+    } catch (err) {
+      logout();
+      return null;
+    }
+  };
+
+  // Логин с access + refresh токенами
+  const login = async (accessToken: string, newRefreshToken: string) => {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.setItem('refresh_token', newRefreshToken);
+    setToken(accessToken);
+    setRefreshToken(newRefreshToken);
+    await fetchMe(accessToken);
   };
 
   // Логаут
   const logout = () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     setToken(null);
+    setRefreshToken(null);
     setCurrentUser(null);
   };
 
+  // Подтягиваем пользователя при старте, если access token есть
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     fetchMe(token)
       .catch((err) => {
         if (err.message === 'unauthorized') logout();
-        // иначе НЕ удаляем токен, просто показываем “сервер недоступен” и т.п.
         console.error('fetchMe error:', err);
       })
       .finally(() => setLoading(false));
   }, [token]);
 
-
   return (
-    <AuthContext.Provider value={{ token, currentUser, login, logout }}>
+    <AuthContext.Provider value={{ token, refreshToken, currentUser, login, logout, refreshAccessToken }}>
       {!loading ? children : <div className="min-h-screen center-vertical"><p>Загрузка...</p></div>}
     </AuthContext.Provider>
   );
