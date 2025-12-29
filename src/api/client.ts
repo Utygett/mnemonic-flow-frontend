@@ -106,24 +106,19 @@ export class ApiClient {
   return res.json();
 }
 
-// 1) Получить колоду с карточками+уровнями через /cards/?deck_id=...
+// 1) Получить колоду с карточками+уровнями
 static async getDeckWithCards(deckId: string) {
   const token = localStorage.getItem('access_token');
   if (!token) throw new Error('No auth token');
 
-  const res = await fetch(`${this.API_BASE_URL}/cards/?deck_id=${deckId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+  const res = await fetch(`${this.API_BASE_URL}/decks/${deckId}/with_cards`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch deck: ${text}`);
-  }
-  return res.json(); // DeckWithCards[]
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
+
 
 static async replaceCardLevels(cardId: string, levels: Array<{ question: string; answer: string }>) {
   const token = localStorage.getItem('access_token');

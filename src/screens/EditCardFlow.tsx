@@ -59,9 +59,8 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
       setLoading(true);
       setErrorText(null);
       try {
-        const data = await ApiClient.getDeckWithCards(deckId); // DeckWithCards[]
-        const deck = data?.[0];
-        setCards(deck?.cards ?? []);
+        const deck = await ApiClient.getDeckWithCards(deckId); // DeckWithCards
+        setCards(deck.cards ?? []);;
         setSelectedCardId('');
         setLevels([{ question: '', answer: '' }]);
         setActiveLevel(0);
