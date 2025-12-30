@@ -218,4 +218,16 @@ static async getReviewSession(limit = 20) {
   }
 
 
+  static async deleteCardProgress(cardId: string) {
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error('No auth token');
+
+    const res = await fetch(`${this.API_BASE_URL}/cards/${cardId}/progress`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+  }
+
 }

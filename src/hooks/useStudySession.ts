@@ -60,5 +60,9 @@ export function useStudySession(deckCards: StudyCard[] | null, initialIndex = 0)
 
   const resetSession = () => setCurrentIndex(0);
 
-  return { cards, currentIndex, setCurrentIndex, currentCard, isCompleted, rateCard, resetSession };
+  const skipCard = () => {
+    setCurrentIndex((i) => Math.min(i + 1, cards.length)); // clamp
+  };
+
+  return { cards, currentIndex, setCurrentIndex, currentCard, isCompleted, rateCard, skipCard, resetSession };
 }

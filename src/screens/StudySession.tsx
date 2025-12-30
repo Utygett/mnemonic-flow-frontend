@@ -5,7 +5,7 @@ import { FlipCard } from '../components/FlipCard';
 import { RatingButton } from '../components/RatingButton';
 import { Button } from '../components/Button/Button';
 import { ProgressBar } from '../components/ProgressBar';
-import { X, ArrowUp } from 'lucide-react';
+import { X, SkipForward, Trash2 } from 'lucide-react';
 
 interface StudySessionProps {
   cards: StudyCard[];
@@ -14,12 +14,23 @@ interface StudySessionProps {
   onClose: () => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
+
+  onSkip: () => void;              
+  onRemoveFromProgress: () => void;
 }
 
-
-export function StudySession({ cards, currentIndex, onRate, onClose, onLevelUp, onLevelDown }: StudySessionProps) {
+export function StudySession({
+  cards,
+  currentIndex,
+  onRate,
+  onClose,
+  onLevelUp,
+  onLevelDown,
+  onSkip,
+  onRemoveFromProgress,
+}: StudySessionProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  
+
   const currentCard = cards[currentIndex];
   if (!currentCard) {
     return (
@@ -28,52 +39,72 @@ export function StudySession({ cards, currentIndex, onRate, onClose, onLevelUp, 
       </div>
     );
   }
-  const progress = ((currentIndex) / cards.length) * 100;
-  const canLevelUp = false; // Проверяем по длине массива
-  
+
+  const progress = (currentIndex / cards.length) * 100;
+
   const handleRate = (rating: DifficultyRating) => {
     setIsFlipped(false);
-    setTimeout(() => {
-      onRate(rating);
-    }, 300);
+    setTimeout(() => onRate(rating), 300);
   };
-  
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
+
+  const handleFlip = () => setIsFlipped(!isFlipped);
+
+  const handleSkip = () => {
+    setIsFlipped(false);
+    onSkip();
   };
-  
-  if (!currentCard) {
-    return (
-      <div className="study-page flex items-center justify-center">
-        <div className="text-muted">Карточки закончились</div>
-      </div>
+
+  const handleRemoveFromProgress = () => {
+    const ok = window.confirm(
+      'Удалить карточку из прогресса?\n\n' +
+      'Она больше не будет отображаться в повторении. ' +
+      'Вернуть её можно будет, начав изучение снова (прогресс начнётся заново).'
     );
-  }
+
+    if (!ok) return;
+
+    setIsFlipped(false);
+    onRemoveFromProgress();
+  };
 
   return (
     <div className="study-page">
-      {/* Header */}
       <div className="page__header py-4">
-  <div className="page__header-inner">
+        <div className="page__header-inner">
           <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={onClose}
-              className="icon-btn"
-              aria-label="Закрыть сессию"
-              type="button"
-            >
+            <button onClick={onClose} className="icon-btn" aria-label="Закрыть сессию" type="button">
               <X size={18} />
             </button>
 
             <span className="text-sm text-muted">
               {currentIndex + 1} / {cards.length}
             </span>
+
+            <div className="flex items-center" style={{ columnGap: 32 }}>
+              <button
+                onClick={() => { setIsFlipped(false); handleSkip(); }}
+                className="icon-btn"
+                aria-label="Пропустить карточку"
+                type="button"
+              >
+                <SkipForward size={18} />
+              </button>
+
+              <button
+                onClick={() => { setIsFlipped(false); handleRemoveFromProgress(); }}
+                className="icon-btn"
+                aria-label="Удалить прогресс карточки"
+                type="button"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
+
           <ProgressBar progress={progress} color="#FF9A76" />
         </div>
       </div>
-      
-      {/* Card Area */}
+
       <div className="study__card-area">
         <FlipCard
           card={currentCard}
@@ -83,37 +114,19 @@ export function StudySession({ cards, currentIndex, onRate, onClose, onLevelUp, 
           onLevelDown={onLevelDown}
         />
       </div>
-      
-      {/* Actions */}
-  <div className="study__actions">
+
+      <div className="study__actions">
         {!isFlipped ? (
           <Button onClick={handleFlip} variant="primary" size="large" fullWidth>
             Показать ответ
           </Button>
         ) : (
           <div className="study__actions-inner">
-            {/* Rating Buttons */}
             <div className="rating-row">
-              <RatingButton
-                rating="again"
-                label="Снова"
-                onClick={() => handleRate('again')}
-              />
-              <RatingButton
-                rating="hard"
-                label="Трудно"
-                onClick={() => handleRate('hard')}
-              />
-              <RatingButton
-                rating="good"
-                label="Хорошо"
-                onClick={() => handleRate('good')}
-              />
-              <RatingButton
-                rating="easy"
-                label="Легко"
-                onClick={() => handleRate('easy')}
-              />
+              <RatingButton rating="again" label="Снова" onClick={() => handleRate('again')} />
+              <RatingButton rating="hard" label="Трудно" onClick={() => handleRate('hard')} />
+              <RatingButton rating="good" label="Хорошо" onClick={() => handleRate('good')} />
+              <RatingButton rating="easy" label="Легко" onClick={() => handleRate('easy')} />
             </div>
           </div>
         )}

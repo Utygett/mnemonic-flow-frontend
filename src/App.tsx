@@ -132,6 +132,7 @@ function MainAppContent() {
     currentCard,
     isCompleted,
     rateCard,
+    skipCard,
     resetSession
   } = useStudySession(deckCards, sessionIndex);
   const [isEditingCard, setIsEditingCard] = useState(false);
@@ -283,6 +284,28 @@ const [isCreatingDeck, setIsCreatingDeck] = useState(false);
   };
 
 
+  const handleSkipCard = () => {
+    skipCard();
+  };
+
+  const handleRemoveFromProgress = async () => {
+    const card = cards[currentIndex];
+    if (!card) return;
+
+    try {
+      // 1) удалить прогресс на сервере
+      await ApiClient.deleteCardProgress(card.id);
+
+      // 2) убрать карточку из локальной очереди (чтобы исчезла прямо сейчас)
+      skipCard();
+    } catch (e) {
+      console.error('delete progress failed', e);
+    }
+  };
+
+
+
+
   const handleStartStudy = async () => {
     try {
       setLoadingDeckCards(true);
@@ -381,12 +404,6 @@ const handleRate = async (rating: DifficultyRating) => {
       setLoadingDeckCards(false);
     }
   };
-
-
-
-
-
-
   
   // Показываем загрузку
   if (decksLoading || statsLoading) {
@@ -500,6 +517,8 @@ if (isStudying) {
         onLevelUp={handleLevelUp}
         onLevelDown={handleLevelDown}
         onClose={handleCloseStudy}
+        onSkip={handleSkipCard}
+        onRemoveFromProgress={handleRemoveFromProgress}
       />
       <PWAUpdatePrompt />
       <OfflineStatus />
