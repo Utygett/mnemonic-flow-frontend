@@ -46,6 +46,8 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
   const [activeLevel, setActiveLevel] = useState(0);
   const [levels, setLevels] = useState<LevelQA[]>([{ question: '', answer: '' }]);
 
+  const [titleDraft, setTitleDraft] = useState('');
+
   // если decks пришли позже и deckId пустой — выставим дефолт
   useEffect(() => {
     if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
@@ -91,6 +93,11 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
     setLevels(mapped);
     setActiveLevel(0);
   }, [selectedCardId]);
+
+  useEffect(() => {
+    const c = cards.find(x => x.card_id === selectedCardId);
+    setTitleDraft(c?.title ?? '');
+  }, [selectedCardId, cards]);
 
   const patchLevel = (index: number, patch: Partial<LevelQA>) => {
     setLevels(prev => {
@@ -146,15 +153,33 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
 
   const canSave = Boolean(selectedCard) && cleaned.length > 0 && !saving;
 
-  const save = async () => {
-    if (!selectedCard) return;
+  const saveCard = async () => {
+    if (!selectedCardId) return;
+
+    const token = localStorage.getItem('access_token');
+    if (!token) throw new Error('No auth token');
 
     setSaving(true);
     setErrorText(null);
 
     try {
-      await ApiClient.replaceCardLevels(selectedCard.card_id, cleaned);
-      onDone();
+      // 1) обновляем title
+      const t = titleDraft.trim();
+      if (!t) throw new Error('Название обязательно');
+
+      const patchRes = await fetch(
+        `/api/cards/${selectedCardId}?title=${encodeURIComponent(t)}`,
+        { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!patchRes.ok) throw new Error(await patchRes.text());
+
+      // 2) обновляем уровни (как у тебя уже сделано)
+      await ApiClient.replaceCardLevels(selectedCardId, levels);
+
+      // 3) чтобы селект карточек обновил текст — обнови локальный cards
+      setCards(prev => prev.map(c => (
+        c.card_id === selectedCardId ? { ...c, title: t } : c
+      )));
     } catch (e: any) {
       setErrorText(e?.message ?? 'Ошибка сохранения');
     } finally {
@@ -162,7 +187,64 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
     }
   };
 
+
   const active = levels[activeLevel];
+
+
+  const humanizeDeleteError = (e: any, what: 'card' | 'deck') => {
+    const status = e?.status;
+    if (status === 403) return what === 'card'
+      ? 'Нельзя удалить карточку: вы не хозяин.'
+      : 'Нельзя удалить колоду: вы не хозяин.';
+    if (status === 404) return 'Объект не найден (возможно, уже удалён).';
+    return e?.message ?? 'Ошибка удаления';
+  };
+
+  const deleteSelectedCard = async () => {
+    if (!selectedCard) return;
+    if (!window.confirm('Удалить карточку?')) return;
+
+    setSaving(true);
+    setErrorText(null);
+    try {
+      await ApiClient.deleteCard(selectedCard.card_id);
+
+      setCards(prev => prev.filter(c => c.card_id !== selectedCard.card_id));
+      setSelectedCardId('');
+      setLevels([{ question: '', answer: '' }]);
+      setActiveLevel(0);
+    } catch (e: any) {
+      setErrorText(humanizeDeleteError(e, 'card'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteCurrentDeck = async () => {
+    if (!deckId) return;
+    if (!window.confirm('Удалить колоду и все её карточки?')) return;
+
+    setSaving(true);
+    setErrorText(null);
+    try {
+      await ApiClient.deleteDeck(deckId);
+
+      // Локально очищаем, а список колод пусть перезагрузит родитель
+      setCards([]);
+      setSelectedCardId('');
+      setLevels([{ question: '', answer: '' }]);
+      setActiveLevel(0);
+
+      onDone();
+    } catch (e: any) {
+      setErrorText(humanizeDeleteError(e, 'deck'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
+
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -185,44 +267,99 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
           </div>
         )}
 
+
+
         {/* Deck */}
         <div className="form-row">
           <label className="form-label">Колода</label>
-          <select
-            value={deckId}
-            onChange={(e) => setDeckId(e.target.value)}
-            className="input"
-            disabled={decks.length === 0}
-          >
-            {decks.length === 0 ? (
-              <option value="">Нет доступных колод</option>
-            ) : (
-              decks.map(d => (
-                <option key={d.deck_id} value={d.deck_id}>{d.title}</option>
-              ))
-            )}
-          </select>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <select
+              value={deckId}
+              onChange={(e) => setDeckId(e.target.value)}
+              className="input"
+              disabled={decks.length === 0 || saving}
+              style={{ flex: 1 }}
+            >
+              {decks.length === 0 ? (
+                <option value="">Нет доступных колод</option>
+              ) : (
+                decks.map(d => (
+                  <option key={d.deck_id} value={d.deck_id}>{d.title}</option>
+                ))
+              )}
+            </select>
+
+            <button
+              onClick={deleteCurrentDeck}
+              disabled={!deckId || decks.length === 0 || saving}
+              title="Удалить колоду"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                border: '1px solid rgba(229,62,62,0.35)',
+                background: 'transparent',
+                color: '#E53E3E',
+                opacity: (!deckId || decks.length === 0 || saving) ? 0.4 : 1,
+              }}
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Card */}
         <div className="form-row">
           <label className="form-label">Карточка</label>
-          <select
-            value={selectedCardId}
-            onChange={(e) => setSelectedCardId(e.target.value)}
-            className="input"
-            disabled={loading || cards.length === 0}
-          >
-            <option value="">{loading ? 'Загрузка…' : 'Выбери карточку'}</option>
-            {cards.map(c => (
-              <option key={c.card_id} value={c.card_id}>{c.title}</option>
-            ))}
-          </select>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <select
+              value={selectedCardId}
+              onChange={(e) => setSelectedCardId(e.target.value)}
+              className="input"
+              disabled={loading || cards.length === 0 || saving}
+              style={{ flex: 1 }}
+            >
+              <option value="">{loading ? 'Загрузка…' : 'Выбери карточку'}</option>
+              {cards.map(c => (
+                <option key={c.card_id} value={c.card_id}>{c.title}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={deleteSelectedCard}
+              disabled={!selectedCard || saving}
+              title="Удалить карточку"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                border: '1px solid rgba(229,62,62,0.35)',
+                background: 'transparent',
+                color: '#E53E3E',
+                opacity: (!selectedCard || saving) ? 0.4 : 1,
+              }}
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         </div>
+        
+
 
         {!selectedCard ? null : (
           <>
             {/* Tabs уровней */}
+            <div className="form-row">
+              <label className="form-label">Название</label>
+              <input
+              className="input"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              disabled={!selectedCardId || saving}
+              />
+            </div>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
@@ -373,7 +510,7 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
               <Button onClick={onCancel} variant="secondary" size="large" fullWidth disabled={saving}>
                 Отмена
               </Button>
-              <Button onClick={save} variant="primary" size="large" fullWidth disabled={!canSave}>
+              <Button onClick={saveCard} variant="primary" size="large" fullWidth disabled={!canSave}>
                 {saving ? 'Сохранение…' : 'Сохранить'}
               </Button>
             </div>

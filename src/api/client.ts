@@ -3,6 +3,46 @@ import { Deck, Statistics, DifficultyRating} from '../types';
 import { DeckSummary } from '../types';
 
 
+
+export class ApiError extends Error {
+  status: number;
+  detail?: string;
+
+  constructor(status: number, message: string, detail?: string) {
+    super(message);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('access_token'); // как у тебя в других методах
+  const res = await fetch(`/api${path}`, {
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json',
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const j = await res.json();
+      detail = typeof j?.detail === 'string' ? j.detail : undefined;
+    } catch {
+      // ignore
+    }
+    throw new ApiError(res.status, detail || `HTTP ${res.status}`, detail);
+  }
+
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
+}
+
+
+
 export class ApiClient {
   static API_BASE_URL = '/api';
 
@@ -229,5 +269,15 @@ static async getReviewSession(limit = 20) {
 
     if (!res.ok) throw new Error(await res.text());
   }
+
+
+  static async deleteCard(cardId: string): Promise<void> {
+    await apiRequest<void>(`/cards/${cardId}`, { method: 'DELETE' });
+  }
+
+  static async deleteDeck(deckId: string): Promise<void> {
+    await apiRequest<void>(`/decks/${deckId}`, { method: 'DELETE' });
+  }
+
 
 }
