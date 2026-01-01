@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
+import { MarkdownField } from '../components/MarkdownField';
 import { LevelIndicator } from '../components/LevelIndicator';
 import { X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
 import type { DeckSummary } from '../types';
@@ -174,64 +175,22 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
               </div>
             </div>
 
-            {/* Question */}
-            <div className="mt-3">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <label className="form-label" style={{ marginBottom: 0 }} >Вопрос</label>
+            <MarkdownField
+              label="Вопрос"
+              value={active.question}
+              onChange={(v) => patchLevel(activeLevel, { question: v })}
+              preview={qPreview}
+              onTogglePreview={() => setQPreview(v => !v)}
+            />
 
-                    <button
-                      type="button"
-                      onClick={() => setQPreview(v => !v)}
-                      className="icon-btn icon-btn--raise"
-                      aria-label={qPreview ? 'Выключить предпросмотр' : 'Включить предпросмотр'}
-                      title={qPreview ? 'Выключить предпросмотр' : 'Включить предпросмотр'}
-                    >
-                      {qPreview ? <EyeOff size={24} /> : <Eye size={24} />}
-                    </button>
-
-              </div>
-              {!qPreview ? (
-                <MDEditor
-                  value={active.question}
-                  onChange={(v) => patchLevel(activeLevel, { question: v ?? '' })}
-                  preview="edit"
-                  extraCommands={[]}
-                  visibleDragbar={false}
-                />
-              ) : (
-                <MarkdownView value={active.question || '*Пусто*'} />
-              )}
-            </div>
-
-            {/* Answer */}
-            <div className="mt-4">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <label className="form-label" style={{ marginBottom: 0 }}>Ответ</label>
-
-                  <button
-                    type="button"
-                    onClick={() => setAPreview(v => !v)}
-                    className="icon-btn icon-btn--raise"
-                    aria-label={aPreview ? 'Выключить предпросмотр' : 'Включить предпросмотр'}
-                    title={aPreview ? 'Выключить предпросмотр' : 'Включить предпросмотр'}
-                  >
-                    {aPreview ? <EyeOff size={24} /> : <Eye size={24} />}
-                  </button>
-              </div>
-
-              {!aPreview ? (
-                <MDEditor
-                  value={active.answer}
-                  onChange={(v) => patchLevel(activeLevel, { answer: v ?? '' })}
-                  preview="edit"
-                  extraCommands={[]}
-                  visibleDragbar={false}
-                />
-              ) : (
-                <MarkdownView value={active.answer || '*Пусто*'} />
-              )}
-            </div>
-
+            <MarkdownField
+              label="Ответ"
+              value={active.answer}
+              onChange={(v) => patchLevel(activeLevel, { answer: v })}
+              preview={aPreview}
+              onTogglePreview={() => setAPreview(v => !v)}
+              className="mt-4"
+            />
           </div>
         </div>
 

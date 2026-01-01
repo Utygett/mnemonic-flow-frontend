@@ -3,7 +3,7 @@ import type { DeckSummary } from '../types';
 import { ApiClient } from '../api/client';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
-import { LevelIndicator } from '../components/LevelIndicator';
+import { MarkdownField } from '../components/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 
 type LevelQA = { question: string; answer: string };
@@ -48,6 +48,8 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
 
   const [titleDraft, setTitleDraft] = useState('');
 
+  const [qPreview, setQPreview] = useState(false);
+  const [aPreview, setAPreview] = useState(false);
   // если decks пришли позже и deckId пустой — выставим дефолт
   useEffect(() => {
     if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
@@ -465,8 +467,6 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
                       <ChevronDown size={16} />
                     </button>
 
-                    <LevelIndicator currentLevel={Math.min(activeLevel, 3) as 0 | 1 | 2 | 3} size="small" />
-
                     {levels.length > 1 && (
                       <button
                         onClick={() => removeLevel(activeLevel)}
@@ -479,21 +479,25 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
                   </div>
                 </div>
 
-                <Input
+                <MarkdownField
+                  label="Вопрос"
                   value={active.question}
                   onChange={(v) => patchLevel(activeLevel, { question: v })}
-                  label={`Вопрос (уровень ${activeLevel + 1})`}
-                  multiline
-                  rows={3}
+                  preview={qPreview}
+                  onTogglePreview={() => setQPreview(v => !v)}
+                  disabled={saving}
                 />
 
-                <Input
+                <MarkdownField
+                  label="Ответ"
                   value={active.answer}
                   onChange={(v) => patchLevel(activeLevel, { answer: v })}
-                  label={`Ответ (уровень ${activeLevel + 1})`}
-                  multiline
-                  rows={5}
+                  preview={aPreview}
+                  onTogglePreview={() => setAPreview(v => !v)}
+                  disabled={saving}
+                  className="mt-4"
                 />
+
               </div>
 
               {/* Подсказка про пустые уровни */}
