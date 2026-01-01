@@ -108,9 +108,15 @@ export function Dashboard({
           ))}
         </div>
       </div>
-      <Button onClick={onCreateDeck} variant="primary" size="large" fullWidth>
-        Создать колоду
-      </Button>
+      <div style={{ }}>
+        <Button onClick={onCreateDeck} variant="primary" size="large" fullWidth>
+          Создать колоду
+        </Button>
+        
+        <Button onClick={onCreateDeck} variant="primary" size="large" fullWidth>
+          Добавить колоду
+        </Button>
+      </div>
     </div>
   );
 }
