@@ -717,6 +717,10 @@ if (isStudying) {
                         Создать карточку
                       </button>
 
+                      <button onClick={() => setIsCreatingDeck(true)} className="btn-primary">
+                        Создать колоду
+                      </button>
+
                       <button onClick={() => setIsEditingCard(true)} className="btn-primary">
                         Редактировать колоду
                       </button>

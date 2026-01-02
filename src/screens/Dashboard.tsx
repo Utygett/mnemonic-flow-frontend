@@ -114,10 +114,6 @@ export function Dashboard({
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <Button onClick={onCreateDeck} variant="primary" size="medium" fullWidth>
-          Создать колоду
-        </Button>
-        
         <Button onClick={onAddDesk} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
