@@ -11,13 +11,13 @@ import { Onboarding } from './screens/Onboarding/Onboarding';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
-import { DifficultyRating, StudyCard } from './types';
+import { DifficultyRating, StudyCard, Group } from './types';
 import { useStatistics, useStudySession } from './hooks';
 import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
 import { loadLastSession, loadSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
 import { CreateDeck } from './screens/CreateDeck';
-
+import  AddDeck from './screens/AddDeck/AddDeck'
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -121,7 +121,6 @@ function MainAppContent() {
   const [loadingDeckCards, setLoadingDeckCards] = useState(false);
 
   // Используем хуки для получения данных с API
-  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } = useDecks();
   const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
   const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
   const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
@@ -146,6 +145,38 @@ function MainAppContent() {
   achievements: [],
 };
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
+const [isAddDeck, setIsAddDeck] = useState(false);
+
+
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(
+    localStorage.getItem('active_group_id')
+  );
+
+  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
+    useDecks(activeGroupId);
+
+  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id); // подстрой под DeckSummary
+
+  useEffect(() => {
+    (async () => {
+      const gs = await ApiClient.getUserGroups();
+      setGroups(gs);
+
+      // выбрать дефолтную группу, если ещё не выбрана
+      if (!activeGroupId && gs.length > 0) {
+        setActiveGroupId(gs[0].id);
+        localStorage.setItem('active_group_id', gs[0].id);
+      }
+    })().catch(console.error);
+  }, []);
+  
+
+  useEffect(() => {
+    if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
+  }, [activeGroupId]);
+
+
 
   // Проверяем, было ли приложение установлено как PWA
   useEffect(() => {
@@ -418,7 +449,7 @@ const handleRate = async (rating: DifficultyRating) => {
   }
   
   // Показываем ошибку загрузки
-  if (decksError || statsError) {
+  if (statsError) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="card text-center">
@@ -554,6 +585,24 @@ if (isStudying) {
     );
   }
 
+  if (isAddDeck) {
+    if (!activeGroupId) {
+      // можно показать ошибку/заглушку
+      return null;
+    }
+    return (
+      <AddDeck
+        groupId={activeGroupId}
+        initialGroupDeckIds={currentGroupDeckIds}
+        onClose={() => setIsAddDeck(false)}
+        onChanged={() => {
+          // после add/remove обновляем колоды группы
+          refreshDecks();
+        }}
+      />
+    );
+  }
+
 
   if (isEditingCard) {
     return (
@@ -620,6 +669,7 @@ if (isStudying) {
                 : undefined
             }
             onCreateDeck={() => setIsCreatingDeck(true)}
+            onAddDesk={() => setIsAddDeck(true)}
           />
           )}
           

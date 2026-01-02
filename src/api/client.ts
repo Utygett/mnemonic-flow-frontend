@@ -1,6 +1,6 @@
 // src/api/client.ts
-import { Deck, Statistics, DifficultyRating} from '../types';
-import { DeckSummary } from '../types';
+import { Deck, Statistics, DifficultyRating, UserGroupResponse, Group} from '../types';
+import { DeckSummary, PublicDeckSummary } from '../types';
 
 
 
@@ -280,4 +280,49 @@ static async getReviewSession(limit = 20) {
   }
 
 
+
+  static async searchPublicDecks(params: {
+      q?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<PublicDeckSummary[]> {
+      const usp = new URLSearchParams();
+      const q = params.q?.trim();
+      if (q) usp.set('q', q);
+
+      usp.set('limit', String(params.limit ?? 20));
+      usp.set('offset', String(params.offset ?? 0));
+
+      // apiRequest сам добавит Bearer access_token и префикс /api
+      return apiRequest<PublicDeckSummary[]>(`/decks/public?${usp.toString()}`);
+    }
+
+    static async addDeckToGroup(groupId: string, deckId: string): Promise<void> {
+      await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, {
+        method: 'PUT',
+      });
+    }
+
+    static async removeDeckFromGroup(groupId: string, deckId: string): Promise<void> {
+      await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, {
+        method: 'DELETE',
+      });
+    }
+
+  static async getUserGroups(): Promise<Group[]> {
+    const data = await apiRequest<UserGroupResponse[]>(`/groups/`);
+    return data.map(g => ({
+      id: g.user_group_id,
+      title: g.title,
+      description: g.description,
+      parent_id: g.parent_id,
+      kind: g.kind,
+      source_group_id: g.source_group_id,
+    }));
+  }
+
+  static async getGroupDecksSummary(groupId: string): Promise<DeckSummary[]> {
+    // groupId здесь = user_group_id
+    return apiRequest<DeckSummary[]>(`/groups/${groupId}/decks/summary`);
+  }
 }

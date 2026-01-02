@@ -1,3 +1,30 @@
+export type UserGroupResponse = {
+  user_group_id: string;
+  kind: string;
+  source_group_id: string | null;
+  title: string;
+  description: string | null;
+  parent_id: string | null;
+};
+
+export type Group = {
+  id: string; // это user_group_id
+  title: string;
+  description: string | null;
+  parent_id: string | null;
+  kind: string;
+  source_group_id: string | null;
+};
+
+export type PublicDeckSummary = {
+  deck_id: string;
+  title: string;
+  description: string | null;
+  color: string | null;
+  owner_id: string;
+};
+
+
 export interface CardLevel {
   level_index: number;
   content: { question: string; answer: string };

@@ -19,6 +19,7 @@ export interface DashboardProps {
 
   resumeSession?: ResumeSessionProps;
   onCreateDeck: () => void;
+  onAddDesk: () => void;
 }
 
 export function Dashboard({
@@ -28,6 +29,7 @@ export function Dashboard({
   onDeckClick,
   resumeSession,
   onCreateDeck,
+  onAddDesk,
 }: DashboardProps) {
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -108,12 +110,12 @@ export function Dashboard({
           ))}
         </div>
       </div>
-      <div style={{ }}>
-        <Button onClick={onCreateDeck} variant="primary" size="large" fullWidth>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <Button onClick={onCreateDeck} variant="primary" size="medium" fullWidth>
           Создать колоду
         </Button>
         
-        <Button onClick={onCreateDeck} variant="primary" size="large" fullWidth>
+        <Button onClick={onAddDesk} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
       </div>

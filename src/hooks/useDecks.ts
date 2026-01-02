@@ -1,36 +1,29 @@
 // src/hooks/useDecks.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback} from 'react';
 import { DeckSummary } from '../types';
 import { ApiClient } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 
-export function useDecks() {
-  const { token } = useAuth(); // берём токен из контекста
+export default function useDecks(groupId: string | null) {
   const [decks, setDecks] = useState<DeckSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDecks = async () => {
-    if (!token) return; // Если токена нет — ничего не делаем
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async () => {
+      if (!groupId) return;          // ключевой guard
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await ApiClient.getGroupDecksSummary(groupId);
+        setDecks(data);
+      } finally {
+        setLoading(false);
+      }
+    }, [groupId]);
 
-    try {
-      const data = await ApiClient.getUserDecks(token);
-      setDecks(data);
-    } catch (err: any) {
-      console.error('Error fetching decks:', err);
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+    useEffect(() => {
+      if (!groupId) return;          // guard и здесь тоже можно
+      refresh();
+    }, [groupId, refresh]);
 
-  useEffect(() => {
-    fetchDecks();
-  }, [token]);
-
-  return { decks, loading, error, refresh: fetchDecks };
+    return { decks, loading, error, refresh };
 }
-
-export default useDecks;
