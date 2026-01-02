@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { DeckSummary } from '../types';
+import type { PublicDeckSummary } from '../types';
 import { ApiClient } from '../api/client';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
@@ -15,7 +15,7 @@ type CardSummary = {
 };
 
 interface Props {
-  decks: DeckSummary[];
+  decks: PublicDeckSummary[];
   onCancel: () => void;
   onDone: () => void;
 }

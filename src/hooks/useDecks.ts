@@ -1,10 +1,10 @@
 // src/hooks/useDecks.ts
 import { useState, useEffect, useCallback} from 'react';
-import { DeckSummary } from '../types';
+import { PublicDeckSummary } from '../types';
 import { ApiClient } from '../api/client';
 
 export default function useDecks(groupId: string | null) {
-  const [decks, setDecks] = useState<DeckSummary[]>([]);
+  const [decks, setDecks] = useState<PublicDeckSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

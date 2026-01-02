@@ -16,14 +16,17 @@ export function EditDeck({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const deck = await ApiClient.getDeckWithCards(deckId);
+        const cards_with_deck = await ApiClient.getDeckWithCards(deckId);
+        const deck = cards_with_deck.deck;
         setTitle(deck.title ?? deck.name ?? '');
         setDescription(deck.description ?? '');
+        setIsPublic(deck.is_public ?? false);
       } catch (e: any) {
         console.error(e);
       } finally {
@@ -39,7 +42,7 @@ export function EditDeck({
     try {
       setSaving(true);
       setError(null);
-      await ApiClient.updateDeck(deckId, { title: t, description: description || null });
+      await ApiClient.updateDeck(deckId, { title: t, description: description || null, is_public: isPublic });
       onSaved();
     } catch (e) {
       setError('Не удалось обновить колоду');
@@ -68,7 +71,14 @@ export function EditDeck({
               maxLength={60}
             />
           </label>
-
+            <label className="form-row">
+            <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            <span style={{ marginLeft: 8 }}>Сделать колоду публичной</span>
+            </label>
           <label className="field">
             <div className="field__label">Описание</div>
             <textarea

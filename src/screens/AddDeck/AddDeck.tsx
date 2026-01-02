@@ -22,7 +22,6 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
   const [error, setError] = useState<string | null>(null);
 
   const limit = 20;
-  const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
   const [groupDeckIds, setGroupDeckIds] = useState<Set<string>>(
@@ -38,7 +37,6 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-      setOffset(0);
       setHasMore(true);
     }, 400);
     return () => clearTimeout(t);
@@ -62,7 +60,6 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
         if (cancelled) return;
         setDecks(data);
         setHasMore(data.length === limit);
-        setOffset(data.length);
       } catch (e: any) {
         if (cancelled) return;
         setError(e?.message ?? 'Ошибка загрузки колод');
@@ -77,26 +74,29 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
     };
   }, [debouncedQuery]);
 
-  const loadMore = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const loadMore = async () => {
+        if (loading || !hasMore) return;
 
-      const data = await ApiClient.searchPublicDecks({
-        q: debouncedQuery,
-        limit,
-        offset,
-      });
+        try {
+            setLoading(true);
+            setError(null);
 
-      setDecks(prev => [...prev, ...data]);
-      setHasMore(data.length === limit);
-      setOffset(prev => prev + data.length);
-    } catch (e: any) {
-      setError(e?.message ?? 'Ошибка загрузки колод');
-    } finally {
-      setLoading(false);
-    }
-  };
+            const currentOffset = decks.length; // ключевой фикс
+
+            const data = await ApiClient.searchPublicDecks({
+            q: debouncedQuery,
+            limit,
+            offset: currentOffset,
+            });
+
+            setDecks(prev => [...prev, ...data]);
+            setHasMore(data.length === limit);
+        } catch (e: any) {
+            setError(e?.message ?? 'Ошибка загрузки колод');
+        } finally {
+            setLoading(false);
+        }
+    };
 
   const handleAdd = async (deckId: string) => {
     try {

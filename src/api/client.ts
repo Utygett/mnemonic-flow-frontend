@@ -1,6 +1,6 @@
 // src/api/client.ts
 import { Deck, Statistics, DifficultyRating, UserGroupResponse, Group} from '../types';
-import { DeckSummary, PublicDeckSummary } from '../types';
+import {PublicDeckSummary } from '../types';
 
 
 
@@ -47,7 +47,7 @@ export class ApiClient {
   static API_BASE_URL = '/api';
 
   // Получаем колоды пользователя
-  static async getUserDecks(token: string): Promise<DeckSummary[]> {
+  static async getUserDecks(token: string): Promise<PublicDeckSummary[]> {
     const res = await fetch(`${this.API_BASE_URL}/decks/`, { // ✅ добавлен слеш
       headers: {
         Authorization: `Bearer ${token}`,
@@ -236,7 +236,7 @@ static async getReviewSession(limit = 20) {
     title: string;
     description?: string | null;
     color?: string | null;
-  }): Promise<DeckSummary> {
+  }): Promise<PublicDeckSummary> {
     const token = localStorage.getItem('access_token');
     if (!token) throw new Error('No auth token');
 
@@ -257,7 +257,7 @@ static async getReviewSession(limit = 20) {
     return res.json();
   }
 
-  static async updateDeck(deckId: string, payload: { title?: string; description?: string | null; color?: string | null }) {
+  static async updateDeck(deckId: string, payload: { title?: string; description?: string | null; color?: string | null ; is_public?: boolean }): Promise<any> {
     return apiRequest<any>(`/decks/${deckId}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
@@ -328,8 +328,8 @@ static async getReviewSession(limit = 20) {
     }));
   }
 
-  static async getGroupDecksSummary(groupId: string): Promise<DeckSummary[]> {
+  static async getGroupDecksSummary(groupId: string): Promise<PublicDeckSummary[]> {
     // groupId здесь = user_group_id
-    return apiRequest<DeckSummary[]>(`/groups/${groupId}/decks/summary`);
+    return apiRequest<PublicDeckSummary[]>(`/groups/${groupId}/decks/summary`);
   }
 }

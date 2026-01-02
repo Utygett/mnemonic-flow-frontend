@@ -159,7 +159,7 @@ const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
   const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
     useDecks(activeGroupId);
 
-  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id); // подстрой под DeckSummary
+  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id);
 
   useEffect(() => {
     (async () => {

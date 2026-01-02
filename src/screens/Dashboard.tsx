@@ -1,5 +1,5 @@
 import React from 'react';
-import { Statistics, DeckSummary, Deck } from '../types';
+import { Statistics, PublicDeckSummary, Deck } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
 import { Clock, BookOpen, Flame } from 'lucide-react';

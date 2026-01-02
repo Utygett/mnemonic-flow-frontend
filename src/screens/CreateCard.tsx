@@ -5,7 +5,7 @@ import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
 import { LevelIndicator } from '../components/LevelIndicator';
 import { X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
-import type { DeckSummary } from '../types';
+import type { PublicDeckSummary } from '../types';
 import MDEditor from '@uiw/react-md-editor';
 import { MarkdownView } from '../components/MarkdownView';
 
@@ -13,7 +13,7 @@ import { MarkdownView } from '../components/MarkdownView';
 type LevelQA = { question: string; answer: string };
 
 interface CreateCardProps {
-  decks: DeckSummary[];
+  decks: PublicDeckSummary[];
   onSave: (cardData: { deckId: string; term: string; levels: LevelQA[] }) => void;
   onCancel: () => void;
 }

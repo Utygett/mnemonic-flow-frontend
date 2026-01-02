@@ -1,24 +1,26 @@
 import React from 'react';
-import { DeckSummary } from '../types';
+import { PublicDeckSummary } from '../types';
 import { ProgressBar } from './ProgressBar';
 import { ChevronRight, Pencil } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import './DeckCard.css';
 
 interface DeckCardProps {
-  deck: DeckSummary;
+  deck: PublicDeckSummary;
   onClick: () => void;
   onEdit?: () => void;
 }
 
 export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
+  const { currentUser } = useAuth();
+  const isOwner = currentUser?.id === deck.owner_id;
+  const description = deck.description?.trim();
+
   return (
     <button onClick={onClick} className="deck-card">
       <div className="deck-card__row">
-        <div style={{ flex: 1 }}>
-          <h3 className="deck-card__title">{deck.title}</h3>
-          <p className="deck-card__meta">{/*deck.cardsCount*/} N карточек</p>
-        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {onEdit && (
+          {isOwner &&onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -32,6 +34,13 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
           )}
           <ChevronRight size={20} className="deck-card__chev" />
         </div>
+        <div style={{ flex: 1 }}>
+          <h3 className="deck-card__title">{deck.title}</h3>
+           {description ? (
+            <p className="deck-card__description">{description}</p>
+          ) : null}
+        </div>
+
       </div>
 
       <div className="deck-card__progress-row">
