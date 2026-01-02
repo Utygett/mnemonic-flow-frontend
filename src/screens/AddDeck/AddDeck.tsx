@@ -4,6 +4,7 @@ import { Search, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
 import { ApiClient } from '../../api/client';
 import { PublicDeckSummary } from '../../types';
+import { useAuth } from '../../auth/AuthContext';
 import './AddDeck.css';
 
 type Props = {
@@ -27,6 +28,12 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
   const [groupDeckIds, setGroupDeckIds] = useState<Set<string>>(
     () => new Set(initialGroupDeckIds),
   );
+
+  const { currentUser } = useAuth();
+
+  const filteredDecks = useMemo(() => (
+    decks.filter(d => d.owner_id !== currentUser?.id)
+  ), [decks, currentUser]);
 
   // если родитель может менять initialGroupDeckIds (например, после рефреша группы)
   useEffect(() => {
@@ -151,7 +158,7 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
           <div className="no-results">Колоды не найдены</div>
         ) : (
           <>
-            {decks.map((deck) => {
+            {filteredDecks.map((deck) => {
               const inGroup = groupDeckIds.has(deck.deck_id);
 
               return (
