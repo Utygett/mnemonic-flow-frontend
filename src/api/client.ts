@@ -1,6 +1,6 @@
 // src/api/client.ts
-import { Deck, Statistics, DifficultyRating, UserGroupResponse, Group} from '../types';
-import {PublicDeckSummary } from '../types';
+import { Statistics, DifficultyRating, UserGroupResponse, Group, GroupCreatePayload} from '../types';
+import { PublicDeckSummary } from '../types';
 
 
 
@@ -332,4 +332,12 @@ static async getReviewSession(limit = 20) {
     // groupId здесь = user_group_id
     return apiRequest<PublicDeckSummary[]>(`/groups/${groupId}/decks/summary`);
   }
+
+   static async createGroup(payload: GroupCreatePayload): Promise<Group> {
+    return apiRequest<Group>(`/groups/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
 }

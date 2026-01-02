@@ -19,6 +19,8 @@ import { loadLastSession, loadSession, saveSession, clearSession, PersistedSessi
 import { CreateDeck } from './screens/CreateDeck';
 import  AddDeck from './screens/AddDeck/AddDeck'
 import { EditDeck } from './screens/EditDeck';
+import { CreateGroup } from './screens/group/CreateGroup';
+
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -149,36 +151,7 @@ const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 const [isAddDeck, setIsAddDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
-
-
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(
-    localStorage.getItem('active_group_id')
-  );
-
-  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
-    useDecks(activeGroupId);
-
-  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id);
-
-  useEffect(() => {
-    (async () => {
-      const gs = await ApiClient.getUserGroups();
-      setGroups(gs);
-
-      // выбрать дефолтную группу, если ещё не выбрана
-      if (!activeGroupId && gs.length > 0) {
-        setActiveGroupId(gs[0].id);
-        localStorage.setItem('active_group_id', gs[0].id);
-      }
-    })().catch(console.error);
-  }, []);
-  
-
-  useEffect(() => {
-    if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
-  }, [activeGroupId]);
-
+const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
 
   // Проверяем, было ли приложение установлено как PWA
@@ -289,6 +262,62 @@ const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 
 
 
+
+
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
+    const v = localStorage.getItem('active_group_id');
+    if (!v || v === 'null' || v === 'undefined' || v.trim() === '') return null;
+    return v;
+  });
+
+
+  const [groups, setGroups] = useState<Group[]>([]);
+
+  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
+    useDecks(activeGroupId);
+
+  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id);
+
+  useEffect(() => {
+    if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
+  }, [activeGroupId]);
+
+
+
+
+
+const refreshGroups = React.useCallback(async () => {
+  const gs = await ApiClient.getUserGroups();
+  setGroups(gs);
+
+  setActiveGroupId((prev) => {
+    // 1) пытаемся сохранить текущую, если она ещё существует
+    if (prev && gs.some((g) => g.id === prev)) return prev;
+
+    // 2) иначе пробуем взять из localStorage (на случай если prev был null при первом рендере)
+    const stored = localStorage.getItem('active_group_id');
+    if (stored && gs.some((g) => g.id === stored)) return stored;
+
+    // 3) иначе выбираем первую
+    return gs[0]?.id ?? null;
+  });
+}, []);
+
+useEffect(() => {
+  refreshGroups().catch(console.error);
+}, [refreshGroups]);
+
+useEffect(() => {
+  if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
+  else localStorage.removeItem('active_group_id');
+}, [activeGroupId]);
+
+
+
+
+
+
+
   const handleLevelUp = async () => {
     const card = cards[currentIndex];
     if (!card) return;
@@ -386,8 +415,6 @@ const handleRate = async (rating: DifficultyRating) => {
     setSessionIndex(0);      // необязательно, но ок
     setActiveTab('home');
   };
-
-
   
   const handleSaveCard = async (cardData: { deckId: string; term: string; levels: Array<{question: string; answer: string}> }) => {
     await ApiClient.createCard({
@@ -588,6 +615,20 @@ if (isStudying) {
     );
   }
 
+
+  if (isCreatingGroup) {
+    return (
+      <CreateGroup
+        onCancel={() => setIsCreatingGroup(false)}
+        onSave={async (createdGroupId) => {
+          await refreshGroups();          // перезагружаем список групп
+          if (createdGroupId) setActiveGroupId(createdGroupId); // если есть id — выбираем
+          setIsCreatingGroup(false);
+        }}
+      />
+    );
+  }
+
     if (isEditingDeck && editingDeckId) {
       return (
         <EditDeck
@@ -670,31 +711,34 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-          <Dashboard
-            statistics={dashboardStats}
-            decks={decks}
-            onStartStudy={handleStartStudy}
-            onDeckClick={handleDeckClick}
-            onEditDeck={(deckId) => {
-              setEditingDeckId(deckId);
-              setIsEditingDeck(true);
-            }}
-            resumeSession={
-              resumeCandidate
-                ? {
-                    title: 'Продолжить сессию',
-                    subtitle:
-                      resumeCandidate.mode === 'review'
-                        ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
-                        : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
-                    onResume: handleResume,
-                    onDiscard: handleDiscardResume,
-                  }
-                : undefined
-            }
-            onCreateDeck={() => setIsCreatingDeck(true)}
-            onAddDesk={() => setIsAddDeck(true)}
-          />
+           <Dashboard
+              statistics={dashboardStats}
+              decks={decks}
+              groups={groups}
+              activeGroupId={activeGroupId}
+              onGroupChange={setActiveGroupId}
+              onStartStudy={handleStartStudy}
+              onDeckClick={handleDeckClick}
+              onEditDeck={(deckId) => {
+                setEditingDeckId(deckId);
+                setIsEditingDeck(true);
+              }}
+              resumeSession={
+                resumeCandidate
+                  ? {
+                      title: 'Продолжить сессию',
+                      subtitle:
+                        resumeCandidate.mode === 'review'
+                          ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
+                          : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
+                      onResume: handleResume,
+                      onDiscard: handleDiscardResume,
+                    }
+                  : undefined
+              }
+              onCreateDeck={() => setIsCreatingDeck(true)}
+              onAddDesk={() => setIsAddDeck(true)}
+            />
           )}
           
           {activeTab === 'study' && (

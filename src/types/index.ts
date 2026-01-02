@@ -7,8 +7,14 @@ export type UserGroupResponse = {
   parent_id: string | null;
 };
 
+export type GroupCreatePayload = {
+  title: string;
+  description?: string | null;
+  parent_id?: string | null;
+};
+
 export type Group = {
-  id: string; // это user_group_id
+  id: string;              // user_group_id
   title: string;
   description: string | null;
   parent_id: string | null;
