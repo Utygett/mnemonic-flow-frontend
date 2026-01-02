@@ -631,6 +631,10 @@ if (isStudying) {
             refreshStats();
             setIsEditingCard(false);
           }}
+          onEditDeck={(deckId) => {
+            setEditingDeckId(deckId);
+            setIsEditingDeck(true);
+          }}
         />
         <PWAUpdatePrompt />
         <OfflineStatus />
@@ -714,7 +718,7 @@ if (isStudying) {
                       </button>
 
                       <button onClick={() => setIsEditingCard(true)} className="btn-primary">
-                        Редактировать карточку
+                        Редактировать колоду
                       </button>
                     </div>
                   {/* PWA Installation Hint */}

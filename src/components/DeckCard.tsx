@@ -1,7 +1,7 @@
 import React from 'react';
 import { PublicDeckSummary } from '../types';
 import { ProgressBar } from './ProgressBar';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import './DeckCard.css';
 
@@ -20,18 +20,7 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
     <button onClick={onClick} className="deck-card">
       <div className="deck-card__row">
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {isOwner &&onEdit && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit();
-              }}
-              className="icon-btn"
-              aria-label="Редактировать"
-            >
-              <Pencil size={16} />
-            </button>
-          )}
+          {/* edit button moved to EditCardFlow (study) */}
           <ChevronRight size={20} className="deck-card__chev" />
         </div>
         <div style={{ flex: 1 }}>

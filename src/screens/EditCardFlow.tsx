@@ -4,8 +4,8 @@ import { ApiClient } from '../api/client';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
-import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 type LevelQA = { question: string; answer: string };
 type CardSummary = {
   card_id: string;
@@ -18,6 +18,7 @@ interface Props {
   decks: PublicDeckSummary[];
   onCancel: () => void;
   onDone: () => void;
+  onEditDeck?: (deckId: string) => void;
 }
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
@@ -27,7 +28,7 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
-export function EditCardFlow({ decks, onCancel, onDone }: Props) {
+export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
   const defaultDeckId = useMemo(() => decks?.[0]?.deck_id ?? '', [decks]);
   const [deckId, setDeckId] = useState(defaultDeckId);
 
@@ -50,6 +51,7 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
 
   const [qPreview, setQPreview] = useState(false);
   const [aPreview, setAPreview] = useState(false);
+  const { currentUser } = useAuth();
   // если decks пришли позже и deckId пустой — выставим дефолт
   useEffect(() => {
     if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
@@ -308,6 +310,30 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
             >
               <Trash2 size={18} />
             </button>
+            {/* Edit deck button (shows only for owner) */}
+            {(() => {
+              const currentDeck = decks.find(d => d.deck_id === deckId);
+              const isOwner = !!(currentDeck && currentUser && currentUser.id === currentDeck.owner_id);
+              return isOwner && onEditDeck && deckId ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditDeck(deckId);
+                  }}
+                  title="Редактировать колоду"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    border: '1px solid rgba(156,163,175,0.12)',
+                    background: 'transparent',
+                    color: '#E8EAF0',
+                  }}
+                >
+                  <Pencil size={18} />
+                </button>
+              ) : null;
+            })()}
           </div>
         </div>
 
