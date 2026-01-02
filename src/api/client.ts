@@ -257,6 +257,13 @@ static async getReviewSession(limit = 20) {
     return res.json();
   }
 
+  static async updateDeck(deckId: string, payload: { title?: string; description?: string | null; color?: string | null }) {
+    return apiRequest<any>(`/decks/${deckId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  }
+
 
   static async deleteCardProgress(cardId: string) {
     const token = localStorage.getItem('access_token');

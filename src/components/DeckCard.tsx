@@ -1,14 +1,15 @@
 import React from 'react';
 import { DeckSummary } from '../types';
 import { ProgressBar } from './ProgressBar';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Pencil } from 'lucide-react';
 
 interface DeckCardProps {
   deck: DeckSummary;
   onClick: () => void;
+  onEdit?: () => void;
 }
 
-export function DeckCard({ deck, onClick }: DeckCardProps) {
+export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
   return (
     <button onClick={onClick} className="deck-card">
       <div className="deck-card__row">
@@ -16,7 +17,21 @@ export function DeckCard({ deck, onClick }: DeckCardProps) {
           <h3 className="deck-card__title">{deck.title}</h3>
           <p className="deck-card__meta">{/*deck.cardsCount*/} N карточек</p>
         </div>
-        <ChevronRight size={20} className="deck-card__chev" />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="icon-btn"
+              aria-label="Редактировать"
+            >
+              <Pencil size={16} />
+            </button>
+          )}
+          <ChevronRight size={20} className="deck-card__chev" />
+        </div>
       </div>
 
       <div className="deck-card__progress-row">

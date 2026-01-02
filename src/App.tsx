@@ -18,6 +18,7 @@ import { ApiClient } from './api/client';
 import { loadLastSession, loadSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
 import { CreateDeck } from './screens/CreateDeck';
 import  AddDeck from './screens/AddDeck/AddDeck'
+import { EditDeck } from './screens/EditDeck';
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -146,6 +147,8 @@ function MainAppContent() {
 };
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 const [isAddDeck, setIsAddDeck] = useState(false);
+const [isEditingDeck, setIsEditingDeck] = useState(false);
+const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 
 
   const [groups, setGroups] = useState<Group[]>([]);
@@ -585,6 +588,19 @@ if (isStudying) {
     );
   }
 
+    if (isEditingDeck && editingDeckId) {
+      return (
+        <EditDeck
+          deckId={editingDeckId}
+          onCancel={() => setIsEditingDeck(false)}
+          onSaved={() => {
+            refreshDecks();
+            setIsEditingDeck(false);
+          }}
+        />
+      );
+    }
+
   if (isAddDeck) {
     if (!activeGroupId) {
       // можно показать ошибку/заглушку
@@ -655,6 +671,10 @@ if (isStudying) {
             decks={decks}
             onStartStudy={handleStartStudy}
             onDeckClick={handleDeckClick}
+            onEditDeck={(deckId) => {
+              setEditingDeckId(deckId);
+              setIsEditingDeck(true);
+            }}
             resumeSession={
               resumeCandidate
                 ? {

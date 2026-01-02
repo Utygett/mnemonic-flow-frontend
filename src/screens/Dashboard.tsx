@@ -16,6 +16,7 @@ export interface DashboardProps {
   decks: Deck[];
   onStartStudy: () => void;
   onDeckClick: (deckId: string) => void;
+  onEditDeck?: (deckId: string) => void;
 
   resumeSession?: ResumeSessionProps;
   onCreateDeck: () => void;
@@ -30,6 +31,7 @@ export function Dashboard({
   resumeSession,
   onCreateDeck,
   onAddDesk,
+  onEditDeck,
 }: DashboardProps) {
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -106,6 +108,7 @@ export function Dashboard({
               key={deck.deck_id}
               deck={deck}
               onClick={() => onDeckClick(deck.deck_id)}
+              onEdit={onEditDeck ? () => onEditDeck(deck.deck_id) : undefined}
             />
           ))}
         </div>
