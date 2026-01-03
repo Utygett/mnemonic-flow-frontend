@@ -16,13 +16,16 @@ import { Onboarding } from './screens/Onboarding/Onboarding';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
-import { DifficultyRating, StudyCard } from './types';
+import { DifficultyRating, StudyCard, Group } from './types';
 import { useStatistics, useStudySession } from './hooks';
 import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
 import { loadLastSession, loadSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
 import { CreateDeck } from './screens/CreateDeck';
 import  AddDeck from './screens/AddDeck/AddDeck'
+import { EditDeck } from './screens/EditDeck';
+import { CreateGroup } from './screens/group/CreateGroup';
+
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -126,7 +129,6 @@ function MainAppContent() {
   const [loadingDeckCards, setLoadingDeckCards] = useState(false);
 
   // Используем хуки для получения данных с API
-  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } = useDecks();
   const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
   const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
   const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
@@ -152,6 +154,10 @@ function MainAppContent() {
 };
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 const [isAddDeck, setIsAddDeck] = useState(false);
+const [isEditingDeck, setIsEditingDeck] = useState(false);
+const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
+const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+
 
   // Проверяем, было ли приложение установлено как PWA
   useEffect(() => {
@@ -261,6 +267,83 @@ const [isAddDeck, setIsAddDeck] = useState(false);
 
 
 
+  const handleDeleteActiveGroup = async () => {
+    if (!activeGroupId) return;
+
+    const g = groups.find((x) => x.id === activeGroupId);
+    const ok = window.confirm(
+      `Удалить группу "${g?.title ?? 'без названия'}"? Это действие нельзя отменить.`
+    );
+    if (!ok) return;
+
+    try {
+      await ApiClient.deleteGroup(activeGroupId);
+
+      // после удаления — обновляем список групп
+      await refreshGroups();
+
+      // если удалили текущую, refreshGroups выберет валидную или null
+      // (а localStorage обновится в useEffect)
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось удалить группу');
+    }
+  };
+
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
+    const v = localStorage.getItem('active_group_id');
+    if (!v || v === 'null' || v === 'undefined' || v.trim() === '') return null;
+    return v;
+  });
+
+
+  const [groups, setGroups] = useState<Group[]>([]);
+
+  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
+    useDecks(activeGroupId);
+
+  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id);
+
+  useEffect(() => {
+    if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
+  }, [activeGroupId]);
+
+
+
+
+
+const refreshGroups = React.useCallback(async () => {
+  const gs = await ApiClient.getUserGroups();
+  setGroups(gs);
+
+  setActiveGroupId((prev) => {
+    // 1) пытаемся сохранить текущую, если она ещё существует
+    if (prev && gs.some((g) => g.id === prev)) return prev;
+
+    // 2) иначе пробуем взять из localStorage (на случай если prev был null при первом рендере)
+    const stored = localStorage.getItem('active_group_id');
+    if (stored && gs.some((g) => g.id === stored)) return stored;
+
+    // 3) иначе выбираем первую
+    return gs[0]?.id ?? null;
+  });
+}, []);
+
+useEffect(() => {
+  refreshGroups().catch(console.error);
+}, [refreshGroups]);
+
+useEffect(() => {
+  if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
+  else localStorage.removeItem('active_group_id');
+}, [activeGroupId]);
+
+
+
+
+
+
+
   const handleLevelUp = async () => {
     const card = cards[currentIndex];
     if (!card) return;
@@ -358,8 +441,6 @@ const handleRate = async (rating: DifficultyRating) => {
     setSessionIndex(0);      // необязательно, но ок
     setActiveTab('home');
   };
-
-
   
   const handleSaveCard = async (cardData: { deckId: string; term: string; levels: Array<{question: string; answer: string}> }) => {
     await ApiClient.createCard({
@@ -424,7 +505,7 @@ const handleRate = async (rating: DifficultyRating) => {
   }
   
   // Показываем ошибку загрузки
-  if (decksError || statsError) {
+  if (statsError) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="card text-center">
@@ -560,11 +641,47 @@ if (isStudying) {
     );
   }
 
+
+  if (isCreatingGroup) {
+    return (
+      <CreateGroup
+        onCancel={() => setIsCreatingGroup(false)}
+        onSave={async (createdGroupId) => {
+          await refreshGroups();          // перезагружаем список групп
+          if (createdGroupId) setActiveGroupId(createdGroupId); // если есть id — выбираем
+          setIsCreatingGroup(false);
+        }}
+      />
+    );
+  }
+
+    if (isEditingDeck && editingDeckId) {
+      return (
+        <EditDeck
+          deckId={editingDeckId}
+          onCancel={() => setIsEditingDeck(false)}
+          onSaved={() => {
+            refreshDecks();
+            setIsEditingDeck(false);
+          }}
+        />
+      );
+    }
+
   if (isAddDeck) {
+    if (!activeGroupId) {
+      // можно показать ошибку/заглушку
+      return null;
+    }
     return (
       <AddDeck
+        groupId={activeGroupId}
+        initialGroupDeckIds={currentGroupDeckIds}
         onClose={() => setIsAddDeck(false)}
-        onDeckAdded={() => setIsCreatingDeck(false)}
+        onChanged={() => {
+          // после add/remove обновляем колоды группы
+          refreshDecks();
+        }}
       />
     );
   }
@@ -580,6 +697,10 @@ if (isStudying) {
             refreshDecks();
             refreshStats();
             setIsEditingCard(false);
+          }}
+          onEditDeck={(deckId) => {
+            setEditingDeckId(deckId);
+            setIsEditingDeck(true);
           }}
         />
         <PWAUpdatePrompt />
@@ -616,27 +737,36 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-          <Dashboard
-            statistics={dashboardStats}
-            decks={decks}
-            onStartStudy={handleStartStudy}
-            onDeckClick={handleDeckClick}
-            resumeSession={
-              resumeCandidate
-                ? {
-                    title: 'Продолжить сессию',
-                    subtitle:
-                      resumeCandidate.mode === 'review'
-                        ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
-                        : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
-                    onResume: handleResume,
-                    onDiscard: handleDiscardResume,
-                  }
-                : undefined
-            }
-            onCreateDeck={() => setIsCreatingDeck(true)}
-            onAddDesk={() => setIsAddDeck(true)}
-          />
+           <Dashboard
+              statistics={dashboardStats}
+              decks={decks}
+              groups={groups}
+              activeGroupId={activeGroupId}
+              onGroupChange={setActiveGroupId}
+              onCreateGroup={() => setIsCreatingGroup(true)}
+              onDeleteActiveGroup={handleDeleteActiveGroup}
+              onStartStudy={handleStartStudy}
+              onDeckClick={handleDeckClick}
+              onEditDeck={(deckId) => {
+                setEditingDeckId(deckId);
+                setIsEditingDeck(true);
+              }}
+              resumeSession={
+                resumeCandidate
+                  ? {
+                      title: 'Продолжить сессию',
+                      subtitle:
+                        resumeCandidate.mode === 'review'
+                          ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
+                          : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
+                      onResume: handleResume,
+                      onDiscard: handleDiscardResume,
+                    }
+                  : undefined
+              }
+              onCreateDeck={() => setIsCreatingDeck(true)}
+              onAddDesk={() => setIsAddDeck(true)}
+            />
           )}
           
           {activeTab === 'study' && (
@@ -659,8 +789,12 @@ if (isStudying) {
                         Создать карточку
                       </button>
 
+                      <button onClick={() => setIsCreatingDeck(true)} className="btn-primary">
+                        Создать колоду
+                      </button>
+
                       <button onClick={() => setIsEditingCard(true)} className="btn-primary">
-                        Редактировать карточку
+                        Редактировать колоду
                       </button>
                     </div>
                   {/* PWA Installation Hint */}
@@ -870,8 +1004,8 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\api\client.t
 ==============================
 
 // src/api/client.ts
-import { Deck, Statistics, DifficultyRating} from '../types';
-import { DeckSummary } from '../types';
+import { Statistics, DifficultyRating, UserGroupResponse, Group, GroupCreatePayload} from '../types';
+import { PublicDeckSummary } from '../types';
 
 
 
@@ -918,7 +1052,7 @@ export class ApiClient {
   static API_BASE_URL = '/api';
 
   // Получаем колоды пользователя
-  static async getUserDecks(token: string): Promise<DeckSummary[]> {
+  static async getUserDecks(token: string): Promise<PublicDeckSummary[]> {
     const res = await fetch(`${this.API_BASE_URL}/decks/`, { // ✅ добавлен слеш
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1107,7 +1241,7 @@ static async getReviewSession(limit = 20) {
     title: string;
     description?: string | null;
     color?: string | null;
-  }): Promise<DeckSummary> {
+  }): Promise<PublicDeckSummary> {
     const token = localStorage.getItem('access_token');
     if (!token) throw new Error('No auth token');
 
@@ -1126,6 +1260,13 @@ static async getReviewSession(limit = 20) {
     } 
 
     return res.json();
+  }
+
+  static async updateDeck(deckId: string, payload: { title?: string; description?: string | null; color?: string | null ; is_public?: boolean }): Promise<any> {
+    return apiRequest<any>(`/decks/${deckId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   }
 
 
@@ -1151,6 +1292,62 @@ static async getReviewSession(limit = 20) {
   }
 
 
+
+  static async searchPublicDecks(params: {
+      q?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<PublicDeckSummary[]> {
+      const usp = new URLSearchParams();
+      const q = params.q?.trim();
+      if (q) usp.set('q', q);
+
+      usp.set('limit', String(params.limit ?? 20));
+      usp.set('offset', String(params.offset ?? 0));
+
+      // apiRequest сам добавит Bearer access_token и префикс /api
+      return apiRequest<PublicDeckSummary[]>(`/decks/public?${usp.toString()}`);
+    }
+
+    static async addDeckToGroup(groupId: string, deckId: string): Promise<void> {
+      await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, {
+        method: 'PUT',
+      });
+    }
+
+    static async removeDeckFromGroup(groupId: string, deckId: string): Promise<void> {
+      await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, {
+        method: 'DELETE',
+      });
+    }
+
+  static async getUserGroups(): Promise<Group[]> {
+    const data = await apiRequest<UserGroupResponse[]>(`/groups/`);
+    return data.map(g => ({
+      id: g.user_group_id,
+      title: g.title,
+      description: g.description,
+      parent_id: g.parent_id,
+      kind: g.kind,
+      source_group_id: g.source_group_id,
+    }));
+  }
+
+  static async getGroupDecksSummary(groupId: string): Promise<PublicDeckSummary[]> {
+    // groupId здесь = user_group_id
+    return apiRequest<PublicDeckSummary[]>(`/groups/${groupId}/decks/summary`);
+  }
+
+   static async createGroup(payload: GroupCreatePayload): Promise<Group> {
+    return apiRequest<Group>(`/groups/`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  static async deleteGroup(groupId: string): Promise<void> {
+    await apiRequest<void>(`/groups/${groupId}`, { method: 'DELETE' });
+  }
 }
 
 
@@ -1355,24 +1552,37 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\D
 ==============================
 
 import React from 'react';
-import { DeckSummary } from '../types';
+import { PublicDeckSummary } from '../types';
 import { ProgressBar } from './ProgressBar';
 import { ChevronRight } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
+import './DeckCard.css';
 
 interface DeckCardProps {
-  deck: DeckSummary;
+  deck: PublicDeckSummary;
   onClick: () => void;
+  onEdit?: () => void;
 }
 
-export function DeckCard({ deck, onClick }: DeckCardProps) {
+export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
+  const { currentUser } = useAuth();
+  const isOwner = currentUser?.id === deck.owner_id;
+  const description = deck.description?.trim();
+
   return (
     <button onClick={onClick} className="deck-card">
       <div className="deck-card__row">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* edit button moved to EditCardFlow (study) */}
+          <ChevronRight size={20} className="deck-card__chev" />
+        </div>
         <div style={{ flex: 1 }}>
           <h3 className="deck-card__title">{deck.title}</h3>
-          <p className="deck-card__meta">{/*deck.cardsCount*/} N карточек</p>
+           {description ? (
+            <p className="deck-card__description">{description}</p>
+          ) : null}
         </div>
-        <ChevronRight size={20} className="deck-card__chev" />
+
       </div>
 
       <div className="deck-card__progress-row">
@@ -6623,41 +6833,35 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\hooks\useDec
 ==============================
 
 // src/hooks/useDecks.ts
-import { useState, useEffect } from 'react';
-import { DeckSummary } from '../types';
+import { useState, useEffect, useCallback} from 'react';
+import { PublicDeckSummary } from '../types';
 import { ApiClient } from '../api/client';
-import { useAuth } from '../auth/AuthContext';
 
-export function useDecks() {
-  const { token } = useAuth(); // берём токен из контекста
-  const [decks, setDecks] = useState<DeckSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function useDecks(groupId: string | null) {
+  const [decks, setDecks] = useState<PublicDeckSummary[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDecks = async () => {
-    if (!token) return; // Если токена нет — ничего не делаем
-    setLoading(true);
-    setError(null);
+  const refresh = useCallback(async () => {
+      if (!groupId) return;          // ключевой guard
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await ApiClient.getGroupDecksSummary(groupId);
+        setDecks(data);
+      } finally {
+        setLoading(false);
+      }
+    }, [groupId]);
 
-    try {
-      const data = await ApiClient.getUserDecks(token);
-      setDecks(data);
-    } catch (err: any) {
-      console.error('Error fetching decks:', err);
-      setError(err.message || 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
+    useEffect(() => {
+      if (!groupId) return;          // guard и здесь тоже можно
+      refresh();
+    }, [groupId, refresh]);
 
-  useEffect(() => {
-    fetchDecks();
-  }, [token]);
-
-  return { decks, loading, error, refresh: fetchDecks };
+    return { decks, loading, error, refresh };
 }
 
-export default useDecks;
 
 
 
@@ -6918,7 +7122,7 @@ import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
 import { LevelIndicator } from '../components/LevelIndicator';
 import { X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
-import type { DeckSummary } from '../types';
+import type { PublicDeckSummary } from '../types';
 import MDEditor from '@uiw/react-md-editor';
 import { MarkdownView } from '../components/MarkdownView';
 
@@ -6926,7 +7130,7 @@ import { MarkdownView } from '../components/MarkdownView';
 type LevelQA = { question: string; answer: string };
 
 interface CreateCardProps {
-  decks: DeckSummary[];
+  decks: PublicDeckSummary[];
   onSave: (cardData: { deckId: string; term: string; levels: LevelQA[] }) => void;
   onCancel: () => void;
 }
@@ -7198,11 +7402,13 @@ export function CreateDeck({
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\Dashboard.tsx
 ==============================
 
+// src/screens/Dashboard.tsx
 import React from 'react';
-import { Statistics, DeckSummary, Deck } from '../types';
+import { Statistics, Deck, Group } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
 import { Clock, BookOpen, Flame } from 'lucide-react';
+
 
 type ResumeSessionProps = {
   title: string;
@@ -7214,30 +7420,47 @@ type ResumeSessionProps = {
 export interface DashboardProps {
   statistics: Statistics;
   decks: Deck[];
+  groups: Group[];
+  activeGroupId: string | null;
+  onGroupChange: (groupId: string) => void;
+
   onStartStudy: () => void;
   onDeckClick: (deckId: string) => void;
+  onEditDeck?: (deckId: string) => void;
 
   resumeSession?: ResumeSessionProps;
   onCreateDeck: () => void;
   onAddDesk: () => void;
+  onCreateGroup: () => void;
+  onDeleteActiveGroup: () => void; // <-- добавь
 }
 
 export function Dashboard({
   statistics,
   decks,
+  groups,
+  activeGroupId,
+  onGroupChange,
   onStartStudy,
   onDeckClick,
   resumeSession,
   onCreateDeck,
   onAddDesk,
+  onEditDeck,
+  onCreateGroup,
+  onDeleteActiveGroup,
 }: DashboardProps) {
+  
+  const safeGroups = groups ?? [];
+  const activeGroup = safeGroups.find((g) => g.id === activeGroupId) ?? null;
+
   return (
     <div className="min-h-screen bg-dark pb-24">
       {/* Header */}
       <div className="page__header px-4 pt-12 pb-6">
-  <div className="page__header-inner">
+        <div className="page__header-inner">
           <h1 className="page__title mb-6">AdaptiveRecall</h1>
-          
+
           {/* Today's Stats */}
           <div className="stats-grid">
             <div className="stat-card">
@@ -7247,7 +7470,7 @@ export function Dashboard({
               </div>
               <p className="stat-value">{statistics.cardsStudiedToday}</p>
             </div>
-            
+
             <div className="stat-card">
               <div className="stat-card__label">
                 <Clock size={16} className="text-accent-2" />
@@ -7255,7 +7478,7 @@ export function Dashboard({
               </div>
               <p className="stat-value">{statistics.timeSpentToday}</p>
             </div>
-            
+
             <div className="stat-card">
               <div className="stat-card__label">
                 <Flame size={16} className="text-accent-2" />
@@ -7266,55 +7489,105 @@ export function Dashboard({
           </div>
         </div>
       </div>
-        {resumeSession && (
-          <div className="container-centered max-w-390 mx-auto mb-4">
-            <div className="card text-center">
-              <h3 className="text-[#E8EAF0] mb-1">{resumeSession.title}</h3>
-              <p className="text-[#9CA3AF] mb-3">{resumeSession.subtitle}</p>
-              <div className="flex gap-2 justify-center">
-                <button className="btn-primary" onClick={resumeSession.onResume}>
-                  Продолжить
-                </button>
-                <button className="btn-ghost" onClick={resumeSession.onDiscard}>
-                  Сбросить
-                </button>
-              </div>
+
+      {/* Resume session */}
+      {resumeSession && (
+        <div className="container-centered max-w-390 mx-auto mb-4">
+          <div className="card text-center">
+            <h3 className="text-[#E8EAF0] mb-1">{resumeSession.title}</h3>
+            <p className="text-[#9CA3AF] mb-3">{resumeSession.subtitle}</p>
+            <div className="flex gap-2 justify-center">
+              <button className="btn-primary" onClick={resumeSession.onResume}>
+                Продолжить
+              </button>
+              <button className="btn-ghost" onClick={resumeSession.onDiscard}>
+                Сбросить
+              </button>
             </div>
           </div>
-        )}
-
+        </div>
+      )}
 
       {/* Main CTA */}
-  <div className="p-4 py-6 container-centered max-w-390">
+      <div className="p-4 py-6 container-centered max-w-390">
         <Button onClick={onStartStudy} variant="primary" size="large" fullWidth>
           Начать обучение
         </Button>
       </div>
-      
-      {/* Active Decks */}
-  <div className="p-4 container-centered max-w-390">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[#E8EAF0]">Мои колоды</h2>
-          <button className="text-sm text-accent">
-            Все
-          </button>
+
+      {/* Groups */}
+      <div className="p-4 container-centered max-w-390">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-[#E8EAF0]">Мои группы</h2>
+
+          <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={onDeleteActiveGroup}
+                disabled={!activeGroupId}
+                title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+              >
+                −
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={onCreateGroup}
+              >
+                +
+              </Button>
+            </div>
         </div>
-        
+
+        {safeGroups.length === 0 ? (
+          <p className="text-[#9CA3AF] text-sm">
+            У вас пока нет групп. Создайте первую, чтобы организовать колоды.
+          </p>
+        ) : (
+          <div className="groups-row">
+            {safeGroups.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                className={
+                  'group-pill' + (g.id === activeGroupId ? ' group-pill--active' : '')
+                }
+                onClick={() => onGroupChange(g.id)}
+              >
+                {g.title}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Decks of active group */}
+      <div className="p-4 container-centered max-w-390">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-[#E8EAF0]">
+            {activeGroup ? activeGroup.title : 'Колоды'}
+          </h2>
+        </div>
+
         <div className="space-y-3">
           {decks.map((deck) => (
             <DeckCard
               key={deck.deck_id}
               deck={deck}
               onClick={() => onDeckClick(deck.deck_id)}
+              onEdit={onEditDeck ? () => onEditDeck(deck.deck_id) : undefined}
             />
           ))}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <Button onClick={onCreateDeck} variant="primary" size="medium" fullWidth>
-          Создать колоду
-        </Button>
-        
+
+      {/* Add deck button */}
+      <div
+        className="p-4 container-centered max-w-390"
+        style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+      >
         <Button onClick={onAddDesk} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
@@ -7325,18 +7598,19 @@ export function Dashboard({
 
 
 
+
 ==============================
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\EditCardFlow.tsx
 ==============================
 
 import React, { useEffect, useMemo, useState } from 'react';
-import type { DeckSummary } from '../types';
+import type { PublicDeckSummary } from '../types';
 import { ApiClient } from '../api/client';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
-import { X, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
-
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 type LevelQA = { question: string; answer: string };
 type CardSummary = {
   card_id: string;
@@ -7346,9 +7620,10 @@ type CardSummary = {
 };
 
 interface Props {
-  decks: DeckSummary[];
+  decks: PublicDeckSummary[];
   onCancel: () => void;
   onDone: () => void;
+  onEditDeck?: (deckId: string) => void;
 }
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
@@ -7358,7 +7633,7 @@ function moveItem<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
-export function EditCardFlow({ decks, onCancel, onDone }: Props) {
+export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
   const defaultDeckId = useMemo(() => decks?.[0]?.deck_id ?? '', [decks]);
   const [deckId, setDeckId] = useState(defaultDeckId);
 
@@ -7381,6 +7656,7 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
 
   const [qPreview, setQPreview] = useState(false);
   const [aPreview, setAPreview] = useState(false);
+  const { currentUser } = useAuth();
   // если decks пришли позже и deckId пустой — выставим дефолт
   useEffect(() => {
     if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
@@ -7639,6 +7915,30 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
             >
               <Trash2 size={18} />
             </button>
+            {/* Edit deck button (shows only for owner) */}
+            {(() => {
+              const currentDeck = decks.find(d => d.deck_id === deckId);
+              const isOwner = !!(currentDeck && currentUser && currentUser.id === currentDeck.owner_id);
+              return isOwner && onEditDeck && deckId ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditDeck(deckId);
+                  }}
+                  title="Редактировать колоду"
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    border: '1px solid rgba(156,163,175,0.12)',
+                    background: 'transparent',
+                    color: '#E8EAF0',
+                  }}
+                >
+                  <Pencil size={18} />
+                </button>
+              ) : null;
+            })()}
           </div>
         </div>
 
@@ -7852,6 +8152,120 @@ export function EditCardFlow({ decks, onCancel, onDone }: Props) {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+
+
+
+==============================
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\EditDeck.tsx
+==============================
+
+import React, { useEffect, useState } from 'react';
+import { ApiClient } from '../api/client';
+import { Button } from '../components/Button/Button';
+
+export function EditDeck({
+  deckId,
+  onCancel,
+  onSaved,
+}: {
+  deckId: string;
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const cards_with_deck = await ApiClient.getDeckWithCards(deckId);
+        const deck = cards_with_deck.deck;
+        setTitle(deck.title ?? deck.name ?? '');
+        setDescription(deck.description ?? '');
+        setIsPublic(deck.is_public ?? false);
+      } catch (e: any) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [deckId]);
+
+  const submit = async () => {
+    const t = title.trim();
+    if (!t) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      await ApiClient.updateDeck(deckId, { title: t, description: description || null, is_public: isPublic });
+      onSaved();
+    } catch (e) {
+      setError('Не удалось обновить колоду');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-dark flex items-center justify-center">Загрузка…</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-dark p-4">
+      <div className="container-centered max-w-390">
+        <div className="card">
+          <h2 className="page__title">Редактировать колоду</h2>
+
+          <label className="field">
+            <div className="field__label">Название</div>
+            <input
+              className="input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Название колоды"
+              maxLength={60}
+            />
+          </label>
+            <label className="form-row">
+            <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            <span style={{ marginLeft: 8 }}>Сделать колоду публичной</span>
+            </label>
+          <label className="field">
+            <div className="field__label">Описание</div>
+            <textarea
+              className="input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Краткое описание (опционально)"
+            />
+          </label>
+
+          {error && <div className="text-error">{error}</div>}
+
+          <div className="actions">
+            <button className="btn-ghost" onClick={onCancel} disabled={saving}>
+              Отмена
+            </button>
+            <button className="btn-primary" onClick={submit} disabled={saving || !title.trim()}>
+              {saving ? 'Сохранение…' : 'Сохранить'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -8151,106 +8565,141 @@ export function StudySession({
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\AddDeck\AddDeck.tsx
 ==============================
 
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus } from 'lucide-react'; // или другие иконки
+// src/screens/AddDeck/AddDeck.tsx
+import { useState, useEffect, useMemo } from 'react';
+import { Search, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../../components/Button/Button';
-import './AddDeck.css'; // стили ниже
+import { ApiClient } from '../../api/client';
+import { PublicDeckSummary } from '../../types';
+import { useAuth } from '../../auth/AuthContext';
+import './AddDeck.css';
 
-const AddDeck = ({ onClose, onDeckAdded }) => {
+type Props = {
+  groupId: string;
+  initialGroupDeckIds?: string[];
+  onClose: () => void;
+  onChanged?: (deckId: string, action: 'added' | 'removed') => void;
+};
+
+const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [decks, setDecks] = useState([]);
+
+  const [decks, setDecks] = useState<PublicDeckSummary[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [limit] = useState(20);
-  const [offset, setOffset] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const limit = 20;
   const [hasMore, setHasMore] = useState(true);
 
-  // Debounce для поиска
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-      setOffset(0); // Сброс при новом поиске
-    }, 500);
+  const [groupDeckIds, setGroupDeckIds] = useState<Set<string>>(
+    () => new Set(initialGroupDeckIds),
+  );
 
-    return () => clearTimeout(timer);
+  const { currentUser } = useAuth();
+
+  const filteredDecks = useMemo(() => (
+    decks.filter(d => d.owner_id !== currentUser?.id)
+  ), [decks, currentUser]);
+
+  // если родитель может менять initialGroupDeckIds (например, после рефреша группы)
+  useEffect(() => {
+    setGroupDeckIds(new Set(initialGroupDeckIds));
+  }, [initialGroupDeckIds]);
+
+  // debounce
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setHasMore(true);
+    }, 400);
+    return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Загрузка колод
+  // загрузка
   useEffect(() => {
-    fetchDecks();
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await ApiClient.searchPublicDecks({
+          q: debouncedQuery,
+          limit,
+          offset: 0,
+        });
+
+        if (cancelled) return;
+        setDecks(data);
+        setHasMore(data.length === limit);
+      } catch (e: any) {
+        if (cancelled) return;
+        setError(e?.message ?? 'Ошибка загрузки колод');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedQuery]);
 
-  const fetchDecks = async (loadMore = false) => {
+    const loadMore = async () => {
+        if (loading || !hasMore) return;
+
+        try {
+            setLoading(true);
+            setError(null);
+
+            const currentOffset = decks.length; // ключевой фикс
+
+            const data = await ApiClient.searchPublicDecks({
+            q: debouncedQuery,
+            limit,
+            offset: currentOffset,
+            });
+
+            setDecks(prev => [...prev, ...data]);
+            setHasMore(data.length === limit);
+        } catch (e: any) {
+            setError(e?.message ?? 'Ошибка загрузки колод');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+  const handleAdd = async (deckId: string) => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      const currentOffset = loadMore ? offset : 0;
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: currentOffset.toString(),
-      });
-      
-      if (debouncedQuery) {
-        params.append('search', debouncedQuery);
-      }
-
-      const response = await fetch(`/api/decks/public?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Ошибка загрузки колод');
-
-      const data = await response.json();
-      
-      if (loadMore) {
-        setDecks(prev => [...prev, ...data.decks]);
-      } else {
-        setDecks(data.decks);
-      }
-      
-      setHasMore(data.decks.length === limit);
-      setOffset(currentOffset + data.decks.length);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      await ApiClient.addDeckToGroup(groupId, deckId);
+      setGroupDeckIds(prev => new Set(prev).add(deckId));
+      onChanged?.(deckId, 'added');
+    } catch (e: any) {
+      alert(`Ошибка: ${e?.message ?? 'не удалось добавить колоду в группу'}`);
     }
   };
 
-  const handleLoadMore = () => {
-    fetchDecks(true);
-  };
-
-  const handleAddDeck = async (deckId) => {
+  const handleRemove = async (deckId: string) => {
     try {
-      const response = await fetch(`/api/decks/${deckId}/clone`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
+      await ApiClient.removeDeckFromGroup(groupId, deckId);
+      setGroupDeckIds(prev => {
+        const next = new Set(prev);
+        next.delete(deckId);
+        return next;
       });
-
-      if (!response.ok) throw new Error('Ошибка добавления колоды');
-
-      const newDeck = await response.json();
-      onDeckAdded?.(newDeck);
-      
-      // Показать уведомление об успехе
-      alert('Колода успешно добавлена!');
-    } catch (err) {
-      alert(`Ошибка: ${err.message}`);
+      onChanged?.(deckId, 'removed');
+    } catch (e: any) {
+      alert(`Ошибка: ${e?.message ?? 'не удалось удалить колоду из группы'}`);
     }
   };
 
   return (
     <div className="add-deck-container">
       <div className="add-deck-header">
-        <h2>Добавить колоду</h2>
+        <h2>Колоды группы</h2>
         <Button onClick={onClose} variant="secondary" size="small">
           Закрыть
         </Button>
@@ -8260,7 +8709,7 @@ const AddDeck = ({ onClose, onDeckAdded }) => {
         <Search className="search-icon" size={20} />
         <input
           type="text"
-          placeholder="Поиск колод по названию..."
+          placeholder="Поиск публичных колод..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="search-input"
@@ -8276,29 +8725,46 @@ const AddDeck = ({ onClose, onDeckAdded }) => {
           <div className="no-results">Колоды не найдены</div>
         ) : (
           <>
-            {decks.map((deck) => (
-              <div key={deck.id} className="deck-card">
-                <div className="deck-info">
-                  <h3 className="deck-title">{deck.name}</h3>
-                  <div className="deck-meta">
-                    <span className="deck-author">Автор: {deck.author_email}</span>
-                    <span className="deck-cards">Карточек: {deck.card_count}</span>
+            {filteredDecks.map((deck) => {
+              const inGroup = groupDeckIds.has(deck.deck_id);
+
+              return (
+                <div key={deck.deck_id} className="deck-card">
+                  <div className="deck-info">
+                    <h3 className="deck-title">{deck.title}</h3>
+                    {deck.description ? (
+                      <div className="deck-meta">
+                        <span className="deck-author">{deck.description}</span>
+                      </div>
+                    ) : null}
                   </div>
+
+                  {!inGroup ? (
+                    <Button
+                      onClick={() => handleAdd(deck.deck_id)}
+                      variant="primary"
+                      size="small"
+                    >
+                      <Plus size={16} />
+                      Добавить
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleRemove(deck.deck_id)}
+                      variant="secondary"
+                      size="small"
+                    >
+                      <Trash2 size={16} />
+                      Удалить
+                    </Button>
+                  )}
                 </div>
-                <Button
-                  onClick={() => handleAddDeck(deck.id)}
-                  variant="primary"
-                  size="small"
-                >
-                  <Plus size={16} />
-                  Добавить
-                </Button>
-              </div>
-            ))}
-            
+              );
+            })}
+
             {hasMore && (
               <Button
-                onClick={handleLoadMore}
+                onClick={loadMore}
                 variant="secondary"
                 size="medium"
                 fullWidth
@@ -8426,6 +8892,101 @@ export function Register({ onSwitch }: { onSwitch: () => void }) {
 
 
 ==============================
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\group\CreateGroup.tsx
+==============================
+
+import React, { useState } from 'react';
+import { ApiClient } from '../../api/client';
+
+export function CreateGroup({
+  onSave,
+  onCancel,
+}: {
+  onSave: (createdGroupId?: string) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async () => {
+    const t = title.trim();
+    if (!t) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const created = await ApiClient.createGroup({
+        title: t,
+        description: description.trim() || null,
+        parent_id: null, // если позже добавишь выбор родителя — подставишь сюда
+      });
+
+      // created.id должен быть user_group_id (или нормализованный id)
+      onSave(created?.id);
+    } catch (e) {
+      setError('Не удалось создать группу');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-dark p-4">
+      <div className="container-centered max-w-390">
+        <div className="card">
+          <h2 className="page__title">Новая группа</h2>
+
+          <label className="field">
+            <div className="field__label">Название</div>
+            <input
+              className="input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Например: Мои колоды"
+              maxLength={60}
+              disabled={saving}
+            />
+          </label>
+
+          <label className="field">
+            <div className="field__label">Описание</div>
+            <textarea
+              className="input input--textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Необязательно"
+              rows={3}
+              disabled={saving}
+            />
+          </label>
+
+          {error && <div className="text-error">{error}</div>}
+
+          <div className="actions">
+            <button className="btn-ghost" onClick={onCancel} disabled={saving}>
+              Отмена
+            </button>
+            <button
+              className="btn-primary"
+              onClick={submit}
+              disabled={saving || !title.trim()}
+            >
+              {saving ? 'Сохранение…' : 'Создать'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+==============================
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\Onboarding\Onboarding.tsx
 ==============================
 
@@ -8535,6 +9096,39 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\types\index.ts
 ==============================
 
+export type UserGroupResponse = {
+  user_group_id: string;
+  kind: string;
+  source_group_id: string | null;
+  title: string;
+  description: string | null;
+  parent_id: string | null;
+};
+
+export type GroupCreatePayload = {
+  title: string;
+  description?: string | null;
+  parent_id?: string | null;
+};
+
+export type Group = {
+  id: string;              // user_group_id
+  title: string;
+  description: string | null;
+  parent_id: string | null;
+  kind: string;
+  source_group_id: string | null;
+};
+
+export type PublicDeckSummary = {
+  deck_id: string;
+  title: string;
+  description: string | null;
+  color: string | null;
+  owner_id: string;
+};
+
+
 export interface CardLevel {
   level_index: number;
   content: { question: string; answer: string };
@@ -8575,11 +9169,6 @@ export interface Achievement {
   icon: string;
   unlocked: boolean;
   progress?: number;
-}
-
-export interface DeckSummary {
-  deck_id: string;
-  title: string;
 }
 
 export type DifficultyRating = 'again' | 'hard' | 'good' | 'easy';

@@ -436,12 +436,12 @@ const handleRate = async (rating: DifficultyRating) => {
     setSessionIndex(0);      // необязательно, но ок
     setActiveTab('home');
   };
-  
-  const handleSaveCard = async (cardData: { deckId: string; term: string; levels: Array<{question: string; answer: string}> }) => {
+
+  const handleSaveCard = async (cardData: { deckId: string; term: string; type: string; levels: Array<{question: string; answer: string}> }) => {
     await ApiClient.createCard({
       deck_id: cardData.deckId,
       title: cardData.term,
-      type: 'flashcard',
+      type: cardData.type,
       levels: cardData.levels,
     });
 

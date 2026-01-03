@@ -1,3 +1,25 @@
+export type CardType = "flashcard" | "multiple_choice";
+
+export type FlashcardContent = {
+  question: string;
+  answer: string;
+  // можно хранить, но пока не используем для flashcard
+  timerSec?: number;
+};
+
+export type McqOption = { id: string; text: string };
+
+export type MultipleChoiceContent = {
+  question: string;
+  options: McqOption[];
+  correctOptionId: string;
+  explanation?: string;
+  timerSec?: number;
+};
+
+export type CardContent = FlashcardContent | MultipleChoiceContent;
+
+
 export type UserGroupResponse = {
   user_group_id: string;
   kind: string;
@@ -32,8 +54,14 @@ export type PublicDeckSummary = {
 
 
 export interface CardLevel {
-  level_index: number;
-  content: { question: string; answer: string };
+  levelindex: number;
+  content: CardContent;
+}
+
+
+// helper’ы (удобно для StudySession/Create/Edit)
+export function isMultipleChoice(card: StudyCard | null | undefined): boolean {
+  return !!card && card.type === "multiple_choice";
 }
 
 export interface StudyCard {
@@ -41,8 +69,8 @@ export interface StudyCard {
   deckId: string;
   title: string;
   type: string;
-  levels: CardLevel[];     // все уровни
-  activeLevel: number;     // текущий уровень пользователя (CardProgress.active_level)
+  levels: CardLevel[];
+  activeLevel: number;
 }
 
 export interface Deck {
