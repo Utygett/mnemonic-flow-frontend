@@ -11,7 +11,7 @@ import { Onboarding } from './screens/Onboarding/Onboarding';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
-import { DifficultyRating, StudyCard, Group } from './types';
+import { DifficultyRating, StudyCard, Group, StudyMode } from './types';
 import { useStatistics, useStudySession } from './hooks';
 import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
@@ -20,6 +20,7 @@ import { CreateDeck } from './screens/CreateDeck';
 import  AddDeck from './screens/AddDeck/AddDeck'
 import { EditDeck } from './screens/EditDeck';
 import { CreateGroup } from './screens/group/CreateGroup';
+import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
 
 
 // Компонент для отображения обновлений PWA
@@ -152,6 +153,64 @@ const [isAddDeck, setIsAddDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+const [isDeckDetailsOpen, setIsDeckDetailsOpen] = useState(false);
+const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
+
+
+  const handleDeckClick = async (deckId: string) => {
+    const key = `deck:${deckId}` as const;
+
+    // 1) если есть сохранённая сессия — как у тебя уже сделано
+    const saved = loadSession(key);
+    if (saved && saved.deckCards.length > 0) {
+      setSessionMode(saved.mode);
+      setSessionKey(saved.key);
+      setActiveDeckId(saved.activeDeckId);
+      setSessionIndex(saved.currentIndex ?? 0);
+      setDeckCards(saved.deckCards ?? []);
+      setIsStudying(true);
+      setResumeCandidate(saved);
+      return;
+    }
+
+    // 2) иначе открываем DeckDetails, а не стартуем study
+    setDeckDetailsId(deckId);
+    setIsDeckDetailsOpen(true);
+  };
+
+
+  const handleStartDeckStudy = async (deckId: string, mode: StudyMode) => {
+    const key = `deck:${deckId}` as const;
+
+    const seed =
+      mode === 'random' || mode === 'new_random' ? Date.now() % 1_000_000_000 : undefined;
+
+    const limit =
+      mode === 'new_random' || mode === 'new_ordered' ? 20 : undefined;
+
+    try {
+      setLoadingDeckCards(true);
+
+      const res = await ApiClient.getStudyCards(deckId, { mode, seed, limit });
+
+      setDeckCards(res.cards);          // важно: сервер должен вернуть StudyCard[]
+      setActiveDeckId(deckId);
+      setSessionMode('deck');
+      setSessionKey(key);
+      setSessionIndex(0);
+
+      setIsDeckDetailsOpen(false);
+      setDeckDetailsId(null);
+
+      if (res.cards.length > 0) setIsStudying(true);
+    } finally {
+      setLoadingDeckCards(false);
+    }
+  };
+
+
+
+
 
 
   // Проверяем, было ли приложение установлено как PWA
@@ -451,42 +510,6 @@ const handleRate = async (rating: DifficultyRating) => {
   };
 
   
-  const handleDeckClick = async (deckId: string) => {
-    const key = `deck:${deckId}` as const;
-
-    // 1) если есть сохранённая сессия именно этой колоды — сразу продолжаем
-    const saved = loadSession(key);
-    if (saved && saved.deckCards.length > 0) {
-      setSessionMode('deck');
-      setSessionKey(saved.key);
-      setActiveDeckId(saved.activeDeckId);
-
-      setSessionIndex(saved.currentIndex ?? 0);
-      setDeckCards(saved.deckCards ?? []);
-
-      setIsStudying(true);
-      setResumeCandidate(saved); // чтобы на Home тоже была “продолжить”
-      return;
-    }
-
-    // 2) иначе грузим с сервера как раньше
-    try {
-      setLoadingDeckCards(true);
-
-      const items = await ApiClient.getDeckSession(deckId);
-      setDeckCards(toStudyCards(items));
-
-      setActiveDeckId(deckId);
-      setSessionMode('deck');
-      setSessionKey(key);
-      setSessionIndex(0);
-
-      if (items.length > 0) setIsStudying(true);
-    } finally {
-      setLoadingDeckCards(false);
-    }
-  };
-  
   // Показываем загрузку
   if (decksLoading || statsLoading) {
     return (
@@ -522,6 +545,17 @@ const handleRate = async (rating: DifficultyRating) => {
   //   return <Onboarding onComplete={() => setHasCompletedOnboarding(true)} />;
   // }
   
+if (isDeckDetailsOpen && deckDetailsId) {
+  return (
+    <DeckDetailsScreen
+      deckId={deckDetailsId}
+      onBack={() => { setIsDeckDetailsOpen(false); setDeckDetailsId(null); }}
+      onStart={(mode) => handleStartDeckStudy(deckDetailsId, mode)}
+    />
+  );
+}
+
+
 if (isStudying) {
   // 1️⃣ Загрузка карточек
   

@@ -1,6 +1,10 @@
 // src/api/client.ts
 import { Statistics, DifficultyRating, UserGroupResponse, Group, GroupCreatePayload} from '../types';
-import { PublicDeckSummary } from '../types';
+import { PublicDeckSummary, StudyCard, StudyMode } from '../types';
+
+export type StudyCardsResponse = {
+  cards: StudyCard[];
+};
 
 
 
@@ -342,5 +346,20 @@ static async getReviewSession(limit = 20) {
 
   static async deleteGroup(groupId: string): Promise<void> {
     await apiRequest<void>(`/groups/${groupId}`, { method: 'DELETE' });
+  }
+
+
+  static async getStudyCards(
+    deckId: string,
+    params: { mode: StudyMode; limit?: number; seed?: number }
+  ): Promise<StudyCardsResponse> {
+    const qs = new URLSearchParams();
+    qs.set('mode', params.mode);
+    qs.set('include', 'full');
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    if (params.seed != null) qs.set('seed', String(params.seed));
+
+    // ВАЖНО: path без "/api", потому что apiRequest сам подставит "/api"
+    return apiRequest<StudyCardsResponse>(`/decks/${deckId}/study-cards?${qs.toString()}`);
   }
 }

@@ -1,3 +1,5 @@
+export type StudyMode = 'random' | 'ordered' | 'new_random' | 'new_ordered';
+
 export type CardType = "flashcard" | "multiple_choice";
 
 export type FlashcardContent = {
