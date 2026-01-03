@@ -262,7 +262,28 @@ const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
 
 
+  const handleDeleteActiveGroup = async () => {
+    if (!activeGroupId) return;
 
+    const g = groups.find((x) => x.id === activeGroupId);
+    const ok = window.confirm(
+      `Удалить группу "${g?.title ?? 'без названия'}"? Это действие нельзя отменить.`
+    );
+    if (!ok) return;
+
+    try {
+      await ApiClient.deleteGroup(activeGroupId);
+
+      // после удаления — обновляем список групп
+      await refreshGroups();
+
+      // если удалили текущую, refreshGroups выберет валидную или null
+      // (а localStorage обновится в useEffect)
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось удалить группу');
+    }
+  };
 
   const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
     const v = localStorage.getItem('active_group_id');
@@ -717,6 +738,8 @@ if (isStudying) {
               groups={groups}
               activeGroupId={activeGroupId}
               onGroupChange={setActiveGroupId}
+              onCreateGroup={() => setIsCreatingGroup(true)}
+              onDeleteActiveGroup={handleDeleteActiveGroup}
               onStartStudy={handleStartStudy}
               onDeckClick={handleDeckClick}
               onEditDeck={(deckId) => {

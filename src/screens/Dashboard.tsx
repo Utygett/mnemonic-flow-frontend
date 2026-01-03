@@ -28,6 +28,7 @@ export interface DashboardProps {
   onCreateDeck: () => void;
   onAddDesk: () => void;
   onCreateGroup: () => void;
+  onDeleteActiveGroup: () => void; // <-- добавь
 }
 
 export function Dashboard({
@@ -43,6 +44,7 @@ export function Dashboard({
   onAddDesk,
   onEditDeck,
   onCreateGroup,
+  onDeleteActiveGroup,
 }: DashboardProps) {
   
   const safeGroups = groups ?? [];
@@ -113,13 +115,26 @@ export function Dashboard({
       <div className="p-4 container-centered max-w-390">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-[#E8EAF0]">Мои группы</h2>
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={onCreateGroup}
-          >
-            +
-          </Button>
+
+          <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={onDeleteActiveGroup}
+                disabled={!activeGroupId}
+                title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+              >
+                −
+              </Button>
+
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={onCreateGroup}
+              >
+                +
+              </Button>
+            </div>
         </div>
 
         {safeGroups.length === 0 ? (

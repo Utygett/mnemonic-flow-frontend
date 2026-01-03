@@ -340,4 +340,7 @@ static async getReviewSession(limit = 20) {
     });
   }
 
+  static async deleteGroup(groupId: string): Promise<void> {
+    await apiRequest<void>(`/groups/${groupId}`, { method: 'DELETE' });
+  }
 }
