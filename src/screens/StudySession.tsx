@@ -32,6 +32,8 @@ export function StudySession({
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [timeLeftMs, setTimeLeftMs] = useState<number | null>(null);
+
 
   const currentCard = cards[currentIndex];
   if (!currentCard) {
@@ -80,57 +82,104 @@ export function StudySession({
   const mcq = isMultipleChoice(currentCard) ? ((level as any)?.content as any) : null;
   const timerSec = typeof mcq?.timerSec === 'number' && mcq.timerSec > 0 ? mcq.timerSec : 0;
 
-  useEffect(() => {
-    if (!isMultipleChoice(currentCard)) return;
-    if (isFlipped) return;
-    if (!timerSec) return;
+useEffect(() => {
+  if (!currentCard) return;
+  if (!isMultipleChoice(currentCard)) return;
+  if (isFlipped) {
+    setTimeLeftMs(null);
+    return;
+  }
+  if (!timerSec) {
+    setTimeLeftMs(null);
+    return;
+  }
 
-    const t = window.setTimeout(() => setIsFlipped(true), timerSec * 1000);
-    return () => window.clearTimeout(t);
-  }, [currentCard.id, currentCard.activeLevel, timerSec, isFlipped]);
+  const endAt = Date.now() + timerSec * 1000;
 
-  const renderMcqFront = () => {
-    if (!mcq) return null;
+  // чтобы сразу отрисовалось "timerSec"
+  setTimeLeftMs(timerSec * 1000);
 
-    return (
-      <div style={{ width: '100%', maxWidth: 520 }}>
-        <div style={{ marginBottom: 12 }}>
-          <MarkdownView value={String(mcq.question ?? '')} />
-        </div>
+  const id = window.setInterval(() => {
+    const left = endAt - Date.now();
+    if (left <= 0) {
+      window.clearInterval(id);
+      setTimeLeftMs(0);
+      setIsFlipped(true); // авто-переворот когда время вышло
+      return;
+    }
+    setTimeLeftMs(left);
+  }, 200);
 
-        <div style={{ display: 'grid', gap: 10 }}>
-          {(mcq.options ?? []).map((opt: any) => (
+  return () => window.clearInterval(id);
+}, [currentCard?.id, currentCard?.activeLevel, timerSec, isFlipped]);
+
+const renderMcqFront = () => {
+  const c = mcq;
+  if (!c) return null;
+
+  const correctId = String(c.correctOptionId ?? "");
+  const showResult = selectedOptionId !== null;
+  const leftSec = timerSec > 0
+  ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000))
+  : 0;
+
+const progressPct =
+  timerSec > 0 && timeLeftMs != null
+    ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100))
+    : 100;
+
+
+  return (
+    <div className="mcq">
+      <div className="mcq-question">
+        <MarkdownView value={String(c.question ?? "")} />
+      </div>
+
+      <div className="mcq-options">
+        {(c.options ?? []).map((opt: any) => {
+          const optId = String(opt.id);
+
+          const isSelected = selectedOptionId === optId;
+          const isCorrect = optId === correctId;
+
+          const className = [
+            "mcq-option",
+            showResult && isCorrect ? "mcq-option--correct" : "",
+            showResult && isSelected && !isCorrect ? "mcq-option--wrong" : "",
+          ]
+            .join(" ")
+            .trim();
+
+          return (
             <button
-              key={opt.id}
+              key={optId}
               type="button"
+              className={className}
+              disabled={isFlipped}
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedOptionId(String(opt.id));
+                setSelectedOptionId(optId);
                 setIsFlipped(true);
               }}
-              disabled={isFlipped}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '10px 12px',
-                borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(0,0,0,0.20)',
-                color: 'inherit',
-                cursor: isFlipped ? 'default' : 'pointer',
-              }}
             >
-              <MarkdownView value={String(opt.text ?? '')} />
+              <MarkdownView value={String(opt.text ?? "")} />
             </button>
-          ))}
-        </div>
-
-        {timerSec > 0 ? (
-          <div style={{ marginTop: 12, opacity: 0.75, fontSize: 12 }}>Таймер: {timerSec}s</div>
-        ) : null}
+          );
+        })}
       </div>
-    );
-  };
+
+      {timerSec > 0 ? (
+        <div className="mcq-timer">
+          <div className="mcq-timer-text">⏳ {leftSec}s</div>
+          <div className="mcq-timer-bar">
+            <div className="mcq-timer-fill" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
 
   const renderMcqBack = () => {
     if (!mcq) return null;
