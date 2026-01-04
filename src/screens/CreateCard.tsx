@@ -1,9 +1,9 @@
 // src/screens/CreateCard.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, Upload } from 'lucide-react';
 import type { PublicDeckSummary } from '../types';
 import { MarkdownView } from '../components/MarkdownView';
 
@@ -20,9 +20,16 @@ type LevelMCQ = {
   timerSec?: number;
 };
 
+type CsvRow = { name: string; front: string; back: string };
+
 interface CreateCardProps {
   decks: PublicDeckSummary[];
   onSave: (cardData: { deckId: string; term: string; type: CardType; levels: any[] }) => void;
+
+  onSaveMany: (
+    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
+  ) => Promise<{ created: number; failed: number; errors?: string[] }>;
+
   onCancel: () => void;
 }
 
@@ -52,7 +59,92 @@ function clampInt(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.trunc(n)));
 }
 
-export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
+/** Очень простой CSV: кавычки + запятая, без переносов строк внутри кавычек */
+function splitCsvLine(line: string): string[] {
+  const res: string[] = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      // "" -> "
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === ',' && !inQuotes) {
+      res.push(cur);
+      cur = '';
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  res.push(cur);
+  return res;
+}
+
+function parseCsvNameFrontBack(text: string): { rows: CsvRow[]; errors: string[]; total: number } {
+  const errors: string[] = [];
+
+  const rawLines = text.split(/\r?\n/);
+  const lines = rawLines.filter(l => l.length > 0);
+
+  if (lines.length === 0) return { rows: [], errors: ['CSV пустой'], total: 0 };
+
+  const first = splitCsvLine(lines[0]).map(s => String(s).toLowerCase());
+  const hasHeader = first.includes('name') && first.includes('front') && first.includes('back');
+
+  let nameIdx = 0;
+  let frontIdx = 1;
+  let backIdx = 2;
+  let start = 0;
+
+  if (hasHeader) {
+    nameIdx = first.indexOf('name');
+    frontIdx = first.indexOf('front');
+    backIdx = first.indexOf('back');
+    start = 1;
+  } else {
+    if (first.length < 3) {
+      return {
+        rows: [],
+        errors: ['Нет заголовка, но в первой строке меньше 3 колонок (нужно name,front,back).'],
+        total: 0,
+      };
+    }
+  }
+
+  const total = Math.max(0, lines.length - start);
+  const rows: CsvRow[] = [];
+
+  for (let i = start; i < lines.length; i++) {
+    const cols = splitCsvLine(lines[i]);
+
+    const name = (cols[nameIdx] ?? '').trim();
+    const front = (cols[frontIdx] ?? '').trim();
+    const back = (cols[backIdx] ?? '').trim();
+
+    if (!name || !front || !back) {
+      errors.push(`Строка ${i + 1}: нужно заполнить name/front/back`);
+      continue;
+    }
+
+    rows.push({ name, front, back });
+  }
+
+  return { rows, errors, total };
+}
+
+export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {
   const [term, setTerm] = useState('');
   const [cardType, setCardType] = useState<CardType>('flashcard');
 
@@ -75,6 +167,17 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
   const [mcqExplanationPreview, setMcqExplanationPreview] = useState(false);
 
   const levelsCount = cardType === 'flashcard' ? levelsQA.length : levelsMCQ.length;
+
+  // CSV import
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const reportRef = useRef<HTMLDivElement | null>(null);
+
+  const [importBusy, setImportBusy] = useState(false);
+  const [importReport, setImportReport] = useState<string | null>(null);
+
+  const scrollToReport = () => {
+    setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
 
   const handleAddLevel = () => {
     if (levelsCount >= 10) return;
@@ -176,7 +279,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
       .filter(l => {
         if (!l.question) return false;
         if (l.options.length < 2) return false;
-        // Требуем, чтобы у минимум 2 опций был текст
         const nonEmpty = l.options.filter(o => o.text);
         if (nonEmpty.length < 2) return false;
         if (!l.correctOptionId) return false;
@@ -201,14 +303,69 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
     }
   };
 
+    const handleImportCsv = async (file: File) => {
+    if (!deckId) return;
+
+    setImportReport(null);
+    setImportBusy(true);
+
+    try {
+      const text = await file.text();
+      const { rows, errors, total } = parseCsvNameFrontBack(text);
+
+      // 1) Если ошибки парсинга — ОТВЕРГАЕМ импорт полностью
+      if (errors.length > 0) {
+        const head = `Импорт отменён: ошибок парсинга ${errors.length} из ${total} строк.\nИсправь CSV и попробуй снова.`;
+        const body =
+          `\n\nОшибки:\n- ${errors.slice(0, 20).join('\n- ')}${errors.length > 20 ? '\n- ...' : ''}`;
+
+        const msg = head + body;
+        setImportReport(msg);
+        alert(msg);
+        return;
+      }
+
+      // 2) Парсинг ок → формируем payload и шлём
+      const cards = rows.map((r) => ({
+        deckId,
+        term: r.name,
+        type: 'flashcard' as const,
+        levels: [{ question: r.front, answer: r.back }],
+      }));
+
+      const result = await onSaveMany(cards);
+
+      const sent = cards.length;
+      const created = result.created ?? 0;
+      const failed = result.failed ?? 0;
+      const apiErrors = result.errors ?? [];
+
+      const tail =
+        apiErrors.length > 0
+          ? `\n\nОшибки API (index: message):\n- ${apiErrors.slice(0, 20).join('\n- ')}${
+              apiErrors.length > 20 ? '\n- ...' : ''
+            }`
+          : '';
+
+      const msg = `Импорт завершён: отправлено ${sent}, создано в базе ${created}, ошибок API ${failed}.${tail}`;
+      setImportReport(msg);
+      alert(msg);
+    } catch (e: any) {
+      const msg = `Импорт не удался: ${String(e?.message ?? e)}`;
+      setImportReport(msg);
+      alert(msg);
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+
   const activeQA = levelsQA[activeLevel];
   const activeMCQ = levelsMCQ[activeLevel];
 
   useEffect(() => {
     if (!decks || decks.length === 0) return;
-    // если сохранённая колода есть в списке — оставляем
     if (deckId && decks.some(d => d.deck_id === deckId)) return;
-    // иначе ставим первую доступную
     setDeckId(decks[0].deck_id);
   }, [decks, deckId]);
 
@@ -217,7 +374,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
     localStorage.setItem(LAST_DECK_KEY, deckId);
   }, [deckId]);
 
-  // при смене типа — не смешиваем индексы/редакторы
   useEffect(() => {
     setActiveLevel(0);
     setQPreview(false);
@@ -242,7 +398,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
       </div>
 
       <main className="container-centered w-full max-w-4xl space-y-6 py-6">
-        {/* Deck select */}
         <div className="form-row">
           <label className="form-label">Колода</label>
           <select
@@ -263,20 +418,14 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           </select>
         </div>
 
-        {/* Card type */}
         <div className="form-row">
           <label className="form-label">Тип карточки</label>
-          <select
-            value={cardType}
-            onChange={(e) => setCardType(e.target.value as CardType)}
-            className="input"
-          >
+          <select value={cardType} onChange={(e) => setCardType(e.target.value as CardType)} className="input">
             <option value="flashcard">Flashcard</option>
             <option value="multiple_choice">Multiple choice</option>
           </select>
         </div>
 
-        {/* Card title/topic */}
         <Input
           value={term}
           onChange={setTerm}
@@ -284,7 +433,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           placeholder="Например: Фотосинтез"
         />
 
-        {/* Level tabs */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
@@ -314,7 +462,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
             ))}
           </div>
 
-          {/* Active level editor */}
           <div className="card">
             <div className="flex items-center justify-between">
               <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -358,7 +505,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
                   onTogglePreview={() => setMcqQPreview(v => !v)}
                 />
 
-                {/* Timer */}
                 <div className="form-row" style={{ marginTop: '1rem' }}>
                   <label className="form-label">Таймер (сек) — опционально</label>
                   <input
@@ -376,7 +522,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
                   />
                 </div>
 
-                {/* Options */}
                 <div style={{ marginTop: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label className="form-label" style={{ marginBottom: 0 }}>
@@ -436,7 +581,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
                     ))}
                   </div>
 
-                  {/* Быстрый предпросмотр правильного ответа */}
                   {(() => {
                     const correct = (activeMCQ?.options ?? []).find(o => o.id === activeMCQ?.correctOptionId);
                     const text = correct?.text?.trim();
@@ -454,7 +598,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
                   })()}
                 </div>
 
-                {/* Explanation */}
                 <MarkdownField
                   label="Пояснение (опционально)"
                   value={activeMCQ?.explanation ?? ''}
@@ -468,15 +611,60 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           </div>
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
-          <Button onClick={onCancel} variant="secondary" size="large" fullWidth>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            variant="secondary"
+            size="large"
+            fullWidth
+            disabled={!deckId || importBusy}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Upload size={16} />
+              Импорт CSV
+            </span>
+          </Button>
+
+          <Button onClick={onCancel} variant="secondary" size="large" fullWidth disabled={importBusy}>
             Отмена
           </Button>
-          <Button onClick={handleSave} variant="primary" size="large" fullWidth disabled={!canSave}>
+
+          <Button onClick={handleSave} variant="primary" size="large" fullWidth disabled={!canSave || importBusy}>
             Сохранить
           </Button>
         </div>
+
+        {importReport && (
+          <div
+            ref={reportRef}
+            style={{
+              color: '#9CA3AF',
+              fontSize: '0.875rem',
+              marginTop: '0.5rem',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {importReport}
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={async () => {
+            const input = fileInputRef.current;
+            const file = input?.files?.[0];
+            if (!file) return;
+
+            try {
+              await handleImportCsv(file);
+            } finally {
+              if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+          }}
+        />
       </main>
     </div>
   );

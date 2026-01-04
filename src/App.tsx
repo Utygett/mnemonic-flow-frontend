@@ -179,21 +179,30 @@ const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
   };
 
 
-  const handleStartDeckStudy = async (deckId: string, mode: StudyMode) => {
+  const handleStartDeckStudy = async (deckId: string, mode: StudyMode, limit?: number) => {
     const key = `deck:${deckId}` as const;
 
     const seed =
-      mode === 'random' || mode === 'new_random' ? Date.now() % 1_000_000_000 : undefined;
+      mode === 'random' || mode === 'new_random'
+        ? Date.now() % 1_000_000_000
+        : undefined;
 
-    const limit =
-      mode === 'new_random' || mode === 'new_ordered' ? 20 : undefined;
+    // лимит используем только для "new_*"
+    const limitNormalized =
+      mode === 'new_random' || mode === 'new_ordered'
+        ? Math.max(1, Math.min(200, Math.trunc(Number.isFinite(Number(limit)) ? Number(limit) : 20)))
+        : undefined;
 
     try {
       setLoadingDeckCards(true);
 
-      const res = await ApiClient.getStudyCards(deckId, { mode, seed, limit });
+      const res = await ApiClient.getStudyCards(deckId, {
+        mode,
+        seed,
+        limit: limitNormalized,
+      });
 
-      setDeckCards(res.cards);          // важно: сервер должен вернуть StudyCard[]
+      setDeckCards(res.cards); // важно: сервер должен вернуть StudyCard[]
       setActiveDeckId(deckId);
       setSessionMode('deck');
       setSessionKey(key);
@@ -207,10 +216,6 @@ const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
       setLoadingDeckCards(false);
     }
   };
-
-
-
-
 
 
   // Проверяем, было ли приложение установлено как PWA
@@ -510,6 +515,44 @@ const handleRate = async (rating: DifficultyRating) => {
   };
 
   
+
+  const handleSaveCardsMany = async (
+    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
+  ): Promise<{ created: number; failed: number; errors?: string[] }> => {
+    const errors: string[] = [];
+    let created = 0;
+
+    for (let i = 0; i < cards.length; i++) {
+      const c = cards[i];
+      try {
+        await ApiClient.createCard({
+          deck_id: c.deckId,
+          title: c.term,
+          type: c.type,
+          levels: c.levels,
+        });
+        created++;
+      } catch (e: any) {
+        errors.push(`${i}: ${String(e?.message ?? e)}`);
+      }
+    }
+
+    // один рефреш после пачки
+    refreshDecks();
+    refreshStats();
+
+    return { created, failed: errors.length, errors };
+  };
+
+
+
+
+
+
+
+
+
+
   // Показываем загрузку
   if (decksLoading || statsLoading) {
     return (
@@ -550,7 +593,7 @@ if (isDeckDetailsOpen && deckDetailsId) {
     <DeckDetailsScreen
       deckId={deckDetailsId}
       onBack={() => { setIsDeckDetailsOpen(false); setDeckDetailsId(null); }}
-      onStart={(mode) => handleStartDeckStudy(deckDetailsId, mode)}
+      onStart={(mode, limit) => handleStartDeckStudy(deckDetailsId, mode, limit)}
     />
   );
 }
@@ -650,6 +693,7 @@ if (isStudying) {
         <CreateCard
           decks={decks}
           onSave={handleSaveCard}
+          onSaveMany={handleSaveCardsMany}
           onCancel={() => setIsCreatingCard(false)}
         />
         <PWAUpdatePrompt />
