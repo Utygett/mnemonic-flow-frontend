@@ -4,7 +4,8 @@ import { Statistics, Deck, Group } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
 import { Clock, BookOpen, Flame } from 'lucide-react';
-
+import { useRef } from 'react';
+import './Dashboard.css';
 
 type ResumeSessionProps = {
   title: string;
@@ -49,6 +50,38 @@ export function Dashboard({
   
   const safeGroups = groups ?? [];
   const activeGroup = safeGroups.find((g) => g.id === activeGroupId) ?? null;
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const isDownRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const onWheelCarousel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!carouselRef.current) return;
+    // horizontal scroll by vertical wheel movement
+    carouselRef.current.scrollBy({ left: e.deltaY, behavior: 'smooth' });
+  };
+
+  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!carouselRef.current) return;
+    isDownRef.current = true;
+    carouselRef.current.classList.add('dragging');
+    startXRef.current = e.pageX - carouselRef.current.offsetLeft;
+    scrollLeftRef.current = carouselRef.current.scrollLeft;
+  };
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDownRef.current || !carouselRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1; // drag speed
+    carouselRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const onMouseUpOrLeave = () => {
+    if (!carouselRef.current) return;
+    isDownRef.current = false;
+    carouselRef.current.classList.remove('dragging');
+  };
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -112,52 +145,61 @@ export function Dashboard({
       </div>
 
       {/* Groups */}
-      <div className="p-4 container-centered max-w-390">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-[#E8EAF0]">Мои группы</h2>
+      <div className="groups-section">
+        <div className="groups-container">
+          {/* Кнопка добавления слева */}
+          <button
+            className="groups-button groups-button-add"
+            onClick={onCreateGroup}
+          >
+            +
+          </button>
 
-          <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={onDeleteActiveGroup}
-                disabled={!activeGroupId}
-                title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+          {/* Карусель групп по центру */}
+          <div className="groups-carousel-wrapper">
+            {safeGroups.length === 0 ? (
+              <p className="groups-empty-message">Создайте первую группу</p>
+            ) : (
+              <div
+                ref={carouselRef}
+                className="groups-carousel"
+                onWheel={onWheelCarousel}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUpOrLeave}
+                onMouseLeave={onMouseUpOrLeave}
               >
-                −
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={onCreateGroup}
-              >
-                +
-              </Button>
-            </div>
-        </div>
-
-        {safeGroups.length === 0 ? (
-          <p className="text-[#9CA3AF] text-sm">
-            У вас пока нет групп. Создайте первую, чтобы организовать колоды.
-          </p>
-        ) : (
-          <div className="groups-row">
-            {safeGroups.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                className={
-                  'group-pill' + (g.id === activeGroupId ? ' group-pill--active' : '')
-                }
-                onClick={() => onGroupChange(g.id)}
-              >
-                {g.title}
-              </button>
-            ))}
+                {safeGroups.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className={
+                      'group-pill' + (g.id === activeGroupId ? ' group-pill--active' : '')
+                    }
+                    onClick={() => onGroupChange(g.id)}
+                  >
+                    {g.title}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Кнопка удаления справа */}
+          <button
+            className="groups-button groups-button-delete"
+            onClick={onDeleteActiveGroup}
+            disabled={!activeGroupId}
+            title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+          >
+            🗑️
+          </button>
+        </div>
       </div>
+
+
+
+
 
       {/* Decks of active group */}
       <div className="p-4 container-centered max-w-390">

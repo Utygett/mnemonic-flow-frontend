@@ -19,10 +19,6 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
   return (
     <button onClick={onClick} className="deck-card">
       <div className="deck-card__row">
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {/* edit button moved to EditCardFlow (study) */}
-          <ChevronRight size={20} className="deck-card__chev" />
-        </div>
         <div style={{ flex: 1 }}>
           <h3 className="deck-card__title">{deck.title}</h3>
            {description ? (

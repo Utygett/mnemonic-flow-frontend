@@ -16,7 +16,7 @@ import { Onboarding } from './screens/Onboarding/Onboarding';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
-import { DifficultyRating, StudyCard, Group } from './types';
+import { DifficultyRating, StudyCard, Group, StudyMode } from './types';
 import { useStatistics, useStudySession } from './hooks';
 import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
@@ -25,6 +25,7 @@ import { CreateDeck } from './screens/CreateDeck';
 import  AddDeck from './screens/AddDeck/AddDeck'
 import { EditDeck } from './screens/EditDeck';
 import { CreateGroup } from './screens/group/CreateGroup';
+import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
 
 
 // Компонент для отображения обновлений PWA
@@ -157,6 +158,69 @@ const [isAddDeck, setIsAddDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+const [isDeckDetailsOpen, setIsDeckDetailsOpen] = useState(false);
+const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
+
+
+  const handleDeckClick = async (deckId: string) => {
+    const key = `deck:${deckId}` as const;
+
+    // 1) если есть сохранённая сессия — как у тебя уже сделано
+    const saved = loadSession(key);
+    if (saved && saved.deckCards.length > 0) {
+      setSessionMode(saved.mode);
+      setSessionKey(saved.key);
+      setActiveDeckId(saved.activeDeckId);
+      setSessionIndex(saved.currentIndex ?? 0);
+      setDeckCards(saved.deckCards ?? []);
+      setIsStudying(true);
+      setResumeCandidate(saved);
+      return;
+    }
+
+    // 2) иначе открываем DeckDetails, а не стартуем study
+    setDeckDetailsId(deckId);
+    setIsDeckDetailsOpen(true);
+  };
+
+
+  const handleStartDeckStudy = async (deckId: string, mode: StudyMode, limit?: number) => {
+    const key = `deck:${deckId}` as const;
+
+    const seed =
+      mode === 'random' || mode === 'new_random'
+        ? Date.now() % 1_000_000_000
+        : undefined;
+
+    // лимит используем только для "new_*"
+    const limitNormalized =
+      mode === 'new_random' || mode === 'new_ordered'
+        ? Math.max(1, Math.min(200, Math.trunc(Number.isFinite(Number(limit)) ? Number(limit) : 20)))
+        : undefined;
+
+    try {
+      setLoadingDeckCards(true);
+
+      const res = await ApiClient.getStudyCards(deckId, {
+        mode,
+        seed,
+        limit: limitNormalized,
+      });
+
+      setDeckCards(res.cards); // важно: сервер должен вернуть StudyCard[]
+      setActiveDeckId(deckId);
+      setSessionMode('deck');
+      setSessionKey(key);
+      setSessionIndex(0);
+
+      setIsDeckDetailsOpen(false);
+      setDeckDetailsId(null);
+
+      if (res.cards.length > 0) setIsStudying(true);
+    } finally {
+      setLoadingDeckCards(false);
+    }
+  };
 
 
   // Проверяем, было ли приложение установлено как PWA
@@ -441,12 +505,12 @@ const handleRate = async (rating: DifficultyRating) => {
     setSessionIndex(0);      // необязательно, но ок
     setActiveTab('home');
   };
-  
-  const handleSaveCard = async (cardData: { deckId: string; term: string; levels: Array<{question: string; answer: string}> }) => {
+
+  const handleSaveCard = async (cardData: { deckId: string; term: string; type: string; levels: Array<{question: string; answer: string}> }) => {
     await ApiClient.createCard({
       deck_id: cardData.deckId,
       title: cardData.term,
-      type: 'flashcard',
+      type: cardData.type,
       levels: cardData.levels,
     });
 
@@ -456,42 +520,44 @@ const handleRate = async (rating: DifficultyRating) => {
   };
 
   
-  const handleDeckClick = async (deckId: string) => {
-    const key = `deck:${deckId}` as const;
 
-    // 1) если есть сохранённая сессия именно этой колоды — сразу продолжаем
-    const saved = loadSession(key);
-    if (saved && saved.deckCards.length > 0) {
-      setSessionMode('deck');
-      setSessionKey(saved.key);
-      setActiveDeckId(saved.activeDeckId);
+  const handleSaveCardsMany = async (
+    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
+  ): Promise<{ created: number; failed: number; errors?: string[] }> => {
+    const errors: string[] = [];
+    let created = 0;
 
-      setSessionIndex(saved.currentIndex ?? 0);
-      setDeckCards(saved.deckCards ?? []);
-
-      setIsStudying(true);
-      setResumeCandidate(saved); // чтобы на Home тоже была “продолжить”
-      return;
+    for (let i = 0; i < cards.length; i++) {
+      const c = cards[i];
+      try {
+        await ApiClient.createCard({
+          deck_id: c.deckId,
+          title: c.term,
+          type: c.type,
+          levels: c.levels,
+        });
+        created++;
+      } catch (e: any) {
+        errors.push(`${i}: ${String(e?.message ?? e)}`);
+      }
     }
 
-    // 2) иначе грузим с сервера как раньше
-    try {
-      setLoadingDeckCards(true);
+    // один рефреш после пачки
+    refreshDecks();
+    refreshStats();
 
-      const items = await ApiClient.getDeckSession(deckId);
-      setDeckCards(toStudyCards(items));
-
-      setActiveDeckId(deckId);
-      setSessionMode('deck');
-      setSessionKey(key);
-      setSessionIndex(0);
-
-      if (items.length > 0) setIsStudying(true);
-    } finally {
-      setLoadingDeckCards(false);
-    }
+    return { created, failed: errors.length, errors };
   };
-  
+
+
+
+
+
+
+
+
+
+
   // Показываем загрузку
   if (decksLoading || statsLoading) {
     return (
@@ -527,6 +593,17 @@ const handleRate = async (rating: DifficultyRating) => {
   //   return <Onboarding onComplete={() => setHasCompletedOnboarding(true)} />;
   // }
   
+if (isDeckDetailsOpen && deckDetailsId) {
+  return (
+    <DeckDetailsScreen
+      deckId={deckDetailsId}
+      onBack={() => { setIsDeckDetailsOpen(false); setDeckDetailsId(null); }}
+      onStart={(mode, limit) => handleStartDeckStudy(deckDetailsId, mode, limit)}
+    />
+  );
+}
+
+
 if (isStudying) {
   // 1️⃣ Загрузка карточек
   
@@ -621,6 +698,7 @@ if (isStudying) {
         <CreateCard
           decks={decks}
           onSave={handleSaveCard}
+          onSaveMany={handleSaveCardsMany}
           onCancel={() => setIsCreatingCard(false)}
         />
         <PWAUpdatePrompt />
@@ -1005,7 +1083,11 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\api\client.t
 
 // src/api/client.ts
 import { Statistics, DifficultyRating, UserGroupResponse, Group, GroupCreatePayload} from '../types';
-import { PublicDeckSummary } from '../types';
+import { PublicDeckSummary, StudyCard, StudyMode } from '../types';
+
+export type StudyCardsResponse = {
+  cards: StudyCard[];
+};
 
 
 
@@ -1020,16 +1102,74 @@ export class ApiError extends Error {
   }
 }
 
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = localStorage.getItem('access_token'); // как у тебя в других методах
-  const res = await fetch(`/api${path}`, {
-    ...init,
+async function refreshAccessToken(): Promise<string> {
+  const refresh = localStorage.getItem('refresh_token');
+  if (!refresh) throw new ApiError(401, 'No refresh token');
+
+  const res = await fetch(`/api/auth/refresh`, {
+    method: 'POST',
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${refresh}`,
       'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
     },
   });
+
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const j = await res.json();
+      detail = typeof j?.detail === 'string' ? j.detail : undefined;
+    } catch {
+      // ignore
+    }
+
+    // refresh протух/невалидный — чистим токены
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    throw new ApiError(res.status, detail || `HTTP ${res.status}`, detail);
+  }
+
+  const data = await res.json();
+  const newAccess = String(data?.access_token ?? '');
+  const newRefresh = String(data?.refresh_token ?? refresh);
+
+  if (!newAccess) throw new ApiError(500, 'Refresh returned empty access_token');
+
+  localStorage.setItem('access_token', newAccess);
+  localStorage.setItem('refresh_token', newRefresh);
+
+  return newAccess;
+}
+
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const doFetch = async () => {
+    const token = localStorage.getItem('access_token');
+
+    return fetch(`/api${path}`, {
+      ...init,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        'Content-Type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    });
+  };
+
+  // 1) первая попытка
+  let res = await doFetch();
+
+  // 2) если access протух — пробуем refresh ОДИН раз и повторяем запрос
+  if (res.status === 401) {
+    try {
+      await refreshAccessToken();
+      res = await doFetch();
+    } catch (e) {
+      // если refresh не удался — отдаём исходную 401 (или ошибку refresh)
+      // предпочтительнее: кинуть ошибку refresh как есть
+      throw e;
+    }
+  }
 
   if (!res.ok) {
     let detail: string | undefined;
@@ -1045,6 +1185,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
 
 
 
@@ -1348,6 +1489,21 @@ static async getReviewSession(limit = 20) {
   static async deleteGroup(groupId: string): Promise<void> {
     await apiRequest<void>(`/groups/${groupId}`, { method: 'DELETE' });
   }
+
+
+static async getStudyCards(
+  deckId: string,
+  params: { mode: StudyMode; limit?: number; seed?: number }
+): Promise<StudyCardsResponse> {
+  const qs = new URLSearchParams();
+  qs.set('mode', params.mode);
+  qs.set('include', 'full');
+  if (params.limit != null) qs.set('limit', String(params.limit));
+  if (params.seed != null) qs.set('seed', String(params.seed));
+
+  // ВАЖНО: path без "/api", потому что apiRequest сам подставит "/api"
+  return apiRequest<StudyCardsResponse>(`/decks/${deckId}/study-cards?${qs.toString()}`);
+}
 }
 
 
@@ -1612,12 +1768,10 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\FlipCard.tsx
 ==============================
 
-// src/components/FlipCard.tsx
 import React from 'react';
 import { StudyCard } from '../types';
 import { motion } from 'motion/react';
 import { MarkdownView } from './MarkdownView';
-
 
 interface FlipCardProps {
   card: StudyCard;
@@ -1626,46 +1780,74 @@ interface FlipCardProps {
 
   onLevelUp?: () => void;
   onLevelDown?: () => void;
+
+  // NEW:
+  frontContent?: React.ReactNode;
+  backContent?: React.ReactNode;
+  disableFlipOnClick?: boolean;
 }
 
+function getLevelIndex(l: any): number {
+  return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;
+}
 
-export function FlipCard({ card, isFlipped, onFlip, onLevelUp, onLevelDown }: FlipCardProps) 
-{
+export function FlipCard({
+  card,
+  isFlipped,
+  onFlip,
+  onLevelUp,
+  onLevelDown,
+  frontContent,
+  backContent,
+  disableFlipOnClick = false,
+}: FlipCardProps) {
   const level =
-    card.levels.find(l => l.level_index === card.activeLevel) ??
-    card.levels[0];
+    card.levels.find((l: any) => getLevelIndex(l) === card.activeLevel) ?? card.levels[0];
 
-  const frontText = level?.content?.question || card.title || '…';
-  const backText = level?.content?.answer || '…';
+  const frontText = (level as any)?.content?.question || (card as any).title || '…';
+  const backText = (level as any)?.content?.answer || '…';
 
-  const hasPrev = card.levels.some(l => l.level_index === card.activeLevel - 1);
-  const hasNext = card.levels.some(l => l.level_index === card.activeLevel + 1);
+  const hasPrev = card.levels.some((l: any) => getLevelIndex(l) === card.activeLevel - 1);
+  const hasNext = card.levels.some((l: any) => getLevelIndex(l) === card.activeLevel + 1);
 
   const canDown = hasPrev;
   const canUp = hasNext;
 
+  const handleClick = () => {
+    if (disableFlipOnClick) return;
+    onFlip();
+  };
 
   return (
     <div className="flipcard-container">
-      <motion.div className="flipcard" onClick={onFlip} style={{ perspective: 1000 }}>
+      <motion.div className="flipcard" onClick={handleClick} style={{ perspective: 1000 }}>
         <motion.div
           className="flipcard__inner"
           initial={false}
           animate={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
           transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
+          {/* Front */}
           <div className="flipcard__side flipcard__front">
             <div className="flipcard__text">
-              <MarkdownView value={frontText} />
+              {frontContent ?? <MarkdownView value={frontText} />}
             </div>
             <div className="flipcard__hint">Нажмите, чтобы увидеть ответ</div>
           </div>
-          {/* Back Side */}
+
+          {/* Back */}
           <div className="flipcard__side flipcard__back">
             {(canDown || canUp) && (
               <div className="flipcard__level-controls" onClick={(e) => e.stopPropagation()}>
                 {canDown ? (
-                  <button className="flipcard__level-btn flipcard__level-btn--left" onClick={onLevelDown}>
+                  <button
+                    type="button"
+                    className="flipcard__level-btn flipcard__level-btn--left"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLevelDown?.();
+                    }}
+                  >
                     &lt; проще
                   </button>
                 ) : (
@@ -1673,7 +1855,14 @@ export function FlipCard({ card, isFlipped, onFlip, onLevelUp, onLevelDown }: Fl
                 )}
 
                 {canUp ? (
-                  <button className="flipcard__level-btn flipcard__level-btn--right" onClick={onLevelUp}>
+                  <button
+                    type="button"
+                    className="flipcard__level-btn flipcard__level-btn--right"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLevelUp?.();
+                    }}
+                  >
                     сложнее &gt;
                   </button>
                 ) : (
@@ -1681,14 +1870,15 @@ export function FlipCard({ card, isFlipped, onFlip, onLevelUp, onLevelDown }: Fl
                 )}
               </div>
             )}
+
             <div className="flipcard__text">
-              <MarkdownView value={backText} />
+              {backContent ?? <MarkdownView value={backText} />}
             </div>
+
             <div className="flipcard__hint">
               Уровень {card.activeLevel + 1} из {card.levels.length}
             </div>
           </div>
-
         </motion.div>
       </motion.div>
     </div>
@@ -7116,29 +7306,155 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\Crea
 ==============================
 
 // src/screens/CreateCard.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
-import { LevelIndicator } from '../components/LevelIndicator';
-import { X, Plus, Trash2, Eye, EyeOff } from 'lucide-react';
+import { X, Plus, Trash2, Upload } from 'lucide-react';
 import type { PublicDeckSummary } from '../types';
-import MDEditor from '@uiw/react-md-editor';
 import { MarkdownView } from '../components/MarkdownView';
 
+type CardType = 'flashcard' | 'multiple_choice';
 
 type LevelQA = { question: string; answer: string };
 
+type McqOption = { id: string; text: string };
+type LevelMCQ = {
+  question: string;
+  options: McqOption[];
+  correctOptionId: string;
+  explanation?: string;
+  timerSec?: number;
+};
+
+type CsvRow = { name: string; front: string; back: string };
+
 interface CreateCardProps {
   decks: PublicDeckSummary[];
-  onSave: (cardData: { deckId: string; term: string; levels: LevelQA[] }) => void;
+  onSave: (cardData: { deckId: string; term: string; type: CardType; levels: any[] }) => void;
+
+  onSaveMany: (
+    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
+  ) => Promise<{ created: number; failed: number; errors?: string[] }>;
+
   onCancel: () => void;
 }
 
 const LAST_DECK_KEY = 'mnemonicFlow:lastDeckId';
 
-export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
+function newId() {
+  return Math.random().toString(16).slice(2);
+}
+
+function makeDefaultMcqLevel(): LevelMCQ {
+  const a = newId();
+  const b = newId();
+  return {
+    question: '',
+    options: [
+      { id: a, text: '' },
+      { id: b, text: '' },
+    ],
+    correctOptionId: a,
+    explanation: '',
+    timerSec: undefined,
+  };
+}
+
+function clampInt(n: number, min: number, max: number) {
+  if (!Number.isFinite(n)) return min;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+}
+
+/** Очень простой CSV: кавычки + запятая, без переносов строк внутри кавычек */
+function splitCsvLine(line: string): string[] {
+  const res: string[] = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (ch === '"') {
+      // "" -> "
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === ',' && !inQuotes) {
+      res.push(cur);
+      cur = '';
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  res.push(cur);
+  return res;
+}
+
+function parseCsvNameFrontBack(text: string): { rows: CsvRow[]; errors: string[]; total: number } {
+  const errors: string[] = [];
+
+  const rawLines = text.split(/\r?\n/);
+  const lines = rawLines.filter(l => l.length > 0);
+
+  if (lines.length === 0) return { rows: [], errors: ['CSV пустой'], total: 0 };
+
+  const first = splitCsvLine(lines[0]).map(s => String(s).toLowerCase());
+  const hasHeader = first.includes('name') && first.includes('front') && first.includes('back');
+
+  let nameIdx = 0;
+  let frontIdx = 1;
+  let backIdx = 2;
+  let start = 0;
+
+  if (hasHeader) {
+    nameIdx = first.indexOf('name');
+    frontIdx = first.indexOf('front');
+    backIdx = first.indexOf('back');
+    start = 1;
+  } else {
+    if (first.length < 3) {
+      return {
+        rows: [],
+        errors: ['Нет заголовка, но в первой строке меньше 3 колонок (нужно name,front,back).'],
+        total: 0,
+      };
+    }
+  }
+
+  const total = Math.max(0, lines.length - start);
+  const rows: CsvRow[] = [];
+
+  for (let i = start; i < lines.length; i++) {
+    const cols = splitCsvLine(lines[i]);
+
+    const name = (cols[nameIdx] ?? '').trim();
+    const front = (cols[frontIdx] ?? '').trim();
+    const back = (cols[backIdx] ?? '').trim();
+
+    if (!name || !front || !back) {
+      errors.push(`Строка ${i + 1}: нужно заполнить name/front/back`);
+      continue;
+    }
+
+    rows.push({ name, front, back });
+  }
+
+  return { rows, errors, total };
+}
+
+export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {
   const [term, setTerm] = useState('');
+  const [cardType, setCardType] = useState<CardType>('flashcard');
+
   const [activeLevel, setActiveLevel] = useState(0);
 
   const [deckId, setDeckId] = useState<string>(() => {
@@ -7146,54 +7462,217 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
     return saved ?? '';
   });
 
-  const [levels, setLevels] = useState<LevelQA[]>([{ question: '', answer: '' }]);
+  // FLASHCARD levels
+  const [levelsQA, setLevelsQA] = useState<LevelQA[]>([{ question: '', answer: '' }]);
   const [qPreview, setQPreview] = useState(false);
   const [aPreview, setAPreview] = useState(false);
 
+  // MCQ levels
+  const [levelsMCQ, setLevelsMCQ] = useState<LevelMCQ[]>([makeDefaultMcqLevel()]);
+  const [mcqQPreview, setMcqQPreview] = useState(false);
+  const [mcqOptionsPreview, setMcqOptionsPreview] = useState(false);
+  const [mcqExplanationPreview, setMcqExplanationPreview] = useState(false);
+
+  const levelsCount = cardType === 'flashcard' ? levelsQA.length : levelsMCQ.length;
+
+  // CSV import
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const reportRef = useRef<HTMLDivElement | null>(null);
+
+  const [importBusy, setImportBusy] = useState(false);
+  const [importReport, setImportReport] = useState<string | null>(null);
+
+  const scrollToReport = () => {
+    setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
 
   const handleAddLevel = () => {
-    if (levels.length < 10) {
-      setLevels(prev => [...prev, { question: '', answer: '' }]);
-      setActiveLevel(levels.length);
+    if (levelsCount >= 10) return;
+
+    if (cardType === 'flashcard') {
+      setLevelsQA(prev => [...prev, { question: '', answer: '' }]);
+      setActiveLevel(levelsQA.length);
+    } else {
+      setLevelsMCQ(prev => [...prev, makeDefaultMcqLevel()]);
+      setActiveLevel(levelsMCQ.length);
     }
   };
 
   const handleRemoveLevel = (index: number) => {
-    if (levels.length <= 1) return;
-    const next = levels.filter((_, i) => i !== index);
-    setLevels(next);
-    if (activeLevel >= next.length) setActiveLevel(next.length - 1);
+    if (levelsCount <= 1) return;
+
+    if (cardType === 'flashcard') {
+      const next = levelsQA.filter((_, i) => i !== index);
+      setLevelsQA(next);
+      if (activeLevel >= next.length) setActiveLevel(next.length - 1);
+    } else {
+      const next = levelsMCQ.filter((_, i) => i !== index);
+      setLevelsMCQ(next);
+      if (activeLevel >= next.length) setActiveLevel(next.length - 1);
+    }
   };
 
-  const patchLevel = (index: number, patch: Partial<LevelQA>) => {
-    const next = [...levels];
+  const patchLevelQA = (index: number, patch: Partial<LevelQA>) => {
+    const next = [...levelsQA];
     next[index] = { ...next[index], ...patch };
-    setLevels(next);
+    setLevelsQA(next);
   };
 
-  const cleanedLevels = useMemo(
+  const patchLevelMCQ = (index: number, patch: Partial<LevelMCQ>) => {
+    const next = [...levelsMCQ];
+    next[index] = { ...next[index], ...patch };
+    setLevelsMCQ(next);
+  };
+
+  const patchMcqOption = (levelIndex: number, optionId: string, patch: Partial<McqOption>) => {
+    const next = [...levelsMCQ];
+    const lvl = next[levelIndex];
+    const options = (lvl.options ?? []).map(o => (o.id === optionId ? { ...o, ...patch } : o));
+    next[levelIndex] = { ...lvl, options };
+    setLevelsMCQ(next);
+  };
+
+  const addMcqOption = (levelIndex: number) => {
+    const next = [...levelsMCQ];
+    const lvl = next[levelIndex];
+    const optId = newId();
+    const options = [...(lvl.options ?? []), { id: optId, text: '' }];
+    next[levelIndex] = {
+      ...lvl,
+      options,
+      correctOptionId: lvl.correctOptionId || optId,
+    };
+    setLevelsMCQ(next);
+  };
+
+  const removeMcqOption = (levelIndex: number, optionId: string) => {
+    const next = [...levelsMCQ];
+    const lvl = next[levelIndex];
+    const options = (lvl.options ?? []).filter(o => o.id !== optionId);
+    if (options.length < 2) return;
+
+    let correctOptionId = lvl.correctOptionId;
+    if (!options.some(o => o.id === correctOptionId)) {
+      correctOptionId = options[0]?.id ?? '';
+    }
+
+    next[levelIndex] = { ...lvl, options, correctOptionId };
+    setLevelsMCQ(next);
+  };
+
+  const cleanedLevelsQA = useMemo(
     () =>
-      levels
+      levelsQA
         .map(l => ({ question: l.question.trim(), answer: l.answer.trim() }))
         .filter(l => l.question && l.answer),
-    [levels]
+    [levelsQA]
   );
 
-  const canSave = term.trim() && deckId && cleanedLevels.length > 0;
+  const cleanedLevelsMCQ = useMemo(() => {
+    return levelsMCQ
+      .map(l => {
+        const question = (l.question ?? '').trim();
+        const options = (l.options ?? [])
+          .map(o => ({ id: String(o.id), text: (o.text ?? '').trim() }))
+          .filter(o => o.id);
+
+        const correctOptionId = String(l.correctOptionId ?? '');
+        const explanation = (l.explanation ?? '').trim();
+        const timerSec =
+          typeof l.timerSec === 'number' && l.timerSec > 0 ? clampInt(l.timerSec, 1, 3600) : undefined;
+
+        return { question, options, correctOptionId, explanation, timerSec };
+      })
+      .filter(l => {
+        if (!l.question) return false;
+        if (l.options.length < 2) return false;
+        const nonEmpty = l.options.filter(o => o.text);
+        if (nonEmpty.length < 2) return false;
+        if (!l.correctOptionId) return false;
+        const correct = l.options.find(o => o.id === l.correctOptionId);
+        if (!correct || !correct.text) return false;
+        return true;
+      });
+  }, [levelsMCQ]);
+
+  const canSave =
+    term.trim() &&
+    deckId &&
+    (cardType === 'flashcard' ? cleanedLevelsQA.length > 0 : cleanedLevelsMCQ.length > 0);
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave({ deckId, term: term.trim(), levels: cleanedLevels });
+
+    if (cardType === 'flashcard') {
+      onSave({ deckId, term: term.trim(), type: 'flashcard', levels: cleanedLevelsQA });
+    } else {
+      onSave({ deckId, term: term.trim(), type: 'multiple_choice', levels: cleanedLevelsMCQ });
+    }
   };
 
-  const active = levels[activeLevel];
+    const handleImportCsv = async (file: File) => {
+    if (!deckId) return;
 
-  
+    setImportReport(null);
+    setImportBusy(true);
+
+    try {
+      const text = await file.text();
+      const { rows, errors, total } = parseCsvNameFrontBack(text);
+
+      // 1) Если ошибки парсинга — ОТВЕРГАЕМ импорт полностью
+      if (errors.length > 0) {
+        const head = `Импорт отменён: ошибок парсинга ${errors.length} из ${total} строк.\nИсправь CSV и попробуй снова.`;
+        const body =
+          `\n\nОшибки:\n- ${errors.slice(0, 20).join('\n- ')}${errors.length > 20 ? '\n- ...' : ''}`;
+
+        const msg = head + body;
+        setImportReport(msg);
+        alert(msg);
+        return;
+      }
+
+      // 2) Парсинг ок → формируем payload и шлём
+      const cards = rows.map((r) => ({
+        deckId,
+        term: r.name,
+        type: 'flashcard' as const,
+        levels: [{ question: r.front, answer: r.back }],
+      }));
+
+      const result = await onSaveMany(cards);
+
+      const sent = cards.length;
+      const created = result.created ?? 0;
+      const failed = result.failed ?? 0;
+      const apiErrors = result.errors ?? [];
+
+      const tail =
+        apiErrors.length > 0
+          ? `\n\nОшибки API (index: message):\n- ${apiErrors.slice(0, 20).join('\n- ')}${
+              apiErrors.length > 20 ? '\n- ...' : ''
+            }`
+          : '';
+
+      const msg = `Импорт завершён: отправлено ${sent}, создано в базе ${created}, ошибок API ${failed}.${tail}`;
+      setImportReport(msg);
+      alert(msg);
+    } catch (e: any) {
+      const msg = `Импорт не удался: ${String(e?.message ?? e)}`;
+      setImportReport(msg);
+      alert(msg);
+    } finally {
+      setImportBusy(false);
+    }
+  };
+
+
+  const activeQA = levelsQA[activeLevel];
+  const activeMCQ = levelsMCQ[activeLevel];
+
   useEffect(() => {
     if (!decks || decks.length === 0) return;
-    // если сохранённая колода есть в списке — оставляем
     if (deckId && decks.some(d => d.deck_id === deckId)) return;
-    // иначе ставим первую доступную
     setDeckId(decks[0].deck_id);
   }, [decks, deckId]);
 
@@ -7202,6 +7681,14 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
     localStorage.setItem(LAST_DECK_KEY, deckId);
   }, [deckId]);
 
+  useEffect(() => {
+    setActiveLevel(0);
+    setQPreview(false);
+    setAPreview(false);
+    setMcqQPreview(false);
+    setMcqOptionsPreview(false);
+    setMcqExplanationPreview(false);
+  }, [cardType]);
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -7218,7 +7705,6 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
       </div>
 
       <main className="container-centered w-full max-w-4xl space-y-6 py-6">
-        {/* Deck select */}
         <div className="form-row">
           <label className="form-label">Колода</label>
           <select
@@ -7239,7 +7725,14 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           </select>
         </div>
 
-        {/* Card title/topic */}
+        <div className="form-row">
+          <label className="form-label">Тип карточки</label>
+          <select value={cardType} onChange={(e) => setCardType(e.target.value as CardType)} className="input">
+            <option value="flashcard">Flashcard</option>
+            <option value="multiple_choice">Multiple choice</option>
+          </select>
+        </div>
+
         <Input
           value={term}
           onChange={setTerm}
@@ -7247,14 +7740,13 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           placeholder="Например: Фотосинтез"
         />
 
-        {/* Level tabs */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
-              Уровни сложности ({levels.length})
+              Уровни сложности ({levelsCount})
             </label>
 
-            {levels.length < 10 && (
+            {levelsCount < 10 && (
               <button
                 onClick={handleAddLevel}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
@@ -7266,7 +7758,7 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
           </div>
 
           <div className="level-tabs">
-            {levels.map((_, index) => (
+            {Array.from({ length: levelsCount }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => setActiveLevel(index)}
@@ -7277,11 +7769,10 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
             ))}
           </div>
 
-          {/* Active level editor */}
           <div className="card">
             <div className="flex items-center justify-between">
               <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {levels.length > 1 && (
+                {levelsCount > 1 && (
                   <button
                     onClick={() => handleRemoveLevel(activeLevel)}
                     style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}
@@ -7292,34 +7783,195 @@ export function CreateCard({ decks, onSave, onCancel }: CreateCardProps) {
               </div>
             </div>
 
-            <MarkdownField
-              label="Вопрос"
-              value={active.question}
-              onChange={(v) => patchLevel(activeLevel, { question: v })}
-              preview={qPreview}
-              onTogglePreview={() => setQPreview(v => !v)}
-            />
+            {cardType === 'flashcard' ? (
+              <>
+                <MarkdownField
+                  label="Вопрос"
+                  value={activeQA?.question ?? ''}
+                  onChange={(v) => patchLevelQA(activeLevel, { question: v })}
+                  preview={qPreview}
+                  onTogglePreview={() => setQPreview(v => !v)}
+                />
 
-            <MarkdownField
-              label="Ответ"
-              value={active.answer}
-              onChange={(v) => patchLevel(activeLevel, { answer: v })}
-              preview={aPreview}
-              onTogglePreview={() => setAPreview(v => !v)}
-              className="mt-4"
-            />
+                <MarkdownField
+                  label="Ответ"
+                  value={activeQA?.answer ?? ''}
+                  onChange={(v) => patchLevelQA(activeLevel, { answer: v })}
+                  preview={aPreview}
+                  onTogglePreview={() => setAPreview(v => !v)}
+                  className="mt-4"
+                />
+              </>
+            ) : (
+              <>
+                <MarkdownField
+                  label="Вопрос"
+                  value={activeMCQ?.question ?? ''}
+                  onChange={(v) => patchLevelMCQ(activeLevel, { question: v })}
+                  preview={mcqQPreview}
+                  onTogglePreview={() => setMcqQPreview(v => !v)}
+                />
+
+                <div className="form-row" style={{ marginTop: '1rem' }}>
+                  <label className="form-label">Таймер (сек) — опционально</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={3600}
+                    value={typeof activeMCQ?.timerSec === 'number' ? String(activeMCQ.timerSec) : ''}
+                    onChange={(e) => {
+                      const vRaw = e.target.value;
+                      const v = vRaw === '' ? undefined : clampInt(Number(vRaw), 0, 3600);
+                      patchLevelMCQ(activeLevel, { timerSec: v });
+                    }}
+                    placeholder="Напр. 15"
+                  />
+                </div>
+
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>
+                      Варианты (выбери правильный)
+                    </label>
+
+                    <button
+                      onClick={() => addMcqOption(activeLevel)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
+                      type="button"
+                    >
+                      <Plus size={16} />
+                      Добавить вариант
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
+                    {(activeMCQ?.options ?? []).map((opt, idx) => (
+                      <div key={opt.id} className="card" style={{ padding: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#E8EAF0' }}>
+                            <input
+                              type="radio"
+                              name={`mcq-correct-${activeLevel}`}
+                              checked={String(activeMCQ?.correctOptionId) === String(opt.id)}
+                              onChange={() => patchLevelMCQ(activeLevel, { correctOptionId: String(opt.id) })}
+                            />
+                            Правильный
+                          </label>
+
+                          <div style={{ flex: 1 }} />
+
+                          <button
+                            type="button"
+                            onClick={() => removeMcqOption(activeLevel, opt.id)}
+                            disabled={(activeMCQ?.options?.length ?? 0) <= 2}
+                            style={{
+                              color: (activeMCQ?.options?.length ?? 0) <= 2 ? '#6B7280' : '#E53E3E',
+                              padding: 4,
+                              background: 'transparent',
+                              border: 0,
+                            }}
+                            title="Удалить вариант"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        <MarkdownField
+                          label={`Вариант ${idx + 1}`}
+                          value={opt.text}
+                          onChange={(v) => patchMcqOption(activeLevel, opt.id, { text: v })}
+                          preview={mcqOptionsPreview}
+                          onTogglePreview={() => setMcqOptionsPreview(v => !v)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {(() => {
+                    const correct = (activeMCQ?.options ?? []).find(o => o.id === activeMCQ?.correctOptionId);
+                    const text = correct?.text?.trim();
+                    if (!text) return null;
+                    return (
+                      <div style={{ marginTop: '1rem' }}>
+                        <div style={{ color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                          Предпросмотр правильного ответа
+                        </div>
+                        <div className="card" style={{ padding: '0.75rem' }}>
+                          <MarkdownView value={text} />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <MarkdownField
+                  label="Пояснение (опционально)"
+                  value={activeMCQ?.explanation ?? ''}
+                  onChange={(v) => patchLevelMCQ(activeLevel, { explanation: v })}
+                  preview={mcqExplanationPreview}
+                  onTogglePreview={() => setMcqExplanationPreview(v => !v)}
+                  className="mt-4"
+                />
+              </>
+            )}
           </div>
         </div>
 
-        {/* Actions */}
         <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
-          <Button onClick={onCancel} variant="secondary" size="large" fullWidth>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            variant="secondary"
+            size="large"
+            fullWidth
+            disabled={!deckId || importBusy}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Upload size={16} />
+              Импорт CSV
+            </span>
+          </Button>
+
+          <Button onClick={onCancel} variant="secondary" size="large" fullWidth disabled={importBusy}>
             Отмена
           </Button>
-          <Button onClick={handleSave} variant="primary" size="large" fullWidth disabled={!canSave}>
+
+          <Button onClick={handleSave} variant="primary" size="large" fullWidth disabled={!canSave || importBusy}>
             Сохранить
           </Button>
         </div>
+
+        {importReport && (
+          <div
+            ref={reportRef}
+            style={{
+              color: '#9CA3AF',
+              fontSize: '0.875rem',
+              marginTop: '0.5rem',
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {importReport}
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={async () => {
+            const input = fileInputRef.current;
+            const file = input?.files?.[0];
+            if (!file) return;
+
+            try {
+              await handleImportCsv(file);
+            } finally {
+              if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+          }}
+        />
       </main>
     </div>
   );
@@ -7606,12 +8258,11 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\Edit
 import React, { useEffect, useMemo, useState } from 'react';
 import type { PublicDeckSummary } from '../types';
 import { ApiClient } from '../api/client';
-import { Input } from '../components/Input';
 import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
-type LevelQA = { question: string; answer: string };
+
 type CardSummary = {
   card_id: string;
   title: string;
@@ -7626,11 +8277,114 @@ interface Props {
   onEditDeck?: (deckId: string) => void;
 }
 
+type QaLevelDraft = { kind: 'qa'; question: string; answer: string };
+type McqOptionDraft = { id: string; text: string };
+type McqLevelDraft = {
+  kind: 'mcq';
+  question: string;
+  options: McqOptionDraft[];
+  correctOptionId: string;
+  explanation: string;
+  timerSec: number; // 0 = без таймера
+};
+type LevelDraft = QaLevelDraft | McqLevelDraft;
+
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
   const next = [...arr];
   const [item] = next.splice(from, 1);
   next.splice(to, 0, item);
   return next;
+}
+
+function genId(): string {
+  // crypto.randomUUID() не всегда доступен (в зависимости от окружения/браузера)
+  // поэтому делаем безопасный fallback
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function') {
+    return (crypto as any).randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+const isMcqType = (t?: string) => {
+  const s = (t ?? '').toLowerCase();
+  return s === 'mcq' || s.includes('multiple_choice') || s.includes('multiple-choice') || s.includes('choice');
+};
+
+const getLevelIndex = (l: any) => {
+  if (typeof l?.level_index === 'number') return l.level_index;
+  if (typeof l?.levelIndex === 'number') return l.levelIndex;
+  if (typeof l?.level_index === 'string') return Number(l.level_index) || 0;
+  return 0;
+};
+
+function defaultQaLevel(): QaLevelDraft {
+  return { kind: 'qa', question: '', answer: '' };
+}
+
+function defaultMcqLevel(): McqLevelDraft {
+  const a = genId();
+  const b = genId();
+  return {
+    kind: 'mcq',
+    question: '',
+    options: [
+      { id: a, text: '' },
+      { id: b, text: '' },
+    ],
+    correctOptionId: '',
+    explanation: '',
+    timerSec: 0,
+  };
+}
+
+function isLevelEmpty(level: LevelDraft): boolean {
+  if (level.kind === 'qa') {
+    const q = level.question.trim();
+    const a = level.answer.trim();
+    return !q || !a;
+  }
+
+  const q = level.question.trim();
+  const opts = level.options.map(o => ({ ...o, text: o.text.trim() })).filter(o => o.text);
+  const correctOk = opts.some(o => o.id === level.correctOptionId);
+  return !q || opts.length < 2 || !correctOk;
+}
+
+function normalizeMcqLevel(rawContent: any): McqLevelDraft {
+  const c = rawContent ?? {};
+  const rawOptions = Array.isArray(c.options) ? c.options : [];
+
+  const options: McqOptionDraft[] =
+    rawOptions.length > 0
+      ? rawOptions.map((o: any) => ({
+          id: String(o?.id ?? genId()),
+          text: String(o?.text ?? o?.label ?? ''),
+        }))
+      : [
+          { id: genId(), text: '' },
+          { id: genId(), text: '' },
+        ];
+
+  const correctOptionId = String(c.correctOptionId ?? c.correct_option_id ?? '');
+
+  return {
+    kind: 'mcq',
+    question: String(c.question ?? ''),
+    options,
+    correctOptionId,
+    explanation: String(c.explanation ?? ''),
+    timerSec: Number(c.timerSec ?? c.timer_sec ?? 0) || 0,
+  };
+}
+
+function normalizeQaLevel(rawContent: any): QaLevelDraft {
+  const c = rawContent ?? {};
+  return {
+    kind: 'qa',
+    question: String(c.question ?? ''),
+    answer: String(c.answer ?? ''),
+  };
 }
 
 export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
@@ -7650,13 +8404,14 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
   );
 
   const [activeLevel, setActiveLevel] = useState(0);
-  const [levels, setLevels] = useState<LevelQA[]>([{ question: '', answer: '' }]);
-
+  const [levels, setLevels] = useState<LevelDraft[]>([defaultQaLevel()]);
   const [titleDraft, setTitleDraft] = useState('');
 
   const [qPreview, setQPreview] = useState(false);
   const [aPreview, setAPreview] = useState(false);
+
   const { currentUser } = useAuth();
+
   // если decks пришли позже и deckId пустой — выставим дефолт
   useEffect(() => {
     if (!deckId && defaultDeckId) setDeckId(defaultDeckId);
@@ -7670,10 +8425,10 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
       setLoading(true);
       setErrorText(null);
       try {
-        const deck = await ApiClient.getDeckWithCards(deckId); // DeckWithCards
-        setCards(deck.cards ?? []);;
+        const deck = await ApiClient.getDeckWithCards(deckId);
+        setCards(deck.cards ?? []);
         setSelectedCardId('');
-        setLevels([{ question: '', answer: '' }]);
+        setLevels([defaultQaLevel()]);
         setActiveLevel(0);
       } catch (e: any) {
         setErrorText(e?.message ?? 'Ошибка загрузки карточек');
@@ -7685,45 +8440,51 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     })();
   }, [deckId]);
 
-  // когда выбрали карточку — заполняем уровни (по индексу)
+  // когда выбрали карточку — заполняем уровни (по индексу) и типу карточки
   useEffect(() => {
     if (!selectedCard) return;
 
-    const sorted = [...(selectedCard.levels ?? [])].sort((a, b) => a.level_index - b.level_index);
+    const sorted = [...(selectedCard.levels ?? [])].sort((a, b) => getLevelIndex(a) - getLevelIndex(b));
 
-    const mapped: LevelQA[] =
-      sorted.length > 0
-        ? sorted.map(l => ({
-            question: String(l.content?.question ?? ''),
-            answer: String(l.content?.answer ?? ''),
-          }))
-        : [{ question: '', answer: '' }];
+    if (isMcqType(selectedCard.type)) {
+      const mapped: LevelDraft[] =
+        sorted.length > 0 ? sorted.map(l => normalizeMcqLevel(l.content)) : [defaultMcqLevel()];
+      setLevels(mapped);
+    } else {
+      const mapped: LevelDraft[] =
+        sorted.length > 0 ? sorted.map(l => normalizeQaLevel(l.content)) : [defaultQaLevel()];
+      setLevels(mapped);
+    }
 
-    setLevels(mapped);
     setActiveLevel(0);
-  }, [selectedCardId]);
+    setQPreview(false);
+    setAPreview(false);
+  }, [selectedCardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const c = cards.find(x => x.card_id === selectedCardId);
     setTitleDraft(c?.title ?? '');
   }, [selectedCardId, cards]);
 
-  const patchLevel = (index: number, patch: Partial<LevelQA>) => {
+  const patchLevel = (index: number, patch: Partial<LevelDraft>) => {
     setLevels(prev => {
       const next = [...prev];
-      next[index] = { ...next[index], ...patch };
+      next[index] = { ...(next[index] as any), ...(patch as any) };
       return next;
     });
   };
 
   const addLevel = () => {
     if (levels.length >= 10) return;
-    setLevels(prev => [...prev, { question: '', answer: '' }]);
+
+    const nextLevel: LevelDraft = isMcqType(selectedCard?.type) ? defaultMcqLevel() : defaultQaLevel();
+    setLevels(prev => [...prev, nextLevel]);
     setActiveLevel(levels.length);
   };
 
   const removeLevel = (index: number) => {
     if (levels.length <= 1) return;
+
     setLevels(prev => prev.filter((_, i) => i !== index));
     setActiveLevel(prev => {
       const nextLen = levels.length - 1;
@@ -7738,29 +8499,104 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     setLevels(prev => moveItem(prev, from, to));
 
     setActiveLevel(prev => {
-      // если активный — двигаем вместе с ним
       if (prev === from) return to;
-
-      // если активный оказался "перекрыт" перемещением — корректируем
-      // from -> to вниз: элементы между (from+1..to) сдвигаются вверх на 1
       if (from < to && prev > from && prev <= to) return prev - 1;
-
-      // from -> to вверх: элементы между (to..from-1) сдвигаются вниз на 1
       if (to < from && prev >= to && prev < from) return prev + 1;
-
       return prev;
     });
   };
 
-  const cleaned = useMemo(
-    () =>
-      levels
-        .map(l => ({ question: l.question.trim(), answer: l.answer.trim() }))
-        .filter(l => l.question && l.answer),
-    [levels]
-  );
+  // ---- MCQ helpers ----
+  const addOption = () => {
+    setLevels(prev => {
+      const next = [...prev];
+      const lvl = next[activeLevel];
+      if (!lvl || lvl.kind !== 'mcq') return prev;
+      if (lvl.options.length >= 8) return prev;
+
+      next[activeLevel] = {
+        ...lvl,
+        options: [...lvl.options, { id: genId(), text: '' }],
+      };
+      return next;
+    });
+  };
+
+  const removeOption = (optIndex: number) => {
+    setLevels(prev => {
+      const next = [...prev];
+      const lvl = next[activeLevel];
+      if (!lvl || lvl.kind !== 'mcq') return prev;
+      if (lvl.options.length <= 2) return prev;
+
+      const removed = lvl.options[optIndex];
+      const options = lvl.options.filter((_, i) => i !== optIndex);
+
+      next[activeLevel] = {
+        ...lvl,
+        options,
+        correctOptionId: removed?.id === lvl.correctOptionId ? '' : lvl.correctOptionId,
+      };
+      return next;
+    });
+  };
+
+  const patchOptionText = (optIndex: number, text: string) => {
+    setLevels(prev => {
+      const next = [...prev];
+      const lvl = next[activeLevel];
+      if (!lvl || lvl.kind !== 'mcq') return prev;
+
+      const options = [...lvl.options];
+      options[optIndex] = { ...options[optIndex], text };
+
+      next[activeLevel] = { ...lvl, options };
+      return next;
+    });
+  };
+
+  const moveOption = (from: number, to: number) => {
+    setLevels(prev => {
+      const next = [...prev];
+      const lvl = next[activeLevel];
+      if (!lvl || lvl.kind !== 'mcq') return prev;
+      if (to < 0 || to >= lvl.options.length || from === to) return prev;
+
+      next[activeLevel] = { ...lvl, options: moveItem(lvl.options, from, to) };
+      return next;
+    });
+  };
+
+  // ---- validation / cleaned ----
+  const cleaned = useMemo(() => {
+    const nonEmpty = levels.filter(l => !isLevelEmpty(l));
+    return nonEmpty;
+  }, [levels]);
 
   const canSave = Boolean(selectedCard) && cleaned.length > 0 && !saving;
+
+  const buildApiLevels = () => {
+    // сохраняем только “непустые” уровни, как было раньше (пустые не сохраняем)
+    const usable = levels.filter(l => !isLevelEmpty(l));
+
+    return usable.map((lvl, level_index) => {
+      const content =
+        lvl.kind === 'qa'
+          ? {
+              question: lvl.question.trim(),
+              answer: lvl.answer.trim(),
+            }
+          : {
+              question: lvl.question.trim(),
+              options: lvl.options.map(o => ({ id: o.id, text: o.text.trim() })).filter(o => o.text),
+              correctOptionId: lvl.correctOptionId,
+              explanation: lvl.explanation,
+              timerSec: lvl.timerSec,
+            };
+
+      return { level_index, content };
+    });
+  };
 
   const saveCard = async () => {
     if (!selectedCardId) return;
@@ -7772,23 +8608,22 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     setErrorText(null);
 
     try {
-      // 1) обновляем title
       const t = titleDraft.trim();
       if (!t) throw new Error('Название обязательно');
 
-      const patchRes = await fetch(
-        `/api/cards/${selectedCardId}?title=${encodeURIComponent(t)}`,
-        { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } }
-      );
+      const patchRes = await fetch(`/api/cards/${selectedCardId}?title=${encodeURIComponent(t)}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!patchRes.ok) throw new Error(await patchRes.text());
 
-      // 2) обновляем уровни (как у тебя уже сделано)
-      await ApiClient.replaceCardLevels(selectedCardId, levels);
+      const apiLevels = buildApiLevels();
 
-      // 3) чтобы селект карточек обновил текст — обнови локальный cards
-      setCards(prev => prev.map(c => (
-        c.card_id === selectedCardId ? { ...c, title: t } : c
-      )));
+      // ВАЖНО: тут предполагается, что backend/ApiClient принимает [{level_index, content}]
+      // Если у тебя replaceCardLevels принимает другой формат — скажи, подгоню.
+      await ApiClient.replaceCardLevels(selectedCardId, apiLevels as any);
+
+      setCards(prev => prev.map(c => (c.card_id === selectedCardId ? { ...c, title: t } : c)));
     } catch (e: any) {
       setErrorText(e?.message ?? 'Ошибка сохранения');
     } finally {
@@ -7796,15 +8631,10 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     }
   };
 
-
-  const active = levels[activeLevel];
-
-
   const humanizeDeleteError = (e: any, what: 'card' | 'deck') => {
     const status = e?.status;
-    if (status === 403) return what === 'card'
-      ? 'Нельзя удалить карточку: вы не хозяин.'
-      : 'Нельзя удалить колоду: вы не хозяин.';
+    if (status === 403)
+      return what === 'card' ? 'Нельзя удалить карточку: вы не хозяин.' : 'Нельзя удалить колоду: вы не хозяин.';
     if (status === 404) return 'Объект не найден (возможно, уже удалён).';
     return e?.message ?? 'Ошибка удаления';
   };
@@ -7820,7 +8650,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
 
       setCards(prev => prev.filter(c => c.card_id !== selectedCard.card_id));
       setSelectedCardId('');
-      setLevels([{ question: '', answer: '' }]);
+      setLevels([defaultQaLevel()]);
       setActiveLevel(0);
     } catch (e: any) {
       setErrorText(humanizeDeleteError(e, 'card'));
@@ -7838,10 +8668,9 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     try {
       await ApiClient.deleteDeck(deckId);
 
-      // Локально очищаем, а список колод пусть перезагрузит родитель
       setCards([]);
       setSelectedCardId('');
-      setLevels([{ question: '', answer: '' }]);
+      setLevels([defaultQaLevel()]);
       setActiveLevel(0);
 
       onDone();
@@ -7852,8 +8681,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
     }
   };
 
-
-
+  const active = levels[activeLevel];
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -7876,8 +8704,6 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
           </div>
         )}
 
-
-
         {/* Deck */}
         <div className="form-row">
           <label className="form-label">Колода</label>
@@ -7885,7 +8711,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <select
               value={deckId}
-              onChange={(e) => setDeckId(e.target.value)}
+              onChange={e => setDeckId(e.target.value)}
               className="input"
               disabled={decks.length === 0 || saving}
               style={{ flex: 1 }}
@@ -7894,7 +8720,9 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                 <option value="">Нет доступных колод</option>
               ) : (
                 decks.map(d => (
-                  <option key={d.deck_id} value={d.deck_id}>{d.title}</option>
+                  <option key={d.deck_id} value={d.deck_id}>
+                    {d.title}
+                  </option>
                 ))
               )}
             </select>
@@ -7910,18 +8738,19 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                 border: '1px solid rgba(229,62,62,0.35)',
                 background: 'transparent',
                 color: '#E53E3E',
-                opacity: (!deckId || decks.length === 0 || saving) ? 0.4 : 1,
+                opacity: !deckId || decks.length === 0 || saving ? 0.4 : 1,
               }}
             >
               <Trash2 size={18} />
             </button>
+
             {/* Edit deck button (shows only for owner) */}
             {(() => {
               const currentDeck = decks.find(d => d.deck_id === deckId);
-              const isOwner = !!(currentDeck && currentUser && currentUser.id === currentDeck.owner_id);
+              const isOwner = !!(currentDeck && currentUser && currentUser.id === (currentDeck as any).owner_id);
               return isOwner && onEditDeck && deckId ? (
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     onEditDeck(deckId);
                   }}
@@ -7949,14 +8778,16 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <select
               value={selectedCardId}
-              onChange={(e) => setSelectedCardId(e.target.value)}
+              onChange={e => setSelectedCardId(e.target.value)}
               className="input"
               disabled={loading || cards.length === 0 || saving}
               style={{ flex: 1 }}
             >
               <option value="">{loading ? 'Загрузка…' : 'Выбери карточку'}</option>
               {cards.map(c => (
-                <option key={c.card_id} value={c.card_id}>{c.title}</option>
+                <option key={c.card_id} value={c.card_id}>
+                  {c.title}
+                </option>
               ))}
             </select>
 
@@ -7971,33 +8802,36 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                 border: '1px solid rgba(229,62,62,0.35)',
                 background: 'transparent',
                 color: '#E53E3E',
-                opacity: (!selectedCard || saving) ? 0.4 : 1,
+                opacity: !selectedCard || saving ? 0.4 : 1,
               }}
             >
               <Trash2 size={18} />
             </button>
           </div>
         </div>
-        
-
 
         {!selectedCard ? null : (
           <>
-            {/* Tabs уровней */}
             <div className="form-row">
               <label className="form-label">Название</label>
               <input
-              className="input"
-              value={titleDraft}
-              onChange={(e) => setTitleDraft(e.target.value)}
-              disabled={!selectedCardId || saving}
+                className="input"
+                value={titleDraft}
+                onChange={e => setTitleDraft(e.target.value)}
+                disabled={!selectedCardId || saving}
               />
             </div>
+
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
-                  Уровни ({levels.length})
-                </label>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '0.75rem',
+                }}
+              >
+                <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>Уровни ({levels.length})</label>
 
                 {levels.length < 10 && (
                   <button
@@ -8010,7 +8844,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                 )}
               </div>
 
-              {/* Вкладки + перемещение прямо на вкладках */}
+              {/* Вкладки уровней + перемещение */}
               <div className="level-tabs">
                 {levels.map((_, index) => {
                   const isActive = activeLevel === index;
@@ -8022,7 +8856,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                       className={`level-tab ${isActive ? 'level-tab--active' : 'level-tab--inactive'}`}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => {
+                      onKeyDown={e => {
                         if (e.key === 'Enter' || e.key === ' ') setActiveLevel(index);
                       }}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
@@ -8031,7 +8865,10 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span
-                          onClick={(e) => { e.stopPropagation(); moveLevel(index, index - 1); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            moveLevel(index, index - 1);
+                          }}
                           title="Вверх"
                           style={{
                             display: 'inline-flex',
@@ -8045,7 +8882,10 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                         </span>
 
                         <span
-                          onClick={(e) => { e.stopPropagation(); moveLevel(index, index + 1); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            moveLevel(index, index + 1);
+                          }}
                           title="Вниз"
                           style={{
                             display: 'inline-flex',
@@ -8110,32 +8950,167 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
                   </div>
                 </div>
 
-                <MarkdownField
-                  label="Вопрос"
-                  value={active.question}
-                  onChange={(v) => patchLevel(activeLevel, { question: v })}
-                  preview={qPreview}
-                  onTogglePreview={() => setQPreview(v => !v)}
-                  disabled={saving}
-                />
+                {/* --- QA --- */}
+                {active.kind === 'qa' ? (
+                  <>
+                    <MarkdownField
+                      label="Вопрос"
+                      value={active.question}
+                      onChange={v => patchLevel(activeLevel, { question: v } as any)}
+                      preview={qPreview}
+                      onTogglePreview={() => setQPreview(v => !v)}
+                      disabled={saving}
+                    />
 
-                <MarkdownField
-                  label="Ответ"
-                  value={active.answer}
-                  onChange={(v) => patchLevel(activeLevel, { answer: v })}
-                  preview={aPreview}
-                  onTogglePreview={() => setAPreview(v => !v)}
-                  disabled={saving}
-                  className="mt-4"
-                />
+                    <MarkdownField
+                      label="Ответ"
+                      value={active.answer}
+                      onChange={v => patchLevel(activeLevel, { answer: v } as any)}
+                      preview={aPreview}
+                      onTogglePreview={() => setAPreview(v => !v)}
+                      disabled={saving}
+                      className="mt-4"
+                    />
+                  </>
+                ) : (
+                  /* --- MCQ --- */
+                  <>
+                    <MarkdownField
+                      label="Вопрос"
+                      value={active.question}
+                      onChange={v => patchLevel(activeLevel, { question: v } as any)}
+                      preview={qPreview}
+                      onTogglePreview={() => setQPreview(v => !v)}
+                      disabled={saving}
+                    />
 
+                    <div style={{ marginTop: 12 }}>
+                      <label className="form-label">Варианты</label>
+
+                      {active.options.map((o, i) => (
+                        <div key={o.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                          <input
+                            className="input"
+                            value={o.text}
+                            onChange={e => patchOptionText(i, e.target.value)}
+                            disabled={saving}
+                            placeholder={`Вариант ${i + 1}`}
+                            style={{ flex: 1 }}
+                          />
+
+                          <button
+                            onClick={() => moveOption(i, i - 1)}
+                            disabled={i === 0 || saving}
+                            title="Вверх"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              border: '1px solid rgba(156,163,175,0.12)',
+                              background: 'transparent',
+                              color: '#9CA3AF',
+                              opacity: i === 0 || saving ? 0.35 : 1,
+                            }}
+                          >
+                            <ChevronUp size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => moveOption(i, i + 1)}
+                            disabled={i === active.options.length - 1 || saving}
+                            title="Вниз"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              border: '1px solid rgba(156,163,175,0.12)',
+                              background: 'transparent',
+                              color: '#9CA3AF',
+                              opacity: i === active.options.length - 1 || saving ? 0.35 : 1,
+                            }}
+                          >
+                            <ChevronDown size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => removeOption(i)}
+                            disabled={active.options.length <= 2 || saving}
+                            title="Удалить вариант"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              border: '1px solid rgba(229,62,62,0.35)',
+                              background: 'transparent',
+                              color: '#E53E3E',
+                              opacity: active.options.length <= 2 || saving ? 0.35 : 1,
+                            }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+
+                      <button
+                        onClick={addOption}
+                        disabled={saving || active.options.length >= 8}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
+                      >
+                        <Plus size={16} />
+                        Добавить вариант
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                      <label className="form-label">Правильный вариант</label>
+                      <select
+                        className="input"
+                        value={active.correctOptionId}
+                        onChange={e => patchLevel(activeLevel, { correctOptionId: e.target.value } as any)}
+                        disabled={saving}
+                      >
+                        <option value="">— выбери —</option>
+                        {active.options.map(o => (
+                          <option key={o.id} value={o.id}>
+                            {o.text || o.id}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                      <label className="form-label">Таймер (сек)</label>
+                      <input
+                        className="input"
+                        type="number"
+                        min={0}
+                        value={active.timerSec}
+                        onChange={e => patchLevel(activeLevel, { timerSec: Number(e.target.value) || 0 } as any)}
+                        disabled={saving}
+                      />
+                      <div style={{ color: '#9CA3AF', fontSize: '0.8rem', marginTop: 6 }}>
+                        0 = без таймера (карточка не будет автопереворачиваться по времени).
+                      </div>
+                    </div>
+
+                    <MarkdownField
+                      label="Пояснение (показывать на обороте)"
+                      value={active.explanation}
+                      onChange={v => patchLevel(activeLevel, { explanation: v } as any)}
+                      preview={aPreview}
+                      onTogglePreview={() => setAPreview(v => !v)}
+                      disabled={saving}
+                      className="mt-4"
+                    />
+                  </>
+                )}
               </div>
 
               {/* Подсказка про пустые уровни */}
               {levels.length !== cleaned.length && (
                 <div className="card">
                   <div style={{ color: '#9CA3AF', fontSize: '0.875rem' }}>
-                    Пустые уровни (без вопроса или ответа) не будут сохранены.
+                    Пустые уровни (недозаполненные) не будут сохранены.
                   </div>
                 </div>
               )}
@@ -8421,25 +9396,17 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\StudySession.tsx
 ==============================
 
-// src/screens/StudySession.tsx
-import React, { useState } from 'react';
-import { StudyCard, DifficultyRating } from '../types';
+import React, { useEffect, useState } from 'react';
+import { StudyCard, DifficultyRating, isMultipleChoice } from '../types';
 import { FlipCard } from '../components/FlipCard';
 import { RatingButton } from '../components/RatingButton';
 import { Button } from '../components/Button/Button';
 import { ProgressBar } from '../components/ProgressBar';
 import { X, SkipForward, Trash2 } from 'lucide-react';
+import { MarkdownView } from '../components/MarkdownView';
 
-interface StudySessionProps {
-  cards: StudyCard[];
-  currentIndex: number;
-  onRate: (rating: DifficultyRating) => void;
-  onClose: () => void;
-  onLevelUp: () => void;
-  onLevelDown: () => void;
-
-  onSkip: () => void;              
-  onRemoveFromProgress: () => void;
+function getLevelIndex(l: any): number {
+  return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;
 }
 
 export function StudySession({
@@ -8451,8 +9418,20 @@ export function StudySession({
   onLevelDown,
   onSkip,
   onRemoveFromProgress,
-}: StudySessionProps) {
+}: {
+  cards: StudyCard[];
+  currentIndex: number;
+  onRate: (rating: DifficultyRating) => void;
+  onClose: () => void;
+  onLevelUp: () => void;
+  onLevelDown: () => void;
+  onSkip: () => void;
+  onRemoveFromProgress: () => void;
+}) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [timeLeftMs, setTimeLeftMs] = useState<number | null>(null);
+
 
   const currentCard = cards[currentIndex];
   if (!currentCard) {
@@ -8470,7 +9449,7 @@ export function StudySession({
     setTimeout(() => onRate(rating), 300);
   };
 
-  const handleFlip = () => setIsFlipped(!isFlipped);
+  const handleFlip = () => setIsFlipped((v) => !v);
 
   const handleSkip = () => {
     setIsFlipped(false);
@@ -8480,14 +9459,155 @@ export function StudySession({
   const handleRemoveFromProgress = () => {
     const ok = window.confirm(
       'Удалить карточку из прогресса?\n\n' +
-      'Она больше не будет отображаться в повторении. ' +
-      'Вернуть её можно будет, начав изучение снова (прогресс начнётся заново).'
+        'Она больше не будет отображаться в повторении. ' +
+        'Вернуть её можно будет, начав изучение снова (прогресс начнётся заново).'
     );
-
     if (!ok) return;
 
     setIsFlipped(false);
     onRemoveFromProgress();
+  };
+
+  useEffect(() => {
+    setIsFlipped(false);
+    setSelectedOptionId(null);
+  }, [currentCard?.id, currentCard?.activeLevel]);
+
+  const level =
+    (currentCard.levels as any[]).find((l) => getLevelIndex(l) === currentCard.activeLevel) ??
+    currentCard.levels[0];
+
+  const mcq = isMultipleChoice(currentCard) ? ((level as any)?.content as any) : null;
+  const timerSec = typeof mcq?.timerSec === 'number' && mcq.timerSec > 0 ? mcq.timerSec : 0;
+
+useEffect(() => {
+  if (!currentCard) return;
+  if (!isMultipleChoice(currentCard)) return;
+  if (isFlipped) {
+    setTimeLeftMs(null);
+    return;
+  }
+  if (!timerSec) {
+    setTimeLeftMs(null);
+    return;
+  }
+
+  const endAt = Date.now() + timerSec * 1000;
+
+  // чтобы сразу отрисовалось "timerSec"
+  setTimeLeftMs(timerSec * 1000);
+
+  const id = window.setInterval(() => {
+    const left = endAt - Date.now();
+    if (left <= 0) {
+      window.clearInterval(id);
+      setTimeLeftMs(0);
+      setIsFlipped(true); // авто-переворот когда время вышло
+      return;
+    }
+    setTimeLeftMs(left);
+  }, 200);
+
+  return () => window.clearInterval(id);
+}, [currentCard?.id, currentCard?.activeLevel, timerSec, isFlipped]);
+
+const renderMcqFront = () => {
+  const c = mcq;
+  if (!c) return null;
+
+  const correctId = String(c.correctOptionId ?? "");
+  const showResult = selectedOptionId !== null;
+  const leftSec = timerSec > 0
+  ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000))
+  : 0;
+
+const progressPct =
+  timerSec > 0 && timeLeftMs != null
+    ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100))
+    : 100;
+
+
+  return (
+    <div className="mcq">
+      <div className="mcq-question">
+        <MarkdownView value={String(c.question ?? "")} />
+      </div>
+
+      <div className="mcq-options">
+        {(c.options ?? []).map((opt: any) => {
+          const optId = String(opt.id);
+
+          const isSelected = selectedOptionId === optId;
+          const isCorrect = optId === correctId;
+
+          const className = [
+            "mcq-option",
+            showResult && isCorrect ? "mcq-option--correct" : "",
+            showResult && isSelected && !isCorrect ? "mcq-option--wrong" : "",
+          ]
+            .join(" ")
+            .trim();
+
+          return (
+            <button
+              key={optId}
+              type="button"
+              className={className}
+              disabled={isFlipped}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedOptionId(optId);
+                setIsFlipped(true);
+              }}
+            >
+              <MarkdownView value={String(opt.text ?? "")} />
+            </button>
+          );
+        })}
+      </div>
+
+      {timerSec > 0 ? (
+        <div className="mcq-timer">
+          <div className="mcq-timer-text">⏳ {leftSec}s</div>
+          <div className="mcq-timer-bar">
+            <div className="mcq-timer-fill" style={{ width: `${progressPct}%` }} />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+
+  const renderMcqBack = () => {
+    if (!mcq) return null;
+
+    const options: any[] = mcq.options ?? [];
+    const correct = options.find((o) => String(o.id) === String(mcq.correctOptionId));
+    const selected = options.find((o) => String(o.id) === String(selectedOptionId));
+
+    return (
+      <div style={{ width: '100%', maxWidth: 520 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Правильный ответ</div>
+          <MarkdownView value={String(correct?.text ?? '')} />
+        </div>
+
+        {selectedOptionId ? (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Вы выбрали</div>
+            <MarkdownView value={String(selected?.text ?? '')} />
+          </div>
+        ) : null}
+
+        {mcq.explanation ? (
+          <div>
+            <div style={{ opacity: 0.85, fontSize: 12, marginBottom: 6 }}>Пояснение</div>
+            <MarkdownView value={String(mcq.explanation)} />
+          </div>
+        ) : null}
+      </div>
+    );
   };
 
   return (
@@ -8505,7 +9625,7 @@ export function StudySession({
 
             <div className="flex items-center" style={{ columnGap: 32 }}>
               <button
-                onClick={() => { setIsFlipped(false); handleSkip(); }}
+                onClick={handleSkip}
                 className="icon-btn"
                 aria-label="Пропустить карточку"
                 type="button"
@@ -8514,7 +9634,7 @@ export function StudySession({
               </button>
 
               <button
-                onClick={() => { setIsFlipped(false); handleRemoveFromProgress(); }}
+                onClick={handleRemoveFromProgress}
                 className="icon-btn"
                 aria-label="Удалить прогресс карточки"
                 type="button"
@@ -8529,13 +9649,26 @@ export function StudySession({
       </div>
 
       <div className="study__card-area">
-        <FlipCard
-          card={currentCard}
-          isFlipped={isFlipped}
-          onFlip={handleFlip}
-          onLevelUp={onLevelUp}
-          onLevelDown={onLevelDown}
-        />
+        {isMultipleChoice(currentCard) ? (
+          <FlipCard
+            card={currentCard}
+            isFlipped={isFlipped}
+            onFlip={() => setIsFlipped((v) => !v)}
+            disableFlipOnClick
+            onLevelUp={onLevelUp}
+            onLevelDown={onLevelDown}
+            frontContent={renderMcqFront()}
+            backContent={renderMcqBack()}
+          />
+        ) : (
+          <FlipCard
+            card={currentCard}
+            isFlipped={isFlipped}
+            onFlip={handleFlip}
+            onLevelUp={onLevelUp}
+            onLevelDown={onLevelDown}
+          />
+        )}
       </div>
 
       <div className="study__actions">
@@ -8892,6 +10025,97 @@ export function Register({ onSwitch }: { onSwitch: () => void }) {
 
 
 ==============================
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\deck\DeckDetailsScreen.tsx
+==============================
+
+import React, { useMemo, useState } from 'react';
+import type { StudyMode } from '../../types';
+
+export function DeckDetailsScreen({
+  deckId,
+  onBack,
+  onStart,
+}: {
+  deckId: string;
+  onBack: () => void;
+  onStart: (mode: StudyMode, limit?: number) => void; // <-- добавили limit
+}) {
+  const [limit, setLimit] = useState<number>(20);
+
+  const limitClamped = useMemo(() => {
+    const n = Number(limit);
+    if (!Number.isFinite(n)) return 20;
+    return Math.max(1, Math.min(200, Math.trunc(n)));
+  }, [limit]);
+
+  const start = (mode: StudyMode) => {
+    if (mode === 'new_random' || mode === 'new_ordered') {
+      onStart(mode, limitClamped);
+    } else {
+      onStart(mode);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-dark pb-24">
+      <div className="page__header px-4 pt-12 pb-6">
+        <div className="page__header-inner">
+          <button className="btn-ghost" onClick={onBack} type="button">
+            Назад
+          </button>
+          <h1 className="page__title">Колода</h1>
+          <div style={{ color: '#9CA3AF', fontSize: 12 }}>id: {deckId}</div>
+        </div>
+      </div>
+
+      <div className="container-centered max-w-390">
+        <div className="actionsStackstudy" style={{ display: 'grid', gap: 20 }}>
+          <button className="btn btn--primary btn--full" onClick={() => start('random')}>
+            Случайно
+          </button>
+
+          <button className="btn btn--secondary btn--full" onClick={() => start('ordered')}>
+            По порядку
+          </button>
+
+          <button className="btn btn--secondary btn--full" onClick={() => start('new_random')}>
+            Новые случайно
+          </button>
+
+          <button className="btn btn--secondary btn--full" onClick={() => start('new_ordered')}>
+            Новые по порядку
+          </button>
+
+          {/* limit field */}
+          <div className="card" style={{ marginTop: 8 }}>
+            <div style={{ color: '#E8EAF0', fontSize: 14, marginBottom: 6 }}>
+              Кол-во карточек для “Новые …”
+            </div>
+
+            <input
+              className="input"
+              type="number"
+              min={1}
+              max={200}
+              value={String(limit)}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              placeholder="Напр. 20"
+            />
+
+            <div style={{ color: '#9CA3AF', fontSize: 12, marginTop: 6 }}>
+              Будет использовано: {limitClamped}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+==============================
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\group\CreateGroup.tsx
 ==============================
 
@@ -9096,6 +10320,30 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\types\index.ts
 ==============================
 
+export type StudyMode = 'random' | 'ordered' | 'new_random' | 'new_ordered';
+
+export type CardType = "flashcard" | "multiple_choice";
+
+export type FlashcardContent = {
+  question: string;
+  answer: string;
+  // можно хранить, но пока не используем для flashcard
+  timerSec?: number;
+};
+
+export type McqOption = { id: string; text: string };
+
+export type MultipleChoiceContent = {
+  question: string;
+  options: McqOption[];
+  correctOptionId: string;
+  explanation?: string;
+  timerSec?: number;
+};
+
+export type CardContent = FlashcardContent | MultipleChoiceContent;
+
+
 export type UserGroupResponse = {
   user_group_id: string;
   kind: string;
@@ -9130,8 +10378,14 @@ export type PublicDeckSummary = {
 
 
 export interface CardLevel {
-  level_index: number;
-  content: { question: string; answer: string };
+  levelindex: number;
+  content: CardContent;
+}
+
+
+// helper’ы (удобно для StudySession/Create/Edit)
+export function isMultipleChoice(card: StudyCard | null | undefined): boolean {
+  return !!card && card.type === "multiple_choice";
 }
 
 export interface StudyCard {
@@ -9139,8 +10393,8 @@ export interface StudyCard {
   deckId: string;
   title: string;
   type: string;
-  levels: CardLevel[];     // все уровни
-  activeLevel: number;     // текущий уровень пользователя (CardProgress.active_level)
+  levels: CardLevel[];
+  activeLevel: number;
 }
 
 export interface Deck {

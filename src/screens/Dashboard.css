@@ -1,0 +1,94 @@
+.groups-section {
+  padding: 16px;
+  max-width: 390px;
+  margin: 0 auto;
+}
+
+.groups-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.groups-button {
+  flex-shrink: 0;
+  flex-grow: 0;
+  background-color: #334155;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.groups-button-add {
+  color: white;
+}
+
+.groups-button-delete {
+  color: red;
+}
+
+.groups-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.groups-carousel-wrapper {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.groups-empty-message {
+  color: #9CA3AF;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.groups-carousel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.groups-carousel.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.groups-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.group-pill {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.group-pill--active {
+  background: #334155;
+  color: white;
+  border-color: #334155;
+}
