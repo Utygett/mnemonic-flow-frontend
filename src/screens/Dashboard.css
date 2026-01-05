@@ -34,7 +34,7 @@
 }
 
 .groups-button-delete {
-  color: red;
+  color: #B23B3B;
 }
 
 .groups-button:disabled {
@@ -46,8 +46,8 @@
   flex: 1;
   min-width: 0;
   max-width: 100%;
-  padding-left: 6px;
-  padding-right: 6px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .groups-empty-message {
@@ -59,7 +59,7 @@
 
 .groups-carousel {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto !important;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -77,18 +77,17 @@
 }
 
 .group-pill {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  padding: 8px 16px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: white;
-  cursor: pointer;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  padding: 8px 16px !important;
+  border: 1px solid #5B5B5B !important;
+  border-radius: 8px ;
+  cursor: pointer !important;
   font-size: 14px;
 }
 
 .group-pill--active {
-  background: #334155;
-  color: white;
-  border-color: #334155;
+  background: #4F72AC36 !important;
+  border: 1px solid #4F72AC !important;
+  color: white !important;
 }

@@ -268,6 +268,7 @@ const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
       key: sessionKey,
       mode: sessionMode,
       activeDeckId,
+      // deckName: '', // можно добавить название, если нужно
       deckCards,
       currentIndex,
       isStudying: true,
@@ -828,10 +829,11 @@ if (isStudying) {
                 resumeCandidate
                   ? {
                       title: 'Продолжить сессию',
-                      subtitle:
+                      cardInfo:
                         resumeCandidate.mode === 'review'
                           ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
                           : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
+                      subtitle: resumeCandidate.deckCards.length,
                       onResume: handleResume,
                       onDiscard: handleDiscardResume,
                     }

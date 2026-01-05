@@ -3,13 +3,15 @@ import React from 'react';
 import { Statistics, Deck, Group } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
-import { Clock, BookOpen, Flame } from 'lucide-react';
+import { Clock, BookOpen, Flame, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import './Dashboard.css';
+import { ResumeSessionCard } from '../components/ResumeSession';
 
 type ResumeSessionProps = {
   title: string;
   subtitle: string;
+  cardInfo: string;
   onResume: () => void;
   onDiscard: () => void;
 };
@@ -121,21 +123,15 @@ export function Dashboard({
 
       {/* Resume session */}
       {resumeSession && (
-        <div className="container-centered max-w-390 mx-auto mb-4">
-          <div className="card text-center">
-            <h3 className="text-[#E8EAF0] mb-1">{resumeSession.title}</h3>
-            <p className="text-[#9CA3AF] mb-3">{resumeSession.subtitle}</p>
-            <div className="flex gap-2 justify-center">
-              <button className="btn-primary" onClick={resumeSession.onResume}>
-                Продолжить
-              </button>
-              <button className="btn-ghost" onClick={resumeSession.onDiscard}>
-                Сбросить
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResumeSessionCard
+          title={resumeSession.title}
+          subtitle={resumeSession.subtitle}
+          cardInfo={resumeSession.cardInfo}
+          onResume={resumeSession.onResume}
+          onDiscard={resumeSession.onDiscard}
+        />
       )}
+
 
       {/* Main CTA */}
       <div className="p-4 py-6 container-centered max-w-390">
@@ -192,7 +188,7 @@ export function Dashboard({
             disabled={!activeGroupId}
             title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
           >
-            🗑️
+            <Trash2 size={18} />
           </button>
         </div>
       </div>
@@ -203,12 +199,6 @@ export function Dashboard({
 
       {/* Decks of active group */}
       <div className="p-4 container-centered max-w-390">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-[#E8EAF0]">
-            {activeGroup ? activeGroup.title : 'Колоды'}
-          </h2>
-        </div>
-
         <div className="space-y-3">
           {decks.map((deck) => (
             <DeckCard

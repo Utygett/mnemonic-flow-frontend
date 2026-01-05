@@ -198,17 +198,6 @@ h1, h2, h3, h4, h5, h6, p {
 .bottom-nav__item--active { color: #4A6FA5; }
 .bottom-nav__label { font-size: 0.75rem; }
 
-/* Deck card */
-.deck-card { width: 100%; background: #252B3D; border-radius: 0.75rem; padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.06); transform-origin: center; text-align: left; border: 1px solid #2D3548; }
-.deck-card:active { transform: scale(0.98); }
-.deck-card__row { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.75rem; }
-.deck-card__title { margin-bottom:0.25rem; color: #E8EAF0; }
-.deck-card__meta { color: #9CA3AF; font-size: 0.875rem; }
-.deck-card__progress-row { display:flex; justify-content:space-between; align-items:center; font-size:0.875rem; color: #9CA3AF; }
-.deck-card__level { margin-top:0.75rem; display:flex; align-items:center; gap:0.5rem; color: #9CA3AF; }
-.level-dot { width: 0.5rem; height: 0.5rem; border-radius: 9999px; background: #2D3548; }
-.level-dot--filled { background: #4A6FA5; }
-
 /* Form input */
 .form-row { width: 100%; }
 .form-label { display:block; margin-bottom:0.5rem; font-size:0.875rem; color: #E8EAF0; }

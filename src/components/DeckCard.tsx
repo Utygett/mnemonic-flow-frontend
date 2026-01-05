@@ -16,33 +16,40 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
   const isOwner = currentUser?.id === deck.owner_id;
   const description = deck.description?.trim();
 
+  // Временные данные для примера
+  const progress = 92;
+  const totalCards = 67;
+  const completedCards = 55;
+  const repetitionsCount = 254;
+  const forRepetition = 15;
+
   return (
     <button onClick={onClick} className="deck-card">
-      <div className="deck-card__row">
-        <div style={{ flex: 1 }}>
-          <h3 className="deck-card__title">{deck.title}</h3>
-           {description ? (
-            <p className="deck-card__description">{description}</p>
-          ) : null}
-        </div>
-
+      <h3 className="deck-card__title">{deck.title}</h3>
+      
+      <div className="deck-card__description-box">
+        {description ? (
+          <p className="deck-card__description">{description}</p>
+        ) : (
+          <p className="deck-card__description">Описание отсутствует</p>
+        )}
       </div>
 
-      <div className="deck-card__progress-row">
-        <span>Прогресс</span>
-        <span style={{ color: '#E8EAF0' }}>xz{/*deck.progress*/}%</span>
+      <div className="deck-card__stats">
+        <span className="deck-card__stat">Прогресс: {progress}%</span>
+        <span className="deck-card__stat">Количество повторений: {repetitionsCount}</span>
+        <span className="deck-card__stat">Для повторения: {forRepetition}</span>
       </div>
-      <ProgressBar progress={55} color= '#E8EAF0' />
 
-      <div className="deck-card__level">
-        <span>Средний уровень:</span>
-        <div style={{ display: 'flex', gap: '0.25rem' }}>
-          {[0, 1, 2, 3].map((level) => (
-            <div
-              key={level}
-              className={`level-dot ${level <= Math.floor(2) ? 'level-dot--filled' : ''}`}
-            />
-          ))}
+      <div className="deck-card__progress-container">
+        <div className="deck-card__progress-bar">
+          <div 
+            className="deck-card__progress-fill" 
+            style={{ width: `${progress}%` }}
+          />
+          <span className="deck-card__progress-text">
+            {completedCards} / {totalCards}
+          </span>
         </div>
       </div>
     </button>
