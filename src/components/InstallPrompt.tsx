@@ -58,7 +58,7 @@ export function InstallPrompt() {
               <div style={{ flex: 1 }}>
                 <h3 style={{ color: '#E8EAF0', marginBottom: '0.25rem' }}>Установить приложение</h3>
                 <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
-                  Добавьте AdaptiveRecall на главный экран для быстрого доступа
+                  Добавьте MenmonicFlow на главный экран для быстрого доступа
                 </p>
 
                 <div className="install-prompt__actions">

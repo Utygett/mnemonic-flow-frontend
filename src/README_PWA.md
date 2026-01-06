@@ -1,4 +1,4 @@
-# 📱 AdaptiveRecall - PWA Ready!
+# 📱 MenmonicFlow - PWA Ready!
 
 ## ✅ Что было добавлено:
 

@@ -10,8 +10,8 @@
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'AdaptiveRecall',
-        short_name: 'AdaptiveRecall',
+        name: 'MenmonicFlow',
+        short_name: 'MenmonicFlow',
         description: 'Adaptive Recall App',
         theme_color: '#ffffff',
         background_color: '#ffffff',

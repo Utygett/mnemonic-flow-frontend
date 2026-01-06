@@ -973,9 +973,9 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\index.html
   <meta name="description" content="Образовательное приложение с карточками и интервальным повторением">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="AdaptiveRecall">
+  <meta name="apple-mobile-web-app-title" content="MenmonicFlow">
   
-  <title>AdaptiveRecall - Обучение по карточкам</title>
+  <title>MenmonicFlow - Обучение по карточкам</title>
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="/manifest.json">
@@ -2007,7 +2007,7 @@ export function InstallPrompt() {
               <div style={{ flex: 1 }}>
                 <h3 style={{ color: '#E8EAF0', marginBottom: '0.25rem' }}>Установить приложение</h3>
                 <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
-                  Добавьте AdaptiveRecall на главный экран для быстрого доступа
+                  Добавьте MenmonicFlow на главный экран для быстрого доступа
                 </p>
 
                 <div className="install-prompt__actions">
@@ -7188,8 +7188,8 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\public\manif
 ==============================
 
 {
-  "name": "AdaptiveRecall - Обучение по карточкам",
-  "short_name": "AdaptiveRecall",
+  "name": "MenmonicFlow - Обучение по карточкам",
+  "short_name": "MenmonicFlow",
   "description": "Образовательное приложение с карточками и интервальным повторением",
   "start_url": "/",
   "display": "standalone",
@@ -8111,7 +8111,7 @@ export function Dashboard({
       {/* Header */}
       <div className="page__header px-4 pt-12 pb-6">
         <div className="page__header-inner">
-          <h1 className="page__title mb-6">AdaptiveRecall</h1>
+          <h1 className="page__title mb-6">MenmonicFlow</h1>
 
           {/* Today's Stats */}
           <div className="stats-grid">

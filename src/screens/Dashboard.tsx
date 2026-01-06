@@ -90,7 +90,6 @@ export function Dashboard({
       {/* Header */}
       <div className="page__header px-4 pt-12 pb-6">
         <div className="page__header-inner">
-          <h1 className="page__title mb-6">AdaptiveRecall</h1>
 
           {/* Today's Stats */}
           <div className="stats-grid">

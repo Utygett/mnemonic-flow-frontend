@@ -792,15 +792,6 @@ if (isStudying) {
           {/* Статус офлайн-режима */}
           <OfflineStatus />
           
-          {/* Индикатор статуса API */}
-          {apiHealth === 'unhealthy' && (
-            <div className="fixed top-4 right-4 z-30">
-              <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">
-                API Offline
-              </div>
-            </div>
-          )}
-          
           {/* PWA Badge (только если установлено как PWA) */}
           {isPWA && (
             <div className="fixed top-4 left-4 z-30">
@@ -829,11 +820,12 @@ if (isStudying) {
                 resumeCandidate
                   ? {
                       title: 'Продолжить сессию',
-                      cardInfo:
+                      subtitle:
                         resumeCandidate.mode === 'review'
-                          ? `Review • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`
-                          : `Колода • карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
-                      subtitle: resumeCandidate.deckCards.length,
+                          ? 'Учебная сессия'
+                          : (decks.find(d => d.deck_id === resumeCandidate.activeDeckId)?.title ?? 'Колода'),
+                      cardInfo:
+                        `Карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
                       onResume: handleResume,
                       onDiscard: handleDiscardResume,
                     }

@@ -1,4 +1,4 @@
-# Изменения в AdaptiveRecall
+# Изменения в MenmonicFlow
 
 ## ✅ Реализовано
 

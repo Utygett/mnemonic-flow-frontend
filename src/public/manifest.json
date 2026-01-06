@@ -1,6 +1,6 @@
 {
-  "name": "AdaptiveRecall - Обучение по карточкам",
-  "short_name": "AdaptiveRecall",
+  "name": "MenmonicFlow - Обучение по карточкам",
+  "short_name": "MenmonicFlow",
   "description": "Образовательное приложение с карточками и интервальным повторением",
   "start_url": "/",
   "display": "standalone",
