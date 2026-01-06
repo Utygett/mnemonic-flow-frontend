@@ -16,12 +16,11 @@ export function DeckCard({ deck, onClick, onEdit }: DeckCardProps) {
   const isOwner = currentUser?.id === deck.owner_id;
   const description = deck.description?.trim();
 
-  // Временные данные для примера
-  const progress = 92;
-  const totalCards = 67;
-  const completedCards = 55;
-  const repetitionsCount = 254;
-  const forRepetition = 15;
+  const totalCards = deck.cards_count;
+  const completedCards = deck.completed_cards_count;
+  const repetitionsCount = deck.count_repeat;
+  const forRepetition = deck.count_for_repeat;
+  const progress = totalCards > 0 ? Math.round((completedCards / totalCards) * 100) : 0;
 
   return (
     <button onClick={onClick} className="deck-card">

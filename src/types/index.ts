@@ -52,6 +52,11 @@ export type PublicDeckSummary = {
   description: string | null;
   color: string | null;
   owner_id: string;
+  is_public: boolean;
+  count_repeat: number;
+  count_for_repeat: number;
+  cards_count: number;
+  completed_cards_count: number;
 };
 
 
