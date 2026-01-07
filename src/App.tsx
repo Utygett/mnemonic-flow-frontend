@@ -21,6 +21,8 @@ import  AddDeck from './screens/AddDeck/AddDeck'
 import { EditDeck } from './screens/EditDeck';
 import { CreateGroup } from './screens/group/CreateGroup';
 import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
+import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
+import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
 
 
 // Компонент для отображения обновлений PWA
@@ -936,7 +938,40 @@ if (isStudying) {
   );
 }
 
+
+
+function getHashRoute() {
+  // пример hash: "#/reset-password?token=xxx"
+  const hash = window.location.hash || '#/';
+  const raw = hash.startsWith('#') ? hash.slice(1) : hash; // "/reset-password?token=..."
+  const [path, qs = ''] = raw.split('?');
+  const params = new URLSearchParams(qs);
+  const token = params.get('token') || '';
+  return { path, token };
+}
+
+
 export default function App() {
+  const { path, token } = getHashRoute();
+
+  // если открыли ссылку из письма — показываем публичный экран без AuthGate
+  if (path === '/reset-password') {
+    return (
+      <AuthProvider>
+        <ResetPasswordPage token={token} />
+      </AuthProvider>
+    );
+  }
+
+  if (path === '/verify-email') {
+    return (
+      <AuthProvider>
+        <VerifyEmailPage token={token} />
+      </AuthProvider>
+    );
+  }
+
+  // обычное приложение как было
   return (
     <AuthProvider>
       <AuthGate>
@@ -945,3 +980,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

@@ -1,3 +1,5 @@
+// src/api/authClient.ts
+
 const API_URL = '/api';
 
 export async function register(email: string, password: string) {
@@ -8,7 +10,14 @@ export async function register(email: string, password: string) {
   });
 
   if (!res.ok) throw new Error('Register failed');
-  return res.json(); // { access_token, refresh_token, token_type }
+
+  const data = await res.json(); // { access_token, refresh_token, token_type }
+
+  // ВАЖНО: сохраняем оба токена
+  localStorage.setItem('access_token', data.access_token);
+  localStorage.setItem('refresh_token', data.refresh_token);
+
+  return data;
 }
 
 export async function login(email: string, password: string) {
@@ -19,7 +28,14 @@ export async function login(email: string, password: string) {
   });
 
   if (!res.ok) throw new Error('Login failed');
-  return res.json(); // { access_token, refresh_token, token_type }
+
+  const data = await res.json(); // { access_token, refresh_token, token_type }
+
+  // ВАЖНО: сохраняем оба токена
+  localStorage.setItem('access_token', data.access_token);
+  localStorage.setItem('refresh_token', data.refresh_token);
+
+  return data;
 }
 
 export async function getMe(token: string) {
