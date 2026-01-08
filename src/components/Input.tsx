@@ -1,11 +1,22 @@
-// src/components/Input.tsx
 import React from 'react';
+
+type InputType =
+  | 'text'
+  | 'password'
+  | 'email'
+  | 'number'
+  | 'search'
+  | 'tel'
+  | 'url';
 
 interface InputProps {
   value: string;
   onChange: (value: string) => void;
+
+  type?: InputType;          // <-- добавили
   placeholder?: string;
   label?: string;
+
   multiline?: boolean;
   rows?: number;
   disabled?: boolean;
@@ -14,6 +25,7 @@ interface InputProps {
 export function Input({
   value,
   onChange,
+  type = 'text',             // <-- дефолт
   placeholder,
   label,
   multiline = false,
@@ -31,16 +43,16 @@ export function Input({
           placeholder={placeholder}
           rows={rows}
           disabled={disabled}
-          className={`input input--textarea`}
+          className="input input--textarea"
         />
       ) : (
         <input
-          type="text"
+          type={type}          // <-- пробросили сюда
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`input`}
+          className="input"
         />
       )}
     </div>

@@ -1,9 +1,9 @@
-// src/screens/auth/Login.tsx
 import React, { useState } from 'react';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { login as loginApi } from '../../api/authClient';
+import styles from './Login.module.css';
 
 type Mode = 'login' | 'forgot';
 
@@ -11,7 +11,6 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
   const { login } = useAuth();
 
   const [mode, setMode] = useState<Mode>('login');
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -27,8 +26,10 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
     try {
       const data = await loginApi(email, password);
       await login(data.access_token);
-    } catch (e) {
-      setError('Ошибка входа');
+    } catch (e: unknown) {
+      console.error('Login error:', e);
+      const msg = e instanceof Error ? e.message : 'Ошибка входа';
+      setError(msg || 'Ошибка входа');
     } finally {
       setLoading(false);
     }
@@ -46,19 +47,21 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
         body: JSON.stringify({ email }),
       });
 
-      // Даже если email не существует, лучше показывать одинаковое сообщение (не палим наличие аккаунта). [web:307]
+      const rawText = await res.text();
+      let payload: any = null;
+      try {
+        payload = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        payload = null;
+      }
+
       if (!res.ok) {
-        // если бэк вернёт текст/JSON — покажем как есть
-        let msg = 'Не удалось отправить ссылку';
-        try {
-          const data = await res.json();
-          msg = data?.detail ?? msg;
-        } catch {
-          try {
-            msg = await res.text();
-          } catch {}
-        }
-        setError(msg);
+        const msg =
+          payload?.detail?.message ??
+          payload?.detail ??
+          rawText ??
+          'Не удалось отправить ссылку';
+        setError(String(msg));
         return;
       }
 
@@ -69,22 +72,28 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-dark center-vertical px-4">
-      <div className="max-w-390 w-full space-y-6">
-        <h1 className="page__title text-center">
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>
           {mode === 'login' ? 'Вход' : 'Восстановление пароля'}
         </h1>
 
-        {error && <div className="text-red-500 text-center">{error}</div>}
-        {info && <div className="text-green-500 text-center">{info}</div>}
+        {error && <div className={styles.messageError}>{error}</div>}
+        {info && <div className={styles.messageInfo}>{info}</div>}
 
         <Input label="Email" value={email} onChange={setEmail} />
 
         {mode === 'login' && (
-          <>
+          <form
+            className={styles.form}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleLogin();
+            }}
+          >
             <Input label="Пароль" type="password" value={password} onChange={setPassword} />
 
-            <Button onClick={handleLogin} variant="primary" size="large" fullWidth disabled={loading}>
+            <Button variant="primary" size="large" fullWidth disabled={loading} type="submit">
               {loading ? 'Входим...' : 'Войти'}
             </Button>
 
@@ -94,21 +103,28 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
                 setError(null);
                 setInfo(null);
               }}
-              className="text-sm text-accent text-center w-full"
+              className={styles.linkBtn}
               type="button"
+              disabled={loading}
             >
               Забыли пароль?
             </button>
 
-            <button onClick={onSwitch} className="text-sm text-accent text-center w-full" type="button">
+            <button onClick={onSwitch} className={styles.linkBtn} type="button" disabled={loading}>
               Нет аккаунта? Зарегистрироваться
             </button>
-          </>
+          </form>
         )}
 
         {mode === 'forgot' && (
-          <>
-            <Button onClick={handleForgot} variant="primary" size="large" fullWidth disabled={loading}>
+          <form
+            className={styles.form}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleForgot();
+            }}
+          >
+            <Button variant="primary" size="large" fullWidth disabled={loading} type="submit">
               {loading ? 'Отправляем...' : 'Отправить ссылку'}
             </Button>
 
@@ -118,12 +134,13 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
                 setError(null);
                 setInfo(null);
               }}
-              className="text-sm text-accent text-center w-full"
+              className={styles.linkBtn}
               type="button"
+              disabled={loading}
             >
               Вернуться ко входу
             </button>
-          </>
+          </form>
         )}
       </div>
     </div>

@@ -1,44 +1,62 @@
-// src/screens/auth/Register.tsx
 import React, { useState } from 'react';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button/Button';
-import { useAuth } from '../../auth/AuthContext';
-import { ApiClient } from '../../api/client';
 import { register as registerApi } from '../../api/authClient';
+import styles from './Register.module.css';
 
 export function Register({ onSwitch }: { onSwitch: () => void }) {
-  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      setInfo(null);
+
       const data = await registerApi(email, password);
-      await login(data.access_token); // авто-вход + fetchMe
-    } catch (e) {
-      alert('Ошибка регистрации');
+
+      setInfo(data?.message ?? 'Регистрация успешна. Подтвердите email и затем войдите.');
+      setPassword(''); // чтобы не оставлять пароль в поле
+      // НЕ делаем onSwitch() автоматически, иначе ты не увидишь сообщение
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка регистрации';
+      setError(msg || 'Ошибка регистрации');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-dark center-vertical px-4">
-      <div className="max-w-390 w-full space-y-6">
-        <h1 className="page__title text-center">Регистрация</h1>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Регистрация</h1>
 
-        {error && <div className="text-red-500 text-center">{error}</div>}
+        {error && <div className={styles.messageError}>{error}</div>}
+        {info && <div className={styles.messageInfo}>{info}</div>}
 
-        <Input label="Email" value={email} onChange={setEmail} />
-        <Input label="Пароль" type="password" value={password} onChange={setPassword} />
+        <form
+          className={styles.form}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <Input label="Email" type="email" value={email} onChange={setEmail} disabled={loading} />
+          <Input label="Пароль" type="password" value={password} onChange={setPassword} disabled={loading} />
 
-        <Button onClick={handleSubmit} variant="primary" size="large" fullWidth disabled={loading}>
-          {loading ? 'Регистрируем...' : 'Зарегистрироваться'}
-        </Button>
+          <Button variant="primary" size="large" fullWidth disabled={loading} type="submit">
+            {loading ? 'Регистрируем...' : 'Зарегистрироваться'}
+          </Button>
 
-        <button onClick={onSwitch} className="text-sm text-accent text-center w-full">
-          Уже есть аккаунт? Войти
-        </button>
+          <button onClick={onSwitch} className={styles.linkBtn} type="button" disabled={loading}>
+            Уже есть аккаунт? Войти
+          </button>
+        </form>
       </div>
     </div>
   );
