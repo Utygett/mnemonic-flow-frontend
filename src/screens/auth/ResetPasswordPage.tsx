@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 export function ResetPasswordPage({ token }: { token: string }) {
   const [password, setPassword] = useState('');
-  const [done, setDone] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'ok' | 'error'>('idle');
+  const [secondsLeft, setSecondsLeft] = useState(5);
   const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setStatus('idle');
+
+    if (!token) {
+      setStatus('error');
+      setError('Токен не найден в ссылке');
+      return;
+    }
 
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
@@ -17,15 +25,47 @@ export function ResetPasswordPage({ token }: { token: string }) {
 
     if (!res.ok) {
       let msg = 'Ошибка';
-      try { msg = (await res.json()).detail ?? msg; } catch {}
+      try {
+        msg = (await res.json()).detail ?? msg;
+      } catch {}
       setError(msg);
+      setStatus('error');
       return;
     }
-    setDone(true);
+
+    setStatus('ok');
   };
 
+  // редирект через 5 секунд после успеха (аналогично verify-email)
+  useEffect(() => {
+    if (status !== 'ok') return;
+
+    setSecondsLeft(5);
+
+    const intervalId = window.setInterval(() => {
+      setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+
+    const timeoutId = window.setTimeout(() => {
+      window.location.hash = '/'; // тот же hash-роут, что и в VerifyEmailPage
+    }, 5000);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [status]);
+
   if (!token) return <div>Токен не найден в ссылке</div>;
-  if (done) return <div>Пароль изменён. Можно войти.</div>;
+
+  if (status === 'ok') {
+    return (
+      <div>
+        <div>Пароль изменён. Перенаправление на вход через {secondsLeft} сек…</div>
+        <a href="/">Перейти на вход сейчас</a>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={submit}>
