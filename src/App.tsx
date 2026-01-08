@@ -804,7 +804,7 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-           <Dashboa rd
+           <Dashboard
               statistics={dashboardStats}
               decks={decks}
               groups={groups}
