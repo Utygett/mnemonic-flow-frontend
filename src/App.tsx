@@ -804,7 +804,7 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-           <Dashboard
+           <Dashboa rd
               statistics={dashboardStats}
               decks={decks}
               groups={groups}
@@ -940,21 +940,16 @@ if (isStudying) {
 
 
 
-function getHashRoute() {
-  // пример hash: "#/reset-password?token=xxx"
-  const hash = window.location.hash || '#/';
-  const raw = hash.startsWith('#') ? hash.slice(1) : hash; // "/reset-password?token=..."
-  const [path, qs = ''] = raw.split('?');
-  const params = new URLSearchParams(qs);
+function getPathRoute() {
+  const path = window.location.pathname || '/';
+  const params = new URLSearchParams(window.location.search);
   const token = params.get('token') || '';
   return { path, token };
 }
 
-
 export default function App() {
-  const { path, token } = getHashRoute();
+  const { path, token } = getPathRoute();
 
-  // если открыли ссылку из письма — показываем публичный экран без AuthGate
   if (path === '/reset-password') {
     return (
       <AuthProvider>
@@ -971,7 +966,6 @@ export default function App() {
     );
   }
 
-  // обычное приложение как было
   return (
     <AuthProvider>
       <AuthGate>
@@ -980,4 +974,5 @@ export default function App() {
     </AuthProvider>
   );
 }
+
 

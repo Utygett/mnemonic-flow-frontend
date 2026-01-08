@@ -286,7 +286,7 @@ export class ApiClient {
       timeSpentToday: 15,
       currentStreak: 4,
       totalCards: 20,
-      weeklyActivity: [2, 4, 3, 5, 1, 0, 6],
+      weeklyActivity: [2, 4, 3, 5, 1, 0, 50],
       achievements: ['Первый успех', '10 карточек'],
     };
   }
