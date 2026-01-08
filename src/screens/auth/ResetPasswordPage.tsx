@@ -16,7 +16,9 @@ export function ResetPasswordPage({ token }: { token: string }) {
     });
 
     if (!res.ok) {
-      setError(await res.text());
+      let msg = 'Ошибка';
+      try { msg = (await res.json()).detail ?? msg; } catch {}
+      setError(msg);
       return;
     }
     setDone(true);
