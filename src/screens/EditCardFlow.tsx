@@ -5,6 +5,7 @@ import { Button } from '../components/Button/Button';
 import { MarkdownField } from '../components/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { getErrorMessage } from '../utils/errorMessage';
 
 type CardSummary = {
   card_id: string;
@@ -173,8 +174,8 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
         setSelectedCardId('');
         setLevels([defaultQaLevel()]);
         setActiveLevel(0);
-      } catch (e: any) {
-        setErrorText(e?.message ?? 'Ошибка загрузки карточек');
+      } catch (e: unknown) {
+        setErrorText(getErrorMessage(e) || 'Ошибка загрузки карточек');
         setCards([]);
         setSelectedCardId('');
       } finally {
@@ -362,9 +363,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
 
       const apiLevels = buildApiLevels();
 
-      // ВАЖНО: тут предполагается, что backend/ApiClient принимает [{level_index, content}]
-      // Если у тебя replaceCardLevels принимает другой формат — скажи, подгоню.
-      await ApiClient.replaceCardLevels(selectedCardId, apiLevels as any);
+      await ApiClient.replaceCardLevels(selectedCardId, apiLevels);
 
       setCards(prev => prev.map(c => (c.card_id === selectedCardId ? { ...c, title: t } : c)));
     } catch (e: any) {

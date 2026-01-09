@@ -37,7 +37,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     );
   }
 
-  if (statsError) {
+  if (decksError || statsError) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="card text-center">
@@ -56,13 +56,19 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     return (
       <CreateCard
         decks={props.decks}
-        onSave={async (cardData: { deckId: string; term: string; type: string; levels: Array<{ question: string; answer: string }> }) => {
-          await ApiClient.createCard({
+        onSave={async (cardData: { deckId: string; term: string; type: string; levels: any[] }) => {
+            const levels = cardData.levels.map((l) => ({
+                ...l,
+                timerSec: l?.timerSec === 0 ? undefined : l?.timerSec,
+            }));
+
+        await ApiClient.createCard({
             deck_id: cardData.deckId,
             title: cardData.term,
             type: cardData.type,
-            levels: cardData.levels,
-          });
+            levels,
+        });
+
 
           props.refreshDecks();
           props.refreshStats();

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ApiClient } from '../api/client';
 import { Button } from '../components/Button/Button';
+import { getErrorMessage } from '../utils/errorMessage';
 
 export function EditDeck({
   deckId,
@@ -27,8 +28,9 @@ export function EditDeck({
         setTitle(deck.title ?? deck.name ?? '');
         setDescription(deck.description ?? '');
         setIsPublic(deck.is_public ?? false);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
+        setError('Не удалось загрузить колоду: ' + getErrorMessage(e));
       } finally {
         setLoading(false);
       }

@@ -8,6 +8,8 @@ import {
 } from '../types';
 import { PublicDeckSummary, StudyCard, StudyMode } from '../types';
 import type { ApiDeckWithCards } from '../types/api';
+import type { ApiLevelIn, ApiReplaceLevelsRequest } from '../types/api';
+import type { ApiCreateCardRequest, ApiCreateCardResponse } from '../types/api';
 
 
 export type StudyCardsResponse = {
@@ -125,7 +127,7 @@ export class ApiClient {
   static async getDeckWithCards(deckId: string): Promise<ApiDeckWithCards> {
     return apiRequest<ApiDeckWithCards>(`/decks/${deckId}/with_cards`);
   }
-  
+
   // static async getDeckSession(deckId: string): Promise<unknown> {
   //   return apiRequest<unknown>(`/decks/${deckId}/session`);
   // }
@@ -200,25 +202,18 @@ static async updateDeck(
     });
   }
 
-  static async createCard(payload: {
-    deck_id: string;
-    title: string;
-    type: string;
-    levels: Array<{ question: string; answer: string }>;
-  }) {
-    return apiRequest(`/cards/`, {
+  static async createCard(payload: ApiCreateCardRequest): Promise<ApiCreateCardResponse> {
+    return apiRequest<ApiCreateCardResponse>(`/cards/`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   }
 
-  static async replaceCardLevels(
-    cardId: string,
-    levels: Array<{ question: string; answer: string }>
-  ) {
-    return apiRequest(`/cards/${cardId}/levels`, {
+
+  static async replaceCardLevels(cardId: string, levels: ApiLevelIn[]): Promise<void> {
+    return apiRequest<void>(`/cards/${cardId}/levels`, {
       method: 'PUT',
-      body: JSON.stringify({ levels }),
+      body: JSON.stringify({ levels } satisfies ApiReplaceLevelsRequest),
     });
   }
 
