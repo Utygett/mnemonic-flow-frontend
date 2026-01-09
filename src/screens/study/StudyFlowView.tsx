@@ -1,8 +1,9 @@
-// src\screens\study\StudyFlowView.tsx
+// src/screens/study/StudyFlowView.tsx
 import React from 'react';
 import type { DifficultyRating, StudyCard } from '../../types';
 import { StudySession } from '../StudySession';
 
+import './StudyFlow.css';
 
 type Props = {
   isStudying: boolean;
@@ -28,21 +29,25 @@ export function StudyFlowView(props: Props) {
 
   if (props.loadingDeckCards) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-[#9CA3AF]">Загрузка карточек…</div>
+      <div className="study-flow">
+        <div className="study-flow__center">
+          <div className="study-flow__muted">Загрузка карточек…</div>
+        </div>
       </div>
     );
   }
 
   if (props.deckCards.length === 0) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="card text-center max-w-390">
-          <h2 className="text-[#E8EAF0] mb-2">Нет карточек</h2>
-          <p className="text-[#9CA3AF] mb-6">В этой сессии нет карточек для изучения.</p>
-          <button className="btn-primary w-full" onClick={props.onBackToHome}>
-            Вернуться
-          </button>
+      <div className="study-flow">
+        <div className="study-flow__center study-flow__center--padded">
+          <div className="study-flow__card study-flow__card--narrow">
+            <h2 className="study-flow__title">Нет карточек</h2>
+            <p className="study-flow__text">В этой сессии нет карточек для изучения.</p>
+            <button className="btn-primary study-flow__full-width" onClick={props.onBackToHome}>
+              Вернуться
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -50,14 +55,18 @@ export function StudyFlowView(props: Props) {
 
   if (props.isCompleted) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="card text-center max-w-390">
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
-          <h2 className="text-[#E8EAF0] mb-2">Сессия завершена</h2>
-          <p className="text-[#9CA3AF] mb-6">Отличная работа! Ты прошёл все карточки.</p>
-          <button className="btn-primary w-full" onClick={props.onBackToHome}>
-            Вернуться в меню
-          </button>
+      <div className="study-flow">
+        <div className="study-flow__center study-flow__center--padded">
+          <div className="study-flow__card study-flow__card--narrow">
+            <div className="study-flow__emoji" aria-hidden="true">
+              🎉
+            </div>
+            <h2 className="study-flow__title">Сессия завершена</h2>
+            <p className="study-flow__text">Отличная работа! Ты прошёл все карточки.</p>
+            <button className="btn-primary study-flow__full-width" onClick={props.onBackToHome}>
+              Вернуться в меню
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -65,22 +74,24 @@ export function StudyFlowView(props: Props) {
 
   if (props.cards.length === 0) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-[#9CA3AF]">Нет карточек для изучения</div>
+      <div className="study-flow">
+        <div className="study-flow__center">
+          <div className="study-flow__muted">Нет карточек для изучения</div>
+        </div>
       </div>
     );
-  }  
+  }
 
-    return (
-        <StudySession
-            cards={props.cards}
-            currentIndex={props.currentIndex}
-            onRate={props.onRate}
-            onLevelUp={props.onLevelUp}
-            onLevelDown={props.onLevelDown}
-            onClose={props.onClose}
-            onSkip={props.onSkip}
-            onRemoveFromProgress={props.onRemoveFromProgress}
-        />
-    );
+  return (
+    <StudySession
+      cards={props.cards}
+      currentIndex={props.currentIndex}
+      onRate={props.onRate}
+      onLevelUp={props.onLevelUp}
+      onLevelDown={props.onLevelDown}
+      onClose={props.onClose}
+      onSkip={props.onSkip}
+      onRemoveFromProgress={props.onRemoveFromProgress}
+    />
+  );
 }

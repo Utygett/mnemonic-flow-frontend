@@ -1,0 +1,69 @@
+/* src/screens/study/StudyFlow.css */
+
+/* Базовые переменные (можно вынести в общий theme.css) */
+:root {
+  --sf-bg: #0b1220;          /* аналог bg-dark */
+  --sf-text: #e8eaf0;        /* аналог text-[#E8EAF0] */
+  --sf-muted: #9ca3af;       /* аналог text-[#9CA3AF] */
+}
+
+/* Контейнер экрана */
+.study-flow {
+  min-height: 100vh;
+  background: var(--sf-bg);
+}
+
+/* Центрирование содержимого (аналог flex + items-center + justify-center) */
+.study-flow__center {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Вариант с отступом (аналог p-4) */
+.study-flow__center--padded {
+  padding: 16px;
+}
+
+/* Текст */
+.study-flow__muted {
+  color: var(--sf-muted);
+}
+
+/* Карточка (можно заменить на вашу существующую .card, если она уже есть) */
+.study-flow__card {
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+/* Ограничение ширины (аналог max-w-390) */
+.study-flow__card--narrow {
+  width: 100%;
+  max-width: 390px;
+}
+
+/* Заголовок/текст */
+.study-flow__title {
+  color: var(--sf-text);
+  margin: 0 0 8px 0; /* аналог mb-2 */
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.study-flow__text {
+  color: var(--sf-muted);
+  margin: 0 0 24px 0; /* аналог mb-6 */
+}
+
+/* Кнопка на всю ширину (аналог w-full) */
+.study-flow__full-width {
+  width: 100%;
+}
+
+/* Emoji блок вместо inline-style */
+.study-flow__emoji {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
