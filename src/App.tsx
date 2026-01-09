@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
-import { Dashboard } from './screens/Dashboard';
 import { StudySession } from './screens/StudySession';
 import { CreateCard } from './screens/CreateCard';
 import { Statistics } from './screens/Statistics';
@@ -23,6 +22,7 @@ import { CreateGroup } from './screens/group/CreateGroup';
 import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
 import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
+import { DashboardView } from './screens/dashboard/DashboardView';
 
 
 // Компонент для отображения обновлений PWA
@@ -804,38 +804,38 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-           <Dashboard
-              statistics={dashboardStats}
-              decks={decks}
-              groups={groups}
-              activeGroupId={activeGroupId}
-              onGroupChange={setActiveGroupId}
-              onCreateGroup={() => setIsCreatingGroup(true)}
-              onDeleteActiveGroup={handleDeleteActiveGroup}
-              onStartStudy={handleStartStudy}
-              onDeckClick={handleDeckClick}
-              onEditDeck={(deckId) => {
+          <DashboardView
+            model={{
+              statistics: dashboardStats,
+              decks,
+              groups,
+              activeGroupId,
+              resumeSession: resumeCandidate
+                ? {
+                    title: 'Продолжить сессию',
+                    subtitle:
+                      resumeCandidate.mode === 'review'
+                        ? 'Учебная сессия'
+                        : (decks.find(d => d.deck_id === resumeCandidate.activeDeckId)?.title ?? 'Колода'),
+                    cardInfo: `Карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
+                    onResume: handleResume,
+                    onDiscard: handleDiscardResume,
+                  }
+                : undefined,
+            }}
+            actions={{
+              onGroupChange: setActiveGroupId,
+              onStartStudy: handleStartStudy,
+              onDeckClick: handleDeckClick,
+              onEditDeck: (deckId) => {
                 setEditingDeckId(deckId);
                 setIsEditingDeck(true);
-              }}
-              resumeSession={
-                resumeCandidate
-                  ? {
-                      title: 'Продолжить сессию',
-                      subtitle:
-                        resumeCandidate.mode === 'review'
-                          ? 'Учебная сессия'
-                          : (decks.find(d => d.deck_id === resumeCandidate.activeDeckId)?.title ?? 'Колода'),
-                      cardInfo:
-                        `Карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
-                      onResume: handleResume,
-                      onDiscard: handleDiscardResume,
-                    }
-                  : undefined
-              }
-              onCreateDeck={() => setIsCreatingDeck(true)}
-              onAddDesk={() => setIsAddDeck(true)}
-            />
+              },
+              onCreateGroup: () => setIsCreatingGroup(true),
+              onDeleteActiveGroup: handleDeleteActiveGroup,
+              onAddDeck: () => setIsAddDeck(true),
+            }}
+          />
           )}
           
           {activeTab === 'study' && (
