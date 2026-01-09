@@ -8,6 +8,7 @@ import type { MainTab } from './main.types';
 import { useIsPWA } from '../../app/pwa/useIsPWA';
 import { useRegisterServiceWorker } from '../../app/pwa/useRegisterServiceWorker';
 import { MnemonicRootSwitch } from './MnemonicRootSwitch';
+import { ApiClient } from '../../api/client';
 
 
 export function MainTabsContainer() {
@@ -51,6 +52,43 @@ export function MainTabsContainer() {
     setEditingDeckId(deckId);
     setIsEditingDeck(true);
   };
+
+    const handleCreateCardSave = async (cardData: any) => {
+        await ApiClient.createCard({
+            deck_id: cardData.deckId,
+            title: cardData.term,
+            type: cardData.type,
+            levels: cardData.levels,
+        });
+
+        refreshDecks();
+        refreshStats();
+        setIsCreatingCard(false);
+    };
+
+    const handleCreateCardSaveMany = async (cards: any[]) => {
+        const errors: string[] = [];
+        let created = 0;
+
+        for (let i = 0; i < cards.length; i++) {
+            const c = cards[i];
+            try {
+            await ApiClient.createCard({
+                deck_id: c.deckId,
+                title: c.term,
+                type: c.type,
+                levels: c.levels,
+            });
+            created++;
+            } catch (e: any) {
+            errors.push(`${i}: ${String(e?.message ?? e)}`);
+            }
+        }
+
+        refreshDecks();
+        refreshStats();
+        return { created, failed: errors.length, errors };
+    };
 
   return (
     <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
@@ -102,6 +140,9 @@ export function MainTabsContainer() {
                 setEditingDeckId={setEditingDeckId}
 
                 openEditDeck={openEditDeck}
+
+                onCreateCardSave={handleCreateCardSave}
+                onCreateCardSaveMany={handleCreateCardSaveMany}
             />
             );
 

@@ -15,6 +15,10 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\app\overlays
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\app\overlays\PWAUpdatePrompt.tsx
 
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\app\pwa\useIsPWA.ts
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\app\pwa\useRegisterServiceWorker.ts
+
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\auth\AuthContext.tsx
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\auth\AuthGate.tsx
@@ -35,11 +39,7 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\M
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\MarkdownView.tsx
 
-FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\OfflineStatus.tsx
-
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\ProgressBar.tsx
-
-FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\PWAUpdatePrompt.tsx
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\components\RatingButton.tsx
 
@@ -209,7 +209,23 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\home
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\home\HomeTabContainer.tsx
 
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\main\main.types.ts
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\main\MainTabsContainer.tsx
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\main\MainTabsView.tsx
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\main\MnemonicRootSwitch.tsx
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\main\mnemonicRootSwitch.types.ts
+
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\Onboarding\Onboarding.tsx
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\profile\profile.types.ts
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\profile\ProfileContainer.tsx
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\profile\ProfileView.tsx
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\study\StudyFlowStateContainer.tsx
 
@@ -219,7 +235,11 @@ FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\stud
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\screens\study\hooks\useStudyLauncher.ts
 
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\types\api.ts
+
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\types\index.ts
+
+FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\utils\errorMessage.ts
 
 FILE: C:\Users\nik\Desktop\mnemonic-flow\mnemonic-flow-frontend\src\utils\latexDelimiters.ts
 

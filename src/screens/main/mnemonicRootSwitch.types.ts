@@ -40,4 +40,7 @@ export type MnemonicRootSwitchProps = {
   openEditDeck: (deckId: string) => void;
 
   study: StudyController;
+
+    onCreateCardSave: (cardData: any) => Promise<void>;
+    onCreateCardSaveMany: (cards: any[]) => Promise<{ created: number; failed: number; errors?: string[] }>;
 };

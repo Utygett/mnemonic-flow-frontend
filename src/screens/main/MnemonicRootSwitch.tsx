@@ -9,7 +9,6 @@ import { Statistics } from '../Statistics';
 import { HomeTabContainer } from '../home/HomeTabContainer';
 import { ProfileContainer } from '../profile/ProfileContainer';
 
-import { ApiClient } from '../../api/client';
 import type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
 
 
@@ -56,49 +55,8 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     return (
       <CreateCard
         decks={props.decks}
-        onSave={async (cardData: { deckId: string; term: string; type: string; levels: any[] }) => {
-            const levels = cardData.levels.map((l) => ({
-                ...l,
-                timerSec: l?.timerSec === 0 ? undefined : l?.timerSec,
-            }));
-
-        await ApiClient.createCard({
-            deck_id: cardData.deckId,
-            title: cardData.term,
-            type: cardData.type,
-            levels,
-        });
-
-
-          props.refreshDecks();
-          props.refreshStats();
-          props.setIsCreatingCard(false);
-        }}
-        onSaveMany={async (
-          cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
-        ): Promise<{ created: number; failed: number; errors?: string[] }> => {
-          const errors: string[] = [];
-          let created = 0;
-
-          for (let i = 0; i < cards.length; i++) {
-            const c = cards[i];
-            try {
-              await ApiClient.createCard({
-                deck_id: c.deckId,
-                title: c.term,
-                type: c.type,
-                levels: c.levels,
-              });
-              created++;
-            } catch (e: any) {
-              errors.push(`${i}: ${String(e?.message ?? e)}`);
-            }
-          }
-
-          props.refreshDecks();
-          props.refreshStats();
-          return { created, failed: errors.length, errors };
-        }}
+        onSave={props.onCreateCardSave}
+        onSaveMany={props.onCreateCardSaveMany}
         onCancel={() => props.setIsCreatingCard(false)}
       />
     );
