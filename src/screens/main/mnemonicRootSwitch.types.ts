@@ -31,10 +31,14 @@ export type MnemonicRootSwitchProps = {
   refreshStats: () => void;
   deleteActiveGroup: () => void;
 
-  setIsCreatingCard: (v: boolean) => void;
-  setIsEditingCard: (v: boolean) => void;
+    openCreateCard: () => void;
+    closeCreateCard: () => void;
+    openEditCard: () => void;
+    closeEditCard: () => void;
+
   setIsCreatingDeck: (v: boolean) => void;
   setIsEditingDeck: (v: boolean) => void;
+
   setEditingDeckId: (v: string | null) => void;
 
   openEditDeck: (deckId: string) => void;
