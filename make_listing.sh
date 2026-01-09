@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SRC_DIR="src/screens"
+SRC_DIR="src"
 OUTPUT="listing.txt"
 
 # Маски исключений (добавляй свои)
