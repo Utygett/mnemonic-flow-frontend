@@ -9,16 +9,16 @@ import './Dashboard.css';
 
 export function DashboardView({ model, actions }: { model: DashboardModel; actions: DashboardActions }) {
   return (
-    <div className="min-h-screen bg-dark pb-24">
-      <div className="page__header px-4 pt-12 pb-6">
-        <div className="page__header-inner">
+    <div className="dashboard">
+      <div className="dashboard__header">
+        <div className="dashboard__header-inner">
           <DashboardStats statistics={model.statistics} />
         </div>
       </div>
 
       {model.resumeSession && <ResumeSessionCard {...model.resumeSession} />}
 
-      <div className="p-4 py-6 container-centered max-w-390">
+      <div className="dashboard__action-section">
         <Button onClick={actions.onStartStudy} variant="primary" size="large" fullWidth>
           Начать обучение
         </Button>
@@ -34,7 +34,7 @@ export function DashboardView({ model, actions }: { model: DashboardModel; actio
 
       <DeckList decks={model.decks} onDeckClick={actions.onDeckClick} onEditDeck={actions.onEditDeck} />
 
-      <div className="p-4 container-centered max-w-390" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="dashboard__footer-section">
         <Button onClick={actions.onAddDeck} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
