@@ -1,27 +1,26 @@
 // src/App.tsx
 import React, { useState, useEffect } from 'react';
+
 import { BottomNav } from './components/BottomNav';
 import { InstallPrompt } from './components/InstallPrompt';
-import { StudySession } from './screens/StudySession';
+
 import { CreateCard } from './screens/CreateCard';
 import { Statistics } from './screens/Statistics';
 import { EditCardFlow } from './screens/EditCardFlow';
-import { Onboarding } from './screens/Onboarding/Onboarding';
+import { EditDeck } from './screens/EditDeck';
+
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
-import { toStudyCards } from './utils/toStudyCards';
-import { DifficultyRating, StudyCard, Group, StudyMode } from './types';
-import { useStatistics, useStudySession } from './hooks';
+
 import { ApiClient } from './api/client';
-import { loadLastSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
-import { EditDeck } from './screens/EditDeck';
+import { useStatistics } from './hooks';
+import { useGroupsDecksController } from './hooks/useGroupsDecksController';
+
+import { HomeTabContainer } from './screens/home/HomeTabContainer';
+import { StudyFlowStateContainer } from './screens/study/StudyFlowStateContainer';
+
 import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
-import { useGroupsDecksController } from './hooks/useGroupsDecksController';
-import { HomeTabContainer } from './screens/home/HomeTabContainer';
-import { StudyFlowContainer } from './screens/study/StudyFlowContainer';
-import { useResumeCandidate } from './hooks/useResumeCandidate';
-
 
 // Компонент для отображения обновлений PWA
 function PWAUpdatePrompt() {
@@ -74,8 +73,12 @@ function PWAUpdatePrompt() {
             </p>
           </div>
           <div className="update-prompt__actions">
-            <button onClick={() => setShowReload(false)} className="btn-ghost">Позже</button>
-            <button onClick={reloadPage} className="btn-primary">Обновить</button>
+            <button onClick={() => setShowReload(false)} className="btn-ghost">
+              Позже
+            </button>
+            <button onClick={reloadPage} className="btn-primary">
+              Обновить
+            </button>
           </div>
         </div>
       </div>
@@ -113,168 +116,68 @@ function OfflineStatus() {
 }
 
 function MainAppContent() {
-
-const openEditDeck = (deckId: string) => {
-  setEditingDeckId(deckId);
-  setIsEditingDeck(true);
-};
-
-const {
-  groups,
-  activeGroupId,
-  setActiveGroupId,
-  decks,
-  decksLoading,
-  decksError,
-  refreshDecks,
-  refreshGroups,
-  deleteActiveGroup,
-  currentGroupDeckIds,
-} = useGroupsDecksController();
-
-
-const resumeDeckSession = (saved: PersistedSession) => {
-  setSessionMode(saved.mode);
-  setSessionKey(saved.key);
-  setActiveDeckId(saved.activeDeckId);
-  setSessionIndex(saved.currentIndex ?? 0);
-  setDeckCards(saved.deckCards ?? []);
-  setIsStudying(true);
-};
-
-const restartDeckSession = (deckId: string) => {
-  clearSession((`deck:${deckId}` as const));
-};
-
-
-
-
-
-
-const [isStudying, setIsStudying] = useState(false);
-const [loadingDeckCards, setLoadingDeckCards] = useState(false);
-const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
-const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
-const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-const [deckCards, setDeckCards] = useState<StudyCard[]>([]);
-const [sessionIndex, setSessionIndex] = useState(0);
-// Используем хуки для получения данных с API
-const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
-
-
   const {
-    cards,
-    currentIndex,
-    currentCard,
-    isCompleted,
-    rateCard,
-    skipCard,
-    resetSession
-  } = useStudySession(deckCards, sessionIndex);
-  const [isEditingCard, setIsEditingCard] = useState(false);
+    groups,
+    activeGroupId,
+    setActiveGroupId,
+    decks,
+    decksLoading,
+    decksError,
+    refreshDecks,
+    refreshGroups,
+    deleteActiveGroup,
+    currentGroupDeckIds,
+  } = useGroupsDecksController();
+
+  const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
+
   const dashboardStats = statistics ?? {
-  cardsStudiedToday: 0,
-  timeSpentToday: 0,
-  currentStreak: 0,
-  totalCards: 0,
-  weeklyActivity: [0,0,0,0,0,0,0],
-  achievements: [],
-};
-
-
-const {
-    resumeCandidate,
-    setResumeCandidate,
-    resumeLastSession: handleResume,
-    discardResume: handleDiscardResume,
-  } = useResumeCandidate({
-    isStudying,
-    loadingDeckCards,
-    sessionKey,
-    sessionMode,
-    activeDeckId,
-    deckCards,
-    currentIndex,
-
-    setIsStudying,
-    setSessionMode,
-    setSessionKey,
-    setActiveDeckId,
-    setSessionIndex,
-    setDeckCards,
-  });
-
-//----------------------------------------------------------------------
-
-
-
-const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-const [activeTab, setActiveTab] = useState<'home' | 'study' | 'stats' | 'profile'>('home');
-const [isCreatingCard, setIsCreatingCard] = useState(false);
-const [isPWA, setIsPWA] = useState(false);
-const [apiHealth, setApiHealth] = useState<'healthy' | 'unhealthy' | 'checking'>('checking');
-const [isCreatingDeck, setIsCreatingDeck] = useState(false);
-const [isEditingDeck, setIsEditingDeck] = useState(false);
-const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
-
-
-  const handleStartDeckStudy = async (deckId: string, mode: StudyMode, limit?: number) => {
-    const key = `deck:${deckId}` as const;
-
-    const seed =
-      mode === 'random' || mode === 'new_random'
-        ? Date.now() % 1_000_000_000
-        : undefined;
-
-    // лимит используем только для "new_*"
-    const limitNormalized =
-      mode === 'new_random' || mode === 'new_ordered'
-        ? Math.max(1, Math.min(200, Math.trunc(Number.isFinite(Number(limit)) ? Number(limit) : 20)))
-        : undefined;
-
-    try {
-      setLoadingDeckCards(true);
-
-      const res = await ApiClient.getStudyCards(deckId, {
-        mode,
-        seed,
-        limit: limitNormalized,
-      });
-
-      setDeckCards(res.cards); // важно: сервер должен вернуть StudyCard[]
-      setActiveDeckId(deckId);
-      setSessionMode('deck');
-      setSessionKey(key);
-      setSessionIndex(0);
-
-      if (res.cards.length > 0) setIsStudying(true);
-    } finally {
-      setLoadingDeckCards(false);
-    }
+    cardsStudiedToday: 0,
+    timeSpentToday: 0,
+    currentStreak: 0,
+    totalCards: 0,
+    weeklyActivity: [0, 0, 0, 0, 0, 0, 0],
+    achievements: [],
   };
 
+  const [activeTab, setActiveTab] = useState<'home' | 'study' | 'stats' | 'profile'>('home');
+
+  const [isCreatingCard, setIsCreatingCard] = useState(false);
+  const [isEditingCard, setIsEditingCard] = useState(false);
+
+  const [isPWA, setIsPWA] = useState(false);
+  const [apiHealth, setApiHealth] = useState<'healthy' | 'unhealthy' | 'checking'>('checking');
+
+  const [isCreatingDeck, setIsCreatingDeck] = useState(false); // пока у тебя нет отдельного экрана — оставлено как было
+  const [isEditingDeck, setIsEditingDeck] = useState(false);
+  const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
+
+  const openEditDeck = (deckId: string) => {
+    setEditingDeckId(deckId);
+    setIsEditingDeck(true);
+  };
 
   // Проверяем, было ли приложение установлено как PWA
   useEffect(() => {
-    // Проверка на установку как PWA
     const checkPWA = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches || 
-          (window.navigator as any).standalone ||
-          document.referrer.includes('android-app://')) {
+      if (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone ||
+        document.referrer.includes('android-app://')
+      ) {
         setIsPWA(true);
       }
     };
-    
+
     checkPWA();
-    
-    // Регистрация Service Worker для PWA
+
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js');
       });
     }
   }, []);
-  
+
   // Проверка здоровья API
   useEffect(() => {
     const checkApiHealth = async () => {
@@ -286,434 +189,261 @@ const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
         console.warn('API is unavailable, using fallback data');
       }
     };
-    
+
     checkApiHealth();
   }, []);
 
-  useEffect(() => {
-    if (!isStudying) return;
-    setSessionIndex(currentIndex);
-  }, [currentIndex, isStudying]);
-
-    useEffect(() => {
-    if (!isStudying) return;
-    if (!isCompleted) return;
-
-    clearSession(sessionKey);
-    setResumeCandidate(null);
-
-    setIsStudying(false);
-    setDeckCards([]);
-    setSessionIndex(0);
-
-    resetSession();
-  }, [isCompleted, isStudying, sessionKey, resetSession]);
-
-
-  const handleLevelUp = async () => {
-    const card = cards[currentIndex];
-    if (!card) return;
-
-    try {
-      const r = await ApiClient.levelUp(card.id);
-      setDeckCards(prev =>
-        prev.map(c => (c.id === card.id ? { ...c, activeLevel: r.active_level } : c))
-      );
-    } catch (e) {
-      console.error('levelUp failed', e);
-    }
-  };
-
-  const handleLevelDown = async () => {
-    const card = cards[currentIndex];
-    if (!card) return;
-
-    try {
-      const r = await ApiClient.levelDown(card.id);
-      setDeckCards(prev =>
-        prev.map(c => (c.id === card.id ? { ...c, activeLevel: r.active_level } : c))
-      );
-    } catch (e) {
-      console.error('levelDown failed', e);
-    }
-  };
-
-
-  const handleSkipCard = () => {
-    skipCard();
-  };
-
-  const handleRemoveFromProgress = async () => {
-    const card = cards[currentIndex];
-    if (!card) return;
-
-    try {
-      // 1) удалить прогресс на сервере
-      await ApiClient.deleteCardProgress(card.id);
-
-      // 2) убрать карточку из локальной очереди (чтобы исчезла прямо сейчас)
-      skipCard();
-    } catch (e) {
-      console.error('delete progress failed', e);
-    }
-  };
-
-
-
-
-  const handleStartStudy = async () => {
-    try {
-      setLoadingDeckCards(true);
-
-      const items = await ApiClient.getReviewSession(20); // GET /cards/review_with_levels?limit=20
-      setDeckCards(toStudyCards(items));                  // <-- и тут используем
-      setActiveDeckId(null);
-      setIsStudying(true);
-      setSessionMode('review');
-      setSessionKey('review');
-      setSessionIndex(0);
-    } finally {
-      setLoadingDeckCards(false);
-    }
-  };
-
-  
-const handleRate = async (rating: DifficultyRating) => {
-  try {
-    await rateCard(rating);
-    refreshStats();
-  } catch (error) {
-    console.error('Error rating card:', error);
-  }
-};
-  
-  const handleCloseStudy = () => {
-    if (deckCards.length > 0) {
-      const snap: PersistedSession = {
-        key: sessionKey,
-        mode: sessionMode,
-        activeDeckId,
-        deckCards,
-        currentIndex,
-        isStudying: true,
-        savedAt: Date.now(),
-      };
-      saveSession(snap);
-      setResumeCandidate(snap);
-    }
-
-    setIsStudying(false);
-    setDeckCards([]);        // чтобы очередь "сбросилась" в хуке
-    setSessionIndex(0);      // необязательно, но ок
-    setActiveTab('home');
-  };
-
-  const handleSaveCard = async (cardData: { deckId: string; term: string; type: string; levels: Array<{question: string; answer: string}> }) => {
-    await ApiClient.createCard({
-      deck_id: cardData.deckId,
-      title: cardData.term,
-      type: cardData.type,
-      levels: cardData.levels,
-    });
-
-    refreshDecks();
-    refreshStats();
-    setIsCreatingCard(false);
-  };
-
-  
-
-  const handleSaveCardsMany = async (
-    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
-  ): Promise<{ created: number; failed: number; errors?: string[] }> => {
-    const errors: string[] = [];
-    let created = 0;
-
-    for (let i = 0; i < cards.length; i++) {
-      const c = cards[i];
-      try {
-        await ApiClient.createCard({
-          deck_id: c.deckId,
-          title: c.term,
-          type: c.type,
-          levels: c.levels,
-        });
-        created++;
-      } catch (e: any) {
-        errors.push(`${i}: ${String(e?.message ?? e)}`);
-      }
-    }
-
-    // один рефреш после пачки
-    refreshDecks();
-    refreshStats();
-
-    return { created, failed: errors.length, errors };
-  };
-
-
-
-
-
-
-
-
-
-
-  // Показываем загрузку
-  if (decksLoading || statsLoading) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-[#9CA3AF]">Загрузка данных...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Показываем ошибку загрузки
-  if (statsError) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="card text-center">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h2 className="text-[#E8EAF0] mb-2">Ошибка загрузки</h2>
-          <p className="text-[#9CA3AF] mb-4">{decksError || statsError}</p>
-          <button 
-            onClick={() => { refreshDecks(); refreshStats(); }} 
-            className="btn-primary"
-          >
-            Попробовать снова
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isStudying) {
-    return (
-      <>
-        <StudyFlowContainer
-          isStudying={isStudying}
-          loadingDeckCards={loadingDeckCards}
-          deckCards={deckCards}
-          cards={cards}
-          currentIndex={currentIndex}
-          isCompleted={isCompleted}
-          onRate={handleRate}
-          onLevelUp={handleLevelUp}
-          onLevelDown={handleLevelDown}
-          onSkip={handleSkipCard}
-          onRemoveFromProgress={handleRemoveFromProgress}
-          onClose={handleCloseStudy}
-          onBackToHome={() => {
-            resetSession();
-            setIsStudying(false);
-          }}
-        />
-        <PWAUpdatePrompt />
-        <OfflineStatus />
-      </>
-    );
-  }
-
-
-  
-  if (isCreatingCard) {
-    return (
-      <>
-        <CreateCard
-          decks={decks}
-          onSave={handleSaveCard}
-          onSaveMany={handleSaveCardsMany}
-          onCancel={() => setIsCreatingCard(false)}
-        />
-        <PWAUpdatePrompt />
-        <OfflineStatus />
-      </>
-    );
-  }
-  
-
-
-    if (isEditingDeck && editingDeckId) {
-      return (
-        <EditDeck
-          deckId={editingDeckId}
-          onCancel={() => setIsEditingDeck(false)}
-          onSaved={() => {
-            refreshDecks();
-            setIsEditingDeck(false);
-          }}
-        />
-      );
-    }
-
-
-  if (isEditingCard) {
-    return (
-      <>
-        <EditCardFlow
-          decks={decks}
-          onCancel={() => setIsEditingCard(false)}
-          onDone={() => {
-            refreshDecks();
-            refreshStats();
-            setIsEditingCard(false);
-          }}
-          onEditDeck={(deckId) => {
-            setEditingDeckId(deckId);
-            setIsEditingDeck(true);
-          }}
-        />
-        <PWAUpdatePrompt />
-        <OfflineStatus />
-      </>
-    );
-  }
-
-
   return (
-        <div className="relative">
-          {/* Уведомление об обновлении PWA */}
-          <PWAUpdatePrompt />
-          
-          {/* Статус офлайн-режима */}
-          <OfflineStatus />
-          
-          {/* PWA Badge (только если установлено как PWA) */}
-          {isPWA && (
-            <div className="fixed top-4 left-4 z-30">
-              <div className="pwa-badge">
-                PWA
+    <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
+      {(study) => {
+        const hideBottomNav =
+          study.isStudying ||
+          decksLoading ||
+          statsLoading ||
+          Boolean(statsError) ||
+          isCreatingCard ||
+          isEditingCard ||
+          (isEditingDeck && Boolean(editingDeckId));
+
+        let content: React.ReactNode = null;
+
+        if (decksLoading || statsLoading) {
+          content = (
+            <div className="min-h-screen bg-dark flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+                <p className="text-[#9CA3AF]">Загрузка данных...</p>
               </div>
             </div>
-          )}
-          
-          {activeTab === 'home' && (
-            <HomeTabContainer
-              statistics={dashboardStats}
+          );
+        } else if (statsError) {
+          content = (
+            <div className="min-h-screen bg-dark flex items-center justify-center p-4">
+              <div className="card text-center">
+                <div className="text-4xl mb-4">⚠️</div>
+                <h2 className="text-[#E8EAF0] mb-2">Ошибка загрузки</h2>
+                <p className="text-[#9CA3AF] mb-4">{decksError || statsError}</p>
+                <button onClick={() => { refreshDecks(); refreshStats(); }} className="btn-primary">
+                  Попробовать снова
+                </button>
+              </div>
+            </div>
+          );
+        } else if (isCreatingCard) {
+          content = (
+            <CreateCard
               decks={decks}
-              groups={groups}
-              activeGroupId={activeGroupId}
-              setActiveGroupId={setActiveGroupId}
-              refreshGroups={refreshGroups}
-              refreshDecks={refreshDecks}
-              currentGroupDeckIds={currentGroupDeckIds}
-              onDeleteActiveGroup={deleteActiveGroup}
-              resumeCandidate={resumeCandidate}
-              onResume={handleResume}
-              onDiscardResume={handleDiscardResume}
-              onStartReviewStudy={handleStartStudy}
-              onStartDeckStudy={handleStartDeckStudy}
-              onResumeDeckSession={resumeDeckSession}
-              onRestartDeckSession={restartDeckSession}
-              onOpenEditDeck={openEditDeck}
+              onSave={async (cardData: { deckId: string; term: string; type: string; levels: Array<{ question: string; answer: string }> }) => {
+                await ApiClient.createCard({
+                  deck_id: cardData.deckId,
+                  title: cardData.term,
+                  type: cardData.type,
+                  levels: cardData.levels,
+                });
+
+                refreshDecks();
+                refreshStats();
+                setIsCreatingCard(false);
+              }}
+              onSaveMany={async (
+                cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
+              ): Promise<{ created: number; failed: number; errors?: string[] }> => {
+                const errors: string[] = [];
+                let created = 0;
+
+                for (let i = 0; i < cards.length; i++) {
+                  const c = cards[i];
+                  try {
+                    await ApiClient.createCard({
+                      deck_id: c.deckId,
+                      title: c.term,
+                      type: c.type,
+                      levels: c.levels,
+                    });
+                    created++;
+                  } catch (e: any) {
+                    errors.push(`${i}: ${String(e?.message ?? e)}`);
+                  }
+                }
+
+                refreshDecks();
+                refreshStats();
+                return { created, failed: errors.length, errors };
+              }}
+              onCancel={() => setIsCreatingCard(false)}
             />
-          )}
-          
-          {activeTab === 'study' && (
-            <div className="min-h-screen bg-dark pb-24">
-              <header className="page__header">
-                <div className="page__header-inner">
-                  <h1 className="page__title">Обучение</h1>
+          );
+        } else if (isEditingDeck && editingDeckId) {
+          content = (
+            <EditDeck
+              deckId={editingDeckId}
+              onCancel={() => setIsEditingDeck(false)}
+              onSaved={() => {
+                refreshDecks();
+                setIsEditingDeck(false);
+              }}
+            />
+          );
+        } else if (isEditingCard) {
+          content = (
+            <EditCardFlow
+              decks={decks}
+              onCancel={() => setIsEditingCard(false)}
+              onDone={() => {
+                refreshDecks();
+                refreshStats();
+                setIsEditingCard(false);
+              }}
+              onEditDeck={(deckId) => {
+                setEditingDeckId(deckId);
+                setIsEditingDeck(true);
+              }}
+            />
+          );
+        } else {
+          content = (
+            <>
+              {/* PWA Badge (только если установлено как PWA) */}
+              {isPWA && (
+                <div className="fixed top-4 left-4 z-30">
+                  <div className="pwa-badge">PWA</div>
                 </div>
-              </header>
+              )}
 
-              <main className="container-centered max-w-390 py-6">
-                <div className="text-center py-12">
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📖</div>
-                  <h2 style={{ marginBottom: '1rem', color: '#E8EAF0' }}>Создайте свою первую карточку</h2>
-                  <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>
-                    Начните изучение с создания карточек
-                  </p>
-                    <div className="actionsStack__study">
-                      <button onClick={() => setIsCreatingCard(true)} className="btn-primary">
-                        Создать карточку
-                      </button>
+              {activeTab === 'home' && (
+                <HomeTabContainer
+                  statistics={dashboardStats}
+                  decks={decks}
+                  groups={groups}
+                  activeGroupId={activeGroupId}
+                  setActiveGroupId={setActiveGroupId}
+                  refreshGroups={refreshGroups}
+                  refreshDecks={refreshDecks}
+                  currentGroupDeckIds={currentGroupDeckIds}
+                  onDeleteActiveGroup={deleteActiveGroup}
+                  resumeCandidate={study.resumeCandidate}
+                  onResume={study.onResume}
+                  onDiscardResume={study.onDiscardResume}
+                  // Чтобы не менять HomeTabContainer прямо сейчас (у тебя там () => void):
+                  onStartReviewStudy={() => { void study.onStartReviewStudy(); }}
+                  onStartDeckStudy={study.onStartDeckStudy}
+                  onResumeDeckSession={study.onResumeDeckSession}
+                  onRestartDeckSession={study.onRestartDeckSession}
+                  onOpenEditDeck={openEditDeck}
+                />
+              )}
 
-                      <button onClick={() => setIsCreatingDeck(true)} className="btn-primary">
-                        Создать колоду
-                      </button>
-
-                      <button onClick={() => setIsEditingCard(true)} className="btn-primary">
-                        Редактировать колоду
-                      </button>
+              {activeTab === 'study' && (
+                <div className="min-h-screen bg-dark pb-24">
+                  <header className="page__header">
+                    <div className="page__header-inner">
+                      <h1 className="page__title">Обучение</h1>
                     </div>
-                  {/* PWA Installation Hint */}
-                  {!isPWA && (
-                    <div className="mt-8 card">
-                      <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
-                        💡 Установите приложение для работы офлайн
+                  </header>
+
+                  <main className="container-centered max-w-390 py-6">
+                    <div className="text-center py-12">
+                      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📖</div>
+                      <h2 style={{ marginBottom: '1rem', color: '#E8EAF0' }}>Создайте свою первую карточку</h2>
+                      <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>
+                        Начните изучение с создания карточек
                       </p>
-                      <p style={{ color: '#6B7280', fontSize: '0.75rem' }}>
-                        Нажмите "Установить" в меню браузера
-                      </p>
+
+                      <div className="actionsStack__study">
+                        <button onClick={() => setIsCreatingCard(true)} className="btn-primary">
+                          Создать карточку
+                        </button>
+
+                        <button onClick={() => setIsCreatingDeck(true)} className="btn-primary">
+                          Создать колоду
+                        </button>
+
+                        <button onClick={() => setIsEditingCard(true)} className="btn-primary">
+                          Редактировать колоду
+                        </button>
+                      </div>
+
+                      {!isPWA && (
+                        <div className="mt-8 card">
+                          <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
+                            💡 Установите приложение для работы офлайн
+                          </p>
+                          <p style={{ color: '#6B7280', fontSize: '0.75rem' }}>
+                            Нажмите "Установить" в меню браузера
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </main>
                 </div>
-              </main>
-            </div>
-          )}
-          
-          {activeTab === 'stats' && statistics && (
-            <Statistics statistics={statistics} decks={decks} />
-          )}
-          
-          {activeTab === 'profile' && (
-            <div className="min-h-screen bg-dark pb-24">
-              <div className="page__header px-4 pt-12 pb-6">
-                <div className="page__header-inner">
-                  <h1 className="page__title">Профиль</h1>
-                </div>
-              </div>
-              <div className="p-4 container-centered max-w-390">
-                <div className="card card--center">
-                  <div className="avatar avatar--xl avatar--accent">У</div>
-                  <h2 className="mb-2 text-[#E8EAF0]">АБД</h2>
-                  <p className="text-[#9CA3AF]">user@example.com</p>
-                  
-                  {/* PWA Status */}
-                  <div className="mt-6 pt-6 border-t border-[#2D3548]">
-                    <h3 className="text-sm font-medium text-[#E8EAF0] mb-3">Настройки приложения</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#9CA3AF]">API Статус</span>
-                        <span className={`text-sm ${apiHealth === 'healthy' ? 'text-green-500' : 'text-red-500'}`}>
-                          {apiHealth === 'healthy' ? '✓ Работает' : '✗ Ошибка'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#9CA3AF]">Версия</span>
-                        <span className="text-sm text-[#E8EAF0]">1.0.0</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#9CA3AF]">Режим</span>
-                        <span className="text-sm text-accent">
-                          {isPWA ? 'Установлено как PWA' : 'Веб-версия'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-[#9CA3AF]">Офлайн доступ</span>
-                        <span className="text-sm text-[#38A169]">
-                          {isPWA ? 'Доступно' : 'Требуется установка'}
-                        </span>
+              )}
+
+              {activeTab === 'stats' && statistics && <Statistics statistics={statistics} decks={decks} />}
+
+              {activeTab === 'profile' && (
+                <div className="min-h-screen bg-dark pb-24">
+                  <div className="page__header px-4 pt-12 pb-6">
+                    <div className="page__header-inner">
+                      <h1 className="page__title">Профиль</h1>
+                    </div>
+                  </div>
+
+                  <div className="p-4 container-centered max-w-390">
+                    <div className="card card--center">
+                      <div className="avatar avatar--xl avatar--accent">У</div>
+                      <h2 className="mb-2 text-[#E8EAF0]">АБД</h2>
+                      <p className="text-[#9CA3AF]">user@example.com</p>
+
+                      <div className="mt-6 pt-6 border-t border-[#2D3548]">
+                        <h3 className="text-sm font-medium text-[#E8EAF0] mb-3">Настройки приложения</h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#9CA3AF]">API Статус</span>
+                            <span className={`text-sm ${apiHealth === 'healthy' ? 'text-green-500' : 'text-red-500'}`}>
+                              {apiHealth === 'healthy' ? '✓ Работает' : '✗ Ошибка'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#9CA3AF]">Версия</span>
+                            <span className="text-sm text-[#E8EAF0]">1.0.0</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#9CA3AF]">Режим</span>
+                            <span className="text-sm text-accent">
+                              {isPWA ? 'Установлено как PWA' : 'Веб-версия'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-[#9CA3AF]">Офлайн доступ</span>
+                            <span className="text-sm text-[#38A169]">
+                              {isPWA ? 'Доступно' : 'Требуется установка'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-          
-          <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-          <InstallPrompt />
-        </div>
+              )}
+            </>
+          );
+        }
+
+        return (
+          <div className="relative">
+            <PWAUpdatePrompt />
+            <OfflineStatus />
+
+            {content}
+
+            {!hideBottomNav && <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />}
+            <InstallPrompt />
+          </div>
+        );
+      }}
+    </StudyFlowStateContainer>
   );
 }
-
-
 
 function getPathRoute() {
   const path = window.location.pathname || '/';
@@ -749,5 +479,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-
-

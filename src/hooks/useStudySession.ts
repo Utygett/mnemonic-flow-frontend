@@ -1,3 +1,4 @@
+// src/hooks/useStudySession.ts
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { StudyCard, DifficultyRating } from '../types';
 import { ApiClient } from '../api/client';

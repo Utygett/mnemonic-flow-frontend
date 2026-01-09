@@ -1,6 +1,6 @@
 // src/hooks/useResumeCandidate.ts
 import { useEffect, useState } from 'react';
-import { clearSession, loadLastSession, saveSession, type PersistedSession } from '../utils/sessionStore';
+import { clearSession, loadLastSession, saveSession, type PersistedSession } from '../../../utils/sessionStore';
 
 type Input = {
   isStudying: boolean;

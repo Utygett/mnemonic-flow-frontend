@@ -1,3 +1,4 @@
+// src\screens\study\StudyFlowView.tsx
 import React from 'react';
 import type { DifficultyRating, StudyCard } from '../../types';
 import { StudySession } from '../StudySession';
@@ -22,7 +23,7 @@ type Props = {
   onBackToHome: () => void; // когда нет карточек / completed
 };
 
-export function StudyFlowContainer(props: Props) {
+export function StudyFlowView(props: Props) {
   if (!props.isStudying) return null;
 
   if (props.loadingDeckCards) {

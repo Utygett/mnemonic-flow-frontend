@@ -27,7 +27,7 @@ type Props = {
   onDiscardResume: () => void;
 
   // действия, которые запускают study (остаются в App)
-  onStartReviewStudy: () => void;
+  onStartReviewStudy: () => Promise<void>;
   onStartDeckStudy: (deckId: string, mode: StudyMode, limit?: number) => Promise<void>;
   onResumeDeckSession: (saved: PersistedSession) => void;
   onRestartDeckSession: (deckId: string) => void;
