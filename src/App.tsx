@@ -22,7 +22,8 @@ import { CreateGroup } from './screens/group/CreateGroup';
 import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
 import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
-import { DashboardView } from './screens/dashboard/DashboardView';
+import { HomeTab } from './screens/home/HomeTab';
+import { useGroupsDecksController } from './hooks/useGroupsDecksController';
 
 
 // Компонент для отображения обновлений PWA
@@ -115,6 +116,33 @@ function OfflineStatus() {
 }
 
 function MainAppContent() {
+
+// Новые состояния приложения
+const openCreateGroup = () => setIsCreatingGroup(true);
+const openAddDeck = () => setIsAddDeck(true);
+const openEditDeck = (deckId: string) => {
+  setEditingDeckId(deckId);
+  setIsEditingDeck(true);
+};
+
+const {
+  groups,
+  activeGroupId,
+  setActiveGroupId,
+  decks,
+  decksLoading,
+  decksError,
+  refreshDecks,
+  refreshGroups,
+  deleteActiveGroup,
+  currentGroupDeckIds,
+} = useGroupsDecksController();
+
+
+//----------------------------------------------------------------------
+
+
+
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [activeTab, setActiveTab] = useState<'home' | 'study' | 'stats' | 'profile'>('home');
   const [isStudying, setIsStudying] = useState(false);
@@ -326,83 +354,6 @@ const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
     clearSession(resumeCandidate.key);
     setResumeCandidate(null);
   };
-
-
-
-  const handleDeleteActiveGroup = async () => {
-    if (!activeGroupId) return;
-
-    const g = groups.find((x) => x.id === activeGroupId);
-    const ok = window.confirm(
-      `Удалить группу "${g?.title ?? 'без названия'}"? Это действие нельзя отменить.`
-    );
-    if (!ok) return;
-
-    try {
-      await ApiClient.deleteGroup(activeGroupId);
-
-      // после удаления — обновляем список групп
-      await refreshGroups();
-
-      // если удалили текущую, refreshGroups выберет валидную или null
-      // (а localStorage обновится в useEffect)
-    } catch (e) {
-      console.error(e);
-      alert('Не удалось удалить группу');
-    }
-  };
-
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
-    const v = localStorage.getItem('active_group_id');
-    if (!v || v === 'null' || v === 'undefined' || v.trim() === '') return null;
-    return v;
-  });
-
-
-  const [groups, setGroups] = useState<Group[]>([]);
-
-  const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
-    useDecks(activeGroupId);
-
-  const currentGroupDeckIds = decks.map((d: any) => d.deck_id ?? d.id);
-
-  useEffect(() => {
-    if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
-  }, [activeGroupId]);
-
-
-
-
-
-const refreshGroups = React.useCallback(async () => {
-  const gs = await ApiClient.getUserGroups();
-  setGroups(gs);
-
-  setActiveGroupId((prev) => {
-    // 1) пытаемся сохранить текущую, если она ещё существует
-    if (prev && gs.some((g) => g.id === prev)) return prev;
-
-    // 2) иначе пробуем взять из localStorage (на случай если prev был null при первом рендере)
-    const stored = localStorage.getItem('active_group_id');
-    if (stored && gs.some((g) => g.id === stored)) return stored;
-
-    // 3) иначе выбираем первую
-    return gs[0]?.id ?? null;
-  });
-}, []);
-
-useEffect(() => {
-  refreshGroups().catch(console.error);
-}, [refreshGroups]);
-
-useEffect(() => {
-  if (activeGroupId) localStorage.setItem('active_group_id', activeGroupId);
-  else localStorage.removeItem('active_group_id');
-}, [activeGroupId]);
-
-
-
-
 
 
 
@@ -718,15 +669,17 @@ if (isStudying) {
   }
 
 
+  const handleGroupCreated = async (createdGroupId?: string) => {
+  await refreshGroups();
+  if (createdGroupId) setActiveGroupId(createdGroupId);
+  setIsCreatingGroup(false);
+};
+
   if (isCreatingGroup) {
     return (
-      <CreateGroup
-        onCancel={() => setIsCreatingGroup(false)}
-        onSave={async (createdGroupId) => {
-          await refreshGroups();          // перезагружаем список групп
-          if (createdGroupId) setActiveGroupId(createdGroupId); // если есть id — выбираем
-          setIsCreatingGroup(false);
-        }}
+      <CreateGroup 
+        onCancel={() => setIsCreatingGroup(false)} 
+        onSave={handleGroupCreated} 
       />
     );
   }
@@ -804,37 +757,21 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-          <DashboardView
-            model={{
-              statistics: dashboardStats,
-              decks,
-              groups,
-              activeGroupId,
-              resumeSession: resumeCandidate
-                ? {
-                    title: 'Продолжить сессию',
-                    subtitle:
-                      resumeCandidate.mode === 'review'
-                        ? 'Учебная сессия'
-                        : (decks.find(d => d.deck_id === resumeCandidate.activeDeckId)?.title ?? 'Колода'),
-                    cardInfo: `Карточка ${resumeCandidate.currentIndex + 1} из ${resumeCandidate.deckCards.length}`,
-                    onResume: handleResume,
-                    onDiscard: handleDiscardResume,
-                  }
-                : undefined,
-            }}
-            actions={{
-              onGroupChange: setActiveGroupId,
-              onStartStudy: handleStartStudy,
-              onDeckClick: handleDeckClick,
-              onEditDeck: (deckId) => {
-                setEditingDeckId(deckId);
-                setIsEditingDeck(true);
-              },
-              onCreateGroup: () => setIsCreatingGroup(true),
-              onDeleteActiveGroup: handleDeleteActiveGroup,
-              onAddDeck: () => setIsAddDeck(true),
-            }}
+          <HomeTab
+            statistics={dashboardStats}
+            decks={decks}
+            groups={groups}
+            activeGroupId={activeGroupId}
+            resumeCandidate={resumeCandidate}
+            onResume={handleResume}
+            onDiscardResume={handleDiscardResume}
+            onGroupChange={setActiveGroupId}
+            onCreateGroup={openCreateGroup}
+            onDeleteActiveGroup={deleteActiveGroup}
+            onStartStudy={handleStartStudy}
+            onDeckClick={handleDeckClick}
+            onOpenEditDeck={openEditDeck}
+            onAddDeck={openAddDeck}
           />
           )}
           
