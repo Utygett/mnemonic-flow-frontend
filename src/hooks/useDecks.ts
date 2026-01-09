@@ -1,29 +1,45 @@
-// src/hooks/useDecks.ts
-import { useState, useEffect, useCallback} from 'react';
-import { PublicDeckSummary } from '../types';
-import { ApiClient } from '../api/client';
+import { useState, useEffect, useCallback } from 'react';
+import type { PublicDeckSummary } from '../types';
+import { ApiClient, ApiError } from '../api/client';
 
-export default function useDecks(groupId: string | null) {
+export type UseDecksResult = {
+  decks: PublicDeckSummary[];
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+};
+
+export default function useDecks(groupId: string | null): UseDecksResult {
   const [decks, setDecks] = useState<PublicDeckSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-      if (!groupId) return;          // ключевой guard
-      setLoading(true);
+    if (!groupId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await ApiClient.getGroupDecksSummary(groupId);
+      setDecks(data);
+    } catch (e: unknown) {
+      if (e instanceof ApiError) setError(e.detail ?? e.message);
+      else setError('Не удалось загрузить колоды');
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
+
+  useEffect(() => {
+    if (!groupId) {
+      setDecks([]);
       setError(null);
-      try {
-        const data = await ApiClient.getGroupDecksSummary(groupId);
-        setDecks(data);
-      } finally {
-        setLoading(false);
-      }
-    }, [groupId]);
+      setLoading(false);
+      return;
+    }
+    refresh();
+  }, [groupId, refresh]);
 
-    useEffect(() => {
-      if (!groupId) return;          // guard и здесь тоже можно
-      refresh();
-    }, [groupId, refresh]);
-
-    return { decks, loading, error, refresh };
+  return { decks, loading, error, refresh };
 }

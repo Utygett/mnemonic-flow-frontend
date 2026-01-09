@@ -10,52 +10,8 @@ import { HomeTabContainer } from '../home/HomeTabContainer';
 import { ProfileContainer } from '../profile/ProfileContainer';
 
 import { ApiClient } from '../../api/client';
+import type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
 
-import type { MainTab } from './main.types';
-
-type MnemonicRootSwitchProps = {
-  // общие флаги/состояния
-  activeTab: MainTab;
-  isPWA: boolean;
-
-  isCreatingCard: boolean;
-  isEditingCard: boolean;
-  isCreatingDeck: boolean;
-  isEditingDeck: boolean;
-  editingDeckId: string | null;
-
-  // данные
-  decks: any[];
-  groups: any[];
-  activeGroupId: string | null;
-  setActiveGroupId: (id: string | null) => void;
-  currentGroupDeckIds: string[];
-  statistics: any | null;
-  dashboardStats: any;
-
-  // loading/errors
-  decksLoading: boolean;
-  statsLoading: boolean;
-  decksError: string | null;
-  statsError: string | null;
-
-  // callbacks верхнего уровня
-  refreshDecks: () => void;
-  refreshGroups: () => void;
-  refreshStats: () => void;
-  deleteActiveGroup: () => void;
-
-  setIsCreatingCard: (v: boolean) => void;
-  setIsEditingCard: (v: boolean) => void;
-  setIsCreatingDeck: (v: boolean) => void;
-  setIsEditingDeck: (v: boolean) => void;
-  setEditingDeckId: (v: string | null) => void;
-
-  openEditDeck: (deckId: string) => void;
-
-  // из StudyFlow render-prop
-  study: any;
-};
 
 export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
   const {

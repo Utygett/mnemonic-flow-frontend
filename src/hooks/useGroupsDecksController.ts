@@ -39,10 +39,11 @@ export function useGroupsDecksController() {
   const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
     useDecks(activeGroupId);
 
-  const currentGroupDeckIds = useMemo(
-    () => (decks ?? []).map((d: any) => d.deck_id ?? d.id),
+    const currentGroupDeckIds = useMemo(
+    () => decks.map((d) => d.deck_id),
     [decks]
-  );
+    );
+
 
   const deleteActiveGroup = useCallback(async () => {
     if (!activeGroupId) return;
