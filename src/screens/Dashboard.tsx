@@ -7,6 +7,7 @@ import { Clock, BookOpen, Flame, Trash2 } from 'lucide-react';
 import { useRef } from 'react';
 import './Dashboard.css';
 import { ResumeSessionCard } from '../components/ResumeSession';
+import { useGroupsCarousel } from './dashboard/useGroupsCarousel';
 
 type ResumeSessionProps = {
   title: string;
@@ -49,42 +50,10 @@ export function Dashboard({
   onCreateGroup,
   onDeleteActiveGroup,
 }: DashboardProps) {
-  
+
+  const { carouselRef, onWheelCarousel, onMouseDown, onMouseMove, onMouseUpOrLeave } = useGroupsCarousel();
   const safeGroups = groups ?? [];
-  const activeGroup = safeGroups.find((g) => g.id === activeGroupId) ?? null;
-  const carouselRef = useRef<HTMLDivElement | null>(null);
-  const isDownRef = useRef(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
-
-  const onWheelCarousel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (!carouselRef.current) return;
-    // horizontal scroll by vertical wheel movement
-    carouselRef.current.scrollBy({ left: e.deltaY, behavior: 'smooth' });
-  };
-
-  const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!carouselRef.current) return;
-    isDownRef.current = true;
-    carouselRef.current.classList.add('dragging');
-    startXRef.current = e.pageX - carouselRef.current.offsetLeft;
-    scrollLeftRef.current = carouselRef.current.scrollLeft;
-  };
-
-  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDownRef.current || !carouselRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 1; // drag speed
-    carouselRef.current.scrollLeft = scrollLeftRef.current - walk;
-  };
-
-  const onMouseUpOrLeave = () => {
-    if (!carouselRef.current) return;
-    isDownRef.current = false;
-    carouselRef.current.classList.remove('dragging');
-  };
-
+  
   return (
     <div className="min-h-screen bg-dark pb-24">
       {/* Header */}
