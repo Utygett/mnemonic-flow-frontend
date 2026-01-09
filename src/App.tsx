@@ -24,6 +24,7 @@ import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
 import { HomeTab } from './screens/home/HomeTab';
 import { useGroupsDecksController } from './hooks/useGroupsDecksController';
+import { HomeTabContainer } from './screens/home/HomeTabContainer';
 
 
 // Компонент для отображения обновлений PWA
@@ -179,12 +180,8 @@ const {
   achievements: [],
 };
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
-const [isAddDeck, setIsAddDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
-const [isCreatingGroup, setIsCreatingGroup] = useState(false);
-const [isDeckDetailsOpen, setIsDeckDetailsOpen] = useState(false);
-const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
 
 
   const handleDeckClick = async (deckId: string) => {
@@ -237,9 +234,6 @@ const [deckDetailsId, setDeckDetailsId] = useState<string | null>(null);
       setSessionMode('deck');
       setSessionKey(key);
       setSessionIndex(0);
-
-      setIsDeckDetailsOpen(false);
-      setDeckDetailsId(null);
 
       if (res.cards.length > 0) setIsStudying(true);
     } finally {
@@ -538,19 +532,6 @@ const handleRate = async (rating: DifficultyRating) => {
     );
   }
   
-  // if (!hasCompletedOnboarding) {
-  //   return <Onboarding onComplete={() => setHasCompletedOnboarding(true)} />;
-  // }
-  
-if (isDeckDetailsOpen && deckDetailsId) {
-  return (
-    <DeckDetailsScreen
-      deckId={deckDetailsId}
-      onBack={() => { setIsDeckDetailsOpen(false); setDeckDetailsId(null); }}
-      onStart={(mode, limit) => handleStartDeckStudy(deckDetailsId, mode, limit)}
-    />
-  );
-}
 
 
 if (isStudying) {
@@ -656,33 +637,7 @@ if (isStudying) {
     );
   }
   
-    if (isCreatingDeck) {
-    return (
-      <CreateDeck
-        onCancel={() => setIsCreatingDeck(false)}
-        onSave={(createdDeckId) => {
-          refreshDecks();
-          setIsCreatingDeck(false);
-        }}
-      />
-    );
-  }
 
-
-  const handleGroupCreated = async (createdGroupId?: string) => {
-  await refreshGroups();
-  if (createdGroupId) setActiveGroupId(createdGroupId);
-  setIsCreatingGroup(false);
-};
-
-  if (isCreatingGroup) {
-    return (
-      <CreateGroup 
-        onCancel={() => setIsCreatingGroup(false)} 
-        onSave={handleGroupCreated} 
-      />
-    );
-  }
 
     if (isEditingDeck && editingDeckId) {
       return (
@@ -696,24 +651,6 @@ if (isStudying) {
         />
       );
     }
-
-  if (isAddDeck) {
-    if (!activeGroupId) {
-      // можно показать ошибку/заглушку
-      return null;
-    }
-    return (
-      <AddDeck
-        groupId={activeGroupId}
-        initialGroupDeckIds={currentGroupDeckIds}
-        onClose={() => setIsAddDeck(false)}
-        onChanged={() => {
-          // после add/remove обновляем колоды группы
-          refreshDecks();
-        }}
-      />
-    );
-  }
 
 
   if (isEditingCard) {
@@ -757,22 +694,23 @@ if (isStudying) {
           )}
           
           {activeTab === 'home' && (
-          <HomeTab
-            statistics={dashboardStats}
-            decks={decks}
-            groups={groups}
-            activeGroupId={activeGroupId}
-            resumeCandidate={resumeCandidate}
-            onResume={handleResume}
-            onDiscardResume={handleDiscardResume}
-            onGroupChange={setActiveGroupId}
-            onCreateGroup={openCreateGroup}
-            onDeleteActiveGroup={deleteActiveGroup}
-            onStartStudy={handleStartStudy}
-            onDeckClick={handleDeckClick}
-            onOpenEditDeck={openEditDeck}
-            onAddDeck={openAddDeck}
-          />
+            <HomeTabContainer
+              statistics={dashboardStats}
+              decks={decks}
+              groups={groups}
+              activeGroupId={activeGroupId}
+              setActiveGroupId={setActiveGroupId}
+              refreshGroups={refreshGroups}
+              refreshDecks={refreshDecks}
+              currentGroupDeckIds={currentGroupDeckIds}
+              onDeleteActiveGroup={deleteActiveGroup}
+              resumeCandidate={resumeCandidate}
+              onResume={handleResume}
+              onDiscardResume={handleDiscardResume}
+              onStartReviewStudy={handleStartStudy}
+              onStartDeckStudy={handleStartDeckStudy}
+              onOpenEditDeck={openEditDeck}
+            />
           )}
           
           {activeTab === 'study' && (
