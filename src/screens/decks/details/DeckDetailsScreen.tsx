@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import type { StudyMode } from '../../types';
-import { loadSession, type PersistedSession } from '../../utils/sessionStore';
+import type { StudyMode } from '../../../types';
+import { loadSession, type PersistedSession } from '../../../utils/sessionStore';
 
 type Props = {
   deckId: string;

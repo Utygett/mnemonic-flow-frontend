@@ -3,9 +3,9 @@ import type { PersistedSession } from '../../utils/sessionStore';
 import type { Deck, Group, StudyMode, Statistics } from '../../types';
 
 import { HomeTab } from './HomeTab';
-import { CreateGroup } from '../group/CreateGroup';
+import { CreateGroup } from '../groups/CreateGroup';
 import { AddDeck } from '../decks/add/AddDeck';
-import { DeckDetailsScreen } from '../deck/DeckDetailsScreen';
+import { DeckDetailsScreen } from '../decks/details/DeckDetailsScreen';
 
 type Props = {
   // данные home
