@@ -66,10 +66,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     return (
       <CreateDeck
         onCancel={() => props.setIsCreatingDeck(false)}
-        onSave={() => {
-          props.refreshDecks();
-          props.setIsCreatingDeck(false);
-        }}
+        onSave={props.onDeckCreated}
       />
     );
   }
@@ -79,10 +76,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
       <EditDeck
         deckId={editingDeckId}
         onCancel={() => props.setIsEditingDeck(false)}
-        onSaved={() => {
-          props.refreshDecks();
-          props.setIsEditingDeck(false);
-        }}
+        onSaved={props.onDeckSaved}
       />
     );
   }

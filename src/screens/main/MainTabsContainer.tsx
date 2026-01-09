@@ -90,6 +90,17 @@ export function MainTabsContainer() {
         return { created, failed: errors.length, errors };
     };
 
+    const handleDeckCreated = () => {
+        refreshDecks();
+        setIsCreatingDeck(false);
+    };
+
+    const handleDeckSaved = () => {
+        refreshDecks();
+        setIsEditingDeck(false);
+    };
+
+
   return (
     <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
       {(study) => {
@@ -143,6 +154,9 @@ export function MainTabsContainer() {
 
                 onCreateCardSave={handleCreateCardSave}
                 onCreateCardSaveMany={handleCreateCardSaveMany}
+
+                onDeckCreated={handleDeckCreated}
+                onDeckSaved={handleDeckSaved}
             />
             );
 
