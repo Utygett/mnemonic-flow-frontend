@@ -12,19 +12,14 @@ import { AuthGate } from './auth/AuthGate';
 import { toStudyCards } from './utils/toStudyCards';
 import { DifficultyRating, StudyCard, Group, StudyMode } from './types';
 import { useStatistics, useStudySession } from './hooks';
-import useDecks from './hooks/useDecks';
 import { ApiClient } from './api/client';
-import { loadLastSession, loadSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
-import { CreateDeck } from './screens/CreateDeck';
-import  AddDeck from './screens/AddDeck/AddDeck'
+import { loadLastSession, saveSession, clearSession, PersistedSession } from './utils/sessionStore';
 import { EditDeck } from './screens/EditDeck';
-import { CreateGroup } from './screens/group/CreateGroup';
-import { DeckDetailsScreen } from './screens/deck/DeckDetailsScreen';
 import { ResetPasswordPage } from './screens/auth/ResetPasswordPage';
 import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
-import { HomeTab } from './screens/home/HomeTab';
 import { useGroupsDecksController } from './hooks/useGroupsDecksController';
 import { HomeTabContainer } from './screens/home/HomeTabContainer';
+import { StudyFlowContainer } from './screens/study/StudyFlowContainer';
 
 
 // Компонент для отображения обновлений PWA
@@ -118,9 +113,6 @@ function OfflineStatus() {
 
 function MainAppContent() {
 
-// Новые состояния приложения
-const openCreateGroup = () => setIsCreatingGroup(true);
-const openAddDeck = () => setIsAddDeck(true);
 const openEditDeck = (deckId: string) => {
   setEditingDeckId(deckId);
   setIsEditingDeck(true);
@@ -138,6 +130,20 @@ const {
   deleteActiveGroup,
   currentGroupDeckIds,
 } = useGroupsDecksController();
+
+
+const resumeDeckSession = (saved: PersistedSession) => {
+  setSessionMode(saved.mode);
+  setSessionKey(saved.key);
+  setActiveDeckId(saved.activeDeckId);
+  setSessionIndex(saved.currentIndex ?? 0);
+  setDeckCards(saved.deckCards ?? []);
+  setIsStudying(true);
+};
+
+const restartDeckSession = (deckId: string) => {
+  clearSession((`deck:${deckId}` as const));
+};
 
 
 //----------------------------------------------------------------------
@@ -182,28 +188,6 @@ const {
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
-
-
-  const handleDeckClick = async (deckId: string) => {
-    const key = `deck:${deckId}` as const;
-
-    // 1) если есть сохранённая сессия — как у тебя уже сделано
-    const saved = loadSession(key);
-    if (saved && saved.deckCards.length > 0) {
-      setSessionMode(saved.mode);
-      setSessionKey(saved.key);
-      setActiveDeckId(saved.activeDeckId);
-      setSessionIndex(saved.currentIndex ?? 0);
-      setDeckCards(saved.deckCards ?? []);
-      setIsStudying(true);
-      setResumeCandidate(saved);
-      return;
-    }
-
-    // 2) иначе открываем DeckDetails, а не стартуем study
-    setDeckDetailsId(deckId);
-    setIsDeckDetailsOpen(true);
-  };
 
 
   const handleStartDeckStudy = async (deckId: string, mode: StudyMode, limit?: number) => {
@@ -531,94 +515,33 @@ const handleRate = async (rating: DifficultyRating) => {
       </div>
     );
   }
-  
 
-
-if (isStudying) {
-  // 1️⃣ Загрузка карточек
-  
-  if (loadingDeckCards) {
+  if (isStudying) {
     return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-[#9CA3AF]">Загрузка карточек…</div>
-      </div>
+      <>
+        <StudyFlowContainer
+          isStudying={isStudying}
+          loadingDeckCards={loadingDeckCards}
+          deckCards={deckCards}
+          cards={cards}
+          currentIndex={currentIndex}
+          isCompleted={isCompleted}
+          onRate={handleRate}
+          onLevelUp={handleLevelUp}
+          onLevelDown={handleLevelDown}
+          onSkip={handleSkipCard}
+          onRemoveFromProgress={handleRemoveFromProgress}
+          onClose={handleCloseStudy}
+          onBackToHome={() => {
+            resetSession();
+            setIsStudying(false);
+          }}
+        />
+        <PWAUpdatePrompt />
+        <OfflineStatus />
+      </>
     );
   }
-
-  if (deckCards.length === 0) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="card text-center max-w-390">
-          <h2 className="text-[#E8EAF0] mb-2">Нет карточек</h2>
-          <p className="text-[#9CA3AF] mb-6">
-            В этой сессии нет карточек для изучения.
-          </p>
-          <button
-            className="btn-primary w-full"
-            onClick={() => {
-              resetSession();
-              setIsStudying(false);
-            }}
-          >
-            Вернуться
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-
-  // 2️⃣ Сессия завершена
-  if (isCompleted) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center p-4">
-        <div className="card text-center max-w-390">
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
-          <h2 className="text-[#E8EAF0] mb-2">Сессия завершена</h2>
-          <p className="text-[#9CA3AF] mb-6">
-            Отличная работа! Ты прошёл все карточки.
-          </p>
-          <button
-            className="btn-primary w-full"
-            onClick={() => {
-              resetSession();
-              setIsStudying(false);
-            }}
-          >
-            Вернуться в меню
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 3️⃣ Нет карточек
-  if (cards.length === 0) {
-    return (
-      <div className="min-h-screen bg-dark flex items-center justify-center">
-        <div className="text-[#9CA3AF]">Нет карточек для изучения</div>
-      </div>
-    );
-  }
-
-  // 4️⃣ Обычная сессия
-  return (
-    <>
-      <StudySession
-        cards={cards}
-        currentIndex={currentIndex}
-        onRate={handleRate}
-        onLevelUp={handleLevelUp}
-        onLevelDown={handleLevelDown}
-        onClose={handleCloseStudy}
-        onSkip={handleSkipCard}
-        onRemoveFromProgress={handleRemoveFromProgress}
-      />
-      <PWAUpdatePrompt />
-      <OfflineStatus />
-    </>
-  );
-}
 
 
   
@@ -709,6 +632,8 @@ if (isStudying) {
               onDiscardResume={handleDiscardResume}
               onStartReviewStudy={handleStartStudy}
               onStartDeckStudy={handleStartDeckStudy}
+              onResumeDeckSession={resumeDeckSession}
+              onRestartDeckSession={restartDeckSession}
               onOpenEditDeck={openEditDeck}
             />
           )}

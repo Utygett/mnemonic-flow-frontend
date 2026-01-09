@@ -29,6 +29,8 @@ type Props = {
   // действия, которые запускают study (остаются в App)
   onStartReviewStudy: () => void;
   onStartDeckStudy: (deckId: string, mode: StudyMode, limit?: number) => Promise<void>;
+  onResumeDeckSession: (saved: PersistedSession) => void;
+  onRestartDeckSession: (deckId: string) => void;
 
   // пока оставляем редактирование колоды глобальным
   onOpenEditDeck: (deckId: string) => void;
@@ -70,21 +72,20 @@ export function HomeTabContainer(props: Props) {
     );
   }
 
-  if (view.kind === 'deckDetails') {
+    if (view.kind === 'deckDetails') {
     const deckId = view.deckId;
 
     return (
-      <DeckDetailsScreen
+        <DeckDetailsScreen
         deckId={deckId}
         onBack={() => setView({ kind: 'dashboard' })}
-        onStart={async (mode, limit) => {
-          // закрываем details, дальше App сам переключит UI в study
-          setView({ kind: 'dashboard' });
-          await props.onStartDeckStudy(deckId, mode, limit);
-        }}
-      />
+        onStart={(mode, limit) => props.onStartDeckStudy(deckId, mode, limit)}
+        onResume={(saved) => { setView({ kind: 'dashboard' }); props.onResumeDeckSession(saved); }}
+        clearSavedSession={() => props.onRestartDeckSession(deckId)}
+        />
     );
-  }
+    }
+
 
   // --- обычный home (dashboard) ---
   return (

@@ -1,16 +1,23 @@
 import React, { useMemo, useState } from 'react';
 import type { StudyMode } from '../../types';
+import { loadSession, type PersistedSession } from '../../utils/sessionStore';
 
-export function DeckDetailsScreen({
-  deckId,
-  onBack,
-  onStart,
-}: {
+type Props = {
   deckId: string;
   onBack: () => void;
-  onStart: (mode: StudyMode, limit?: number) => void; // <-- добавили limit
-}) {
+  onStart: (mode: StudyMode, limit?: number) => void;
+  onResume: (saved: PersistedSession) => void;
+  clearSavedSession: () => void; // без deckId
+};
+
+export function DeckDetailsScreen(props: Props) {
   const [limit, setLimit] = useState<number>(20);
+  const [sessionVersion, setSessionVersion] = useState(0);
+
+  const key = `deck:${props.deckId}` as const;
+
+  const saved = useMemo(() => loadSession(key), [key, sessionVersion]);
+  const hasSaved = !!saved && (saved.deckCards?.length ?? 0) > 0;
 
   const limitClamped = useMemo(() => {
     const n = Number(limit);
@@ -19,27 +26,44 @@ export function DeckDetailsScreen({
   }, [limit]);
 
   const start = (mode: StudyMode) => {
-    if (mode === 'new_random' || mode === 'new_ordered') {
-      onStart(mode, limitClamped);
-    } else {
-      onStart(mode);
+    if (hasSaved) {
+      props.clearSavedSession();
+      setSessionVersion((v) => v + 1);          // чтобы UI перестал показывать saved
     }
+
+    if (mode === 'new_random' || mode === 'new_ordered') props.onStart(mode, limitClamped);
+    else props.onStart(mode);
   };
+
 
   return (
     <div className="min-h-screen bg-dark pb-24">
       <div className="page__header px-4 pt-12 pb-6">
         <div className="page__header-inner">
-          <button className="btn-ghost" onClick={onBack} type="button">
+          <button className="btn-ghost" onClick={props.onBack} type="button">
             Назад
           </button>
           <h1 className="page__title">Колода</h1>
-          <div style={{ color: '#9CA3AF', fontSize: 12 }}>id: {deckId}</div>
+          <div style={{ color: '#9CA3AF', fontSize: 12 }}>id: {props.deckId}</div>
         </div>
       </div>
 
       <div className="container-centered max-w-390">
         <div className="actionsStackstudy" style={{ display: 'grid', gap: 20 }}>
+          {hasSaved && (
+            <div className="card">
+              <p className="text-[#E8EAF0]">Есть незавершённая сессия</p>
+              <p className="text-[#9CA3AF]">
+                Карточка {((saved!.currentIndex ?? 0) + 1)} из {saved!.deckCards.length}
+              </p>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn-primary" onClick={() => props.onResume(saved!)}>
+                  Продолжить
+                </button>
+              </div>
+            </div>
+          )}
           <button className="btn btn--primary btn--full" onClick={() => start('random')}>
             Случайно
           </button>
