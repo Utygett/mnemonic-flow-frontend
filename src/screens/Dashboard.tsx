@@ -1,73 +1,37 @@
-// src/screens/Dashboard.tsx
 import React from 'react';
-import { Statistics, Deck, Group } from '../types';
 import { Button } from '../components/Button/Button';
 import { DeckCard } from '../components/DeckCard';
 import { Clock, BookOpen, Flame, Trash2 } from 'lucide-react';
-import { useRef } from 'react';
 import './Dashboard.css';
 import { ResumeSessionCard } from '../components/ResumeSession';
 import { useGroupsCarousel } from './dashboard/useGroupsCarousel';
+import type { DashboardModel, DashboardActions } from './dashboard/dashboard.types';
 
-type ResumeSessionProps = {
-  title: string;
-  subtitle: string;
-  cardInfo: string;
-  onResume: () => void;
-  onDiscard: () => void;
+// Новый API
+type DashboardViewProps = {
+  model: DashboardModel;
+  actions: DashboardActions;
 };
 
-export interface DashboardProps {
-  statistics: Statistics;
-  decks: Deck[];
-  groups: Group[];
-  activeGroupId: string | null;
-  onGroupChange: (groupId: string) => void;
+function DashboardView({ model, actions }: DashboardViewProps) {
+  const { carouselRef, onWheelCarousel, onMouseDown, onMouseMove, onMouseUpOrLeave } =
+    useGroupsCarousel();
 
-  onStartStudy: () => void;
-  onDeckClick: (deckId: string) => void;
-  onEditDeck?: (deckId: string) => void;
+  const safeGroups = model.groups ?? [];
+  const activeGroup = safeGroups.find((g) => g.id === model.activeGroupId) ?? null;
 
-  resumeSession?: ResumeSessionProps;
-  onCreateDeck: () => void;
-  onAddDesk: () => void;
-  onCreateGroup: () => void;
-  onDeleteActiveGroup: () => void; // <-- добавь
-}
-
-export function Dashboard({
-  statistics,
-  decks,
-  groups,
-  activeGroupId,
-  onGroupChange,
-  onStartStudy,
-  onDeckClick,
-  resumeSession,
-  onCreateDeck,
-  onAddDesk,
-  onEditDeck,
-  onCreateGroup,
-  onDeleteActiveGroup,
-}: DashboardProps) {
-
-  const { carouselRef, onWheelCarousel, onMouseDown, onMouseMove, onMouseUpOrLeave } = useGroupsCarousel();
-  const safeGroups = groups ?? [];
-  
   return (
     <div className="min-h-screen bg-dark pb-24">
-      {/* Header */}
+      {/* stats */}
       <div className="page__header px-4 pt-12 pb-6">
         <div className="page__header-inner">
-
-          {/* Today's Stats */}
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-card__label">
                 <BookOpen size={16} className="text-accent" />
                 <span className="stat-card__meta">Изучено</span>
               </div>
-              <p className="stat-value">{statistics.cardsStudiedToday}</p>
+              <p className="stat-value">{model.statistics.cardsStudiedToday}</p>
             </div>
 
             <div className="stat-card">
@@ -75,7 +39,7 @@ export function Dashboard({
                 <Clock size={16} className="text-accent-2" />
                 <span className="stat-card__meta">Минут</span>
               </div>
-              <p className="stat-value">{statistics.timeSpentToday}</p>
+              <p className="stat-value">{model.statistics.timeSpentToday}</p>
             </div>
 
             <div className="stat-card">
@@ -83,43 +47,31 @@ export function Dashboard({
                 <Flame size={16} className="text-accent-2" />
                 <span className="stat-card__meta">Дней</span>
               </div>
-              <p className="stat-value">{statistics.currentStreak}</p>
+              <p className="stat-value">{model.statistics.currentStreak}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Resume session */}
-      {resumeSession && (
-        <ResumeSessionCard
-          title={resumeSession.title}
-          subtitle={resumeSession.subtitle}
-          cardInfo={resumeSession.cardInfo}
-          onResume={resumeSession.onResume}
-          onDiscard={resumeSession.onDiscard}
-        />
+      {/* resume */}
+      {model.resumeSession && (
+        <ResumeSessionCard {...model.resumeSession} />
       )}
 
-
-      {/* Main CTA */}
+      {/* main CTA */}
       <div className="p-4 py-6 container-centered max-w-390">
-        <Button onClick={onStartStudy} variant="primary" size="large" fullWidth>
+        <Button onClick={actions.onStartStudy} variant="primary" size="large" fullWidth>
           Начать обучение
         </Button>
       </div>
 
-      {/* Groups */}
+      {/* groups */}
       <div className="groups-section">
         <div className="groups-container">
-          {/* Кнопка добавления слева */}
-          <button
-            className="groups-button groups-button-add"
-            onClick={onCreateGroup}
-          >
+          <button className="groups-button groups-button-add" onClick={actions.onCreateGroup}>
             +
           </button>
 
-          {/* Карусель групп по центру */}
           <div className="groups-carousel-wrapper">
             {safeGroups.length === 0 ? (
               <p className="groups-empty-message">Создайте первую группу</p>
@@ -137,10 +89,8 @@ export function Dashboard({
                   <button
                     key={g.id}
                     type="button"
-                    className={
-                      'group-pill' + (g.id === activeGroupId ? ' group-pill--active' : '')
-                    }
-                    onClick={() => onGroupChange(g.id)}
+                    className={'group-pill' + (g.id === model.activeGroupId ? ' group-pill--active' : '')}
+                    onClick={() => actions.onGroupChange(g.id)}
                   >
                     {g.title}
                   </button>
@@ -149,45 +99,51 @@ export function Dashboard({
             )}
           </div>
 
-          {/* Кнопка удаления справа */}
           <button
             className="groups-button groups-button-delete"
-            onClick={onDeleteActiveGroup}
-            disabled={!activeGroupId}
-            title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+            onClick={actions.onDeleteActiveGroup}
+            disabled={!model.activeGroupId}
+            title={!model.activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
           >
             <Trash2 size={18} />
           </button>
         </div>
       </div>
 
-
-
-
-
-      {/* Decks of active group */}
+      {/* decks */}
       <div className="p-4 container-centered max-w-390">
         <div className="space-y-3">
-          {decks.map((deck) => (
+          {model.decks.map((deck) => (
             <DeckCard
               key={deck.deck_id}
               deck={deck}
-              onClick={() => onDeckClick(deck.deck_id)}
-              onEdit={onEditDeck ? () => onEditDeck(deck.deck_id) : undefined}
+              onClick={() => actions.onDeckClick(deck.deck_id)}
+              onEdit={actions.onEditDeck ? () => actions.onEditDeck!(deck.deck_id) : undefined}
             />
           ))}
         </div>
       </div>
 
-      {/* Add deck button */}
-      <div
-        className="p-4 container-centered max-w-390"
-        style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
-      >
-        <Button onClick={onAddDesk} variant="primary" size="medium" fullWidth>
+      {/* add deck */}
+      <div className="p-4 container-centered max-w-390" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <Button onClick={actions.onAddDeck} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
       </div>
     </div>
+  );
+}
+
+// Старый API (чтобы App пока не менять)
+export type DashboardProps = DashboardModel & DashboardActions;
+
+export function Dashboard(props: DashboardProps) {
+  const { statistics, decks, groups, activeGroupId, resumeSession, ...rest } = props;
+
+  return (
+    <DashboardView
+      model={{ statistics, decks, groups, activeGroupId, resumeSession }}
+      actions={rest}
+    />
   );
 }
