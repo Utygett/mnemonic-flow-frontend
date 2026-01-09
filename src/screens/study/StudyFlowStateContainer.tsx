@@ -35,6 +35,7 @@ type Props = {
 export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Props) {
   const [isStudying, setIsStudying] = React.useState(false);
   const [loadingDeckCards, setLoadingDeckCards] = React.useState(false);
+  const showStudy = isStudying || loadingDeckCards;
 
   const [sessionMode, setSessionMode] = React.useState<'deck' | 'review'>('review');
   const [sessionKey, setSessionKey] = React.useState<'review' | `deck:${string}`>('review');
@@ -152,35 +153,35 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
   };
 
     return (
-    <>
-        {isStudying ? (
-        <StudyFlowView
-            isStudying={isStudying}
-            loadingDeckCards={loadingDeckCards}
-            deckCards={deckCards}
-            cards={cards}
-            currentIndex={currentIndex}
-            isCompleted={isCompleted}
-            onRate={handleRate}
-            onLevelUp={handleLevelUp}
-            onLevelDown={handleLevelDown}
-            onSkip={skipCard}
-            onRemoveFromProgress={handleRemoveFromProgress}
-            onClose={handleCloseStudy}
-            onBackToHome={handleCloseStudy}
-        />
+        <>
+        {showStudy ? (
+            <StudyFlowView
+                isStudying={showStudy}
+                loadingDeckCards={loadingDeckCards}
+                deckCards={deckCards}
+                cards={cards}
+                currentIndex={currentIndex}
+                isCompleted={isCompleted}
+                onRate={handleRate}
+                onLevelUp={handleLevelUp}
+                onLevelDown={handleLevelDown}
+                onSkip={skipCard}
+                onRemoveFromProgress={handleRemoveFromProgress}
+                onClose={handleCloseStudy}
+                onBackToHome={handleCloseStudy}
+            />
         ) : (
-        children({
-            resumeCandidate,
-            onResume,
-            onDiscardResume,
-            onStartReviewStudy,
-            onStartDeckStudy,
-            onResumeDeckSession,
-            onRestartDeckSession,
-            isStudying,
-        })
+            children({
+                resumeCandidate,
+                onResume,
+                onDiscardResume,
+                onStartReviewStudy,
+                onStartDeckStudy,
+                onResumeDeckSession,
+                onRestartDeckSession,
+                isStudying,
+            })
         )}
-    </>
+        </>
     );
 }

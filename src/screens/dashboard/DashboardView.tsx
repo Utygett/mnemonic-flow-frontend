@@ -35,7 +35,7 @@ export function DashboardView({ model, actions }: { model: DashboardModel; actio
       <DeckList decks={model.decks} onDeckClick={actions.onDeckClick} onEditDeck={actions.onEditDeck} />
 
       <div className="p-4 container-centered max-w-390" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <Button onClick={actions.onAddDesk} variant="primary" size="medium" fullWidth>
+        <Button onClick={actions.onAddDeck} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>
       </div>

@@ -8,6 +8,7 @@ import { CreateCard } from './screens/CreateCard';
 import { Statistics } from './screens/Statistics';
 import { EditCardFlow } from './screens/EditCardFlow';
 import { EditDeck } from './screens/EditDeck';
+import { CreateDeck } from './screens/CreateDeck';
 
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
@@ -273,6 +274,16 @@ function MainAppContent() {
               onCancel={() => setIsCreatingCard(false)}
             />
           );
+        } else if (isCreatingDeck) {
+          content = (
+            <CreateDeck
+              onCancel={() => setIsCreatingDeck(false)}
+              onSave={(createdDeckId) => {
+                refreshDecks();
+                setIsCreatingDeck(false);
+              }}
+            />
+          );
         } else if (isEditingDeck && editingDeckId) {
           content = (
             <EditDeck
@@ -324,8 +335,7 @@ function MainAppContent() {
                   resumeCandidate={study.resumeCandidate}
                   onResume={study.onResume}
                   onDiscardResume={study.onDiscardResume}
-                  // Чтобы не менять HomeTabContainer прямо сейчас (у тебя там () => void):
-                  onStartReviewStudy={() => { void study.onStartReviewStudy(); }}
+                  onStartReviewStudy={study.onStartReviewStudy}
                   onStartDeckStudy={study.onStartDeckStudy}
                   onResumeDeckSession={study.onResumeDeckSession}
                   onRestartDeckSession={study.onRestartDeckSession}

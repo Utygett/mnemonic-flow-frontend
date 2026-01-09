@@ -43,7 +43,12 @@ type HomeView =
   | { kind: 'deckDetails'; deckId: string };
 
 export function HomeTabContainer(props: Props) {
-  const [view, setView] = React.useState<HomeView>({ kind: 'dashboard' });
+    const [view, setView] = React.useState<HomeView>({ kind: 'dashboard' });
+    React.useEffect(() => {
+        if (view.kind === 'addDeck' && !props.activeGroupId) {
+            setView({ kind: 'dashboard' });
+        }
+    }, [view.kind, props.activeGroupId]);
 
   // --- экраны home ---
   if (view.kind === 'createGroup') {
@@ -61,7 +66,6 @@ export function HomeTabContainer(props: Props) {
 
   if (view.kind === 'addDeck') {
     if (!props.activeGroupId) return null;
-
     return (
       <AddDeck
         groupId={props.activeGroupId}
@@ -90,20 +94,23 @@ export function HomeTabContainer(props: Props) {
   // --- обычный home (dashboard) ---
   return (
     <HomeTab
-      statistics={props.statistics}
-      decks={props.decks}
-      groups={props.groups}
-      activeGroupId={props.activeGroupId}
-      resumeCandidate={props.resumeCandidate}
-      onResume={props.onResume}
-      onDiscardResume={props.onDiscardResume}
-      onGroupChange={props.setActiveGroupId}
-      onCreateGroup={() => setView({ kind: 'createGroup' })}
-      onDeleteActiveGroup={props.onDeleteActiveGroup}
-      onStartStudy={props.onStartReviewStudy}
-      onDeckClick={(deckId) => setView({ kind: 'deckDetails', deckId })}
-      onOpenEditDeck={props.onOpenEditDeck}
-      onAddDeck={() => setView({ kind: 'addDeck' })}
+        statistics={props.statistics}
+        decks={props.decks}
+        groups={props.groups}
+        activeGroupId={props.activeGroupId}
+        resumeCandidate={props.resumeCandidate}
+        onResume={props.onResume}
+        onDiscardResume={props.onDiscardResume}
+        onGroupChange={props.setActiveGroupId}
+        onCreateGroup={() => setView({ kind: 'createGroup' })}
+        onDeleteActiveGroup={props.onDeleteActiveGroup}
+        onStartStudy={props.onStartReviewStudy}
+        onDeckClick={(deckId) => setView({ kind: 'deckDetails', deckId })}
+        onOpenEditDeck={props.onOpenEditDeck}
+        onAddDeck={() => {
+        if (!props.activeGroupId) return;
+            setView({ kind: 'addDeck' });
+        }}
     />
   );
 }
