@@ -20,6 +20,7 @@ import { VerifyEmailPage } from './screens/auth/VerifyEmailPage';
 import { useGroupsDecksController } from './hooks/useGroupsDecksController';
 import { HomeTabContainer } from './screens/home/HomeTabContainer';
 import { StudyFlowContainer } from './screens/study/StudyFlowContainer';
+import { useResumeCandidate } from './hooks/useResumeCandidate';
 
 
 // Компонент для отображения обновлений PWA
@@ -146,26 +147,21 @@ const restartDeckSession = (deckId: string) => {
 };
 
 
-//----------------------------------------------------------------------
 
 
 
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [activeTab, setActiveTab] = useState<'home' | 'study' | 'stats' | 'profile'>('home');
-  const [isStudying, setIsStudying] = useState(false);
-  const [isCreatingCard, setIsCreatingCard] = useState(false);
-  const [isPWA, setIsPWA] = useState(false);
-  const [apiHealth, setApiHealth] = useState<'healthy' | 'unhealthy' | 'checking'>('checking');
-  
-  const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
-  const [deckCards, setDeckCards] = useState<StudyCard[]>([]);
-  const [loadingDeckCards, setLoadingDeckCards] = useState(false);
 
-  // Используем хуки для получения данных с API
-  const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
-  const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
-  const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
-  const [sessionIndex, setSessionIndex] = useState(0);
+const [isStudying, setIsStudying] = useState(false);
+const [loadingDeckCards, setLoadingDeckCards] = useState(false);
+const [sessionMode, setSessionMode] = useState<'deck' | 'review'>('review');
+const [sessionKey, setSessionKey] = useState<'review' | `deck:${string}`>('review');
+const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
+const [deckCards, setDeckCards] = useState<StudyCard[]>([]);
+const [sessionIndex, setSessionIndex] = useState(0);
+// Используем хуки для получения данных с API
+const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
+
+
   const {
     cards,
     currentIndex,
@@ -176,7 +172,6 @@ const restartDeckSession = (deckId: string) => {
     resetSession
   } = useStudySession(deckCards, sessionIndex);
   const [isEditingCard, setIsEditingCard] = useState(false);
-  const [resumeCandidate, setResumeCandidate] = useState<null | PersistedSession>(null);
   const dashboardStats = statistics ?? {
   cardsStudiedToday: 0,
   timeSpentToday: 0,
@@ -185,6 +180,39 @@ const restartDeckSession = (deckId: string) => {
   weeklyActivity: [0,0,0,0,0,0,0],
   achievements: [],
 };
+
+
+const {
+    resumeCandidate,
+    setResumeCandidate,
+    resumeLastSession: handleResume,
+    discardResume: handleDiscardResume,
+  } = useResumeCandidate({
+    isStudying,
+    loadingDeckCards,
+    sessionKey,
+    sessionMode,
+    activeDeckId,
+    deckCards,
+    currentIndex,
+
+    setIsStudying,
+    setSessionMode,
+    setSessionKey,
+    setActiveDeckId,
+    setSessionIndex,
+    setDeckCards,
+  });
+
+//----------------------------------------------------------------------
+
+
+
+const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+const [activeTab, setActiveTab] = useState<'home' | 'study' | 'stats' | 'profile'>('home');
+const [isCreatingCard, setIsCreatingCard] = useState(false);
+const [isPWA, setIsPWA] = useState(false);
+const [apiHealth, setApiHealth] = useState<'healthy' | 'unhealthy' | 'checking'>('checking');
 const [isCreatingDeck, setIsCreatingDeck] = useState(false);
 const [isEditingDeck, setIsEditingDeck] = useState(false);
 const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
@@ -267,51 +295,6 @@ const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
     setSessionIndex(currentIndex);
   }, [currentIndex, isStudying]);
 
-  useEffect(() => {
-    if (!isStudying) return;
-    if (loadingDeckCards) return;
-    if (deckCards.length === 0) return;
-
-    saveSession({
-      key: sessionKey,
-      mode: sessionMode,
-      activeDeckId,
-      // deckName: '', // можно добавить название, если нужно
-      deckCards,
-      currentIndex,
-      isStudying: true,
-      savedAt: Date.now(),
-    });
-
-    setResumeCandidate(loadLastSession());
-  }, [isStudying, loadingDeckCards, sessionKey, sessionMode, activeDeckId, deckCards, currentIndex]);
-
-
-    useEffect(() => {
-    const saved = loadLastSession();
-    if (!saved || !saved.isStudying) {
-      setResumeCandidate(null);
-      return;
-    }
-    setResumeCandidate(saved);
-  }, []);
-
-    const handleResume = () => {
-    const saved = resumeCandidate;
-    if (!saved) return;
-
-    setSessionMode(saved.mode);
-    setSessionKey(saved.key);
-    setActiveDeckId(saved.activeDeckId);
-
-    setSessionIndex(saved.currentIndex ?? 0);
-    setDeckCards(saved.deckCards ?? []);
-
-    setIsStudying(true);
-    setResumeCandidate(null);
-  };
-
-
     useEffect(() => {
     if (!isStudying) return;
     if (!isCompleted) return;
@@ -325,14 +308,6 @@ const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
 
     resetSession();
   }, [isCompleted, isStudying, sessionKey, resetSession]);
-
-
-    const handleDiscardResume = () => {
-    if (!resumeCandidate) return;
-    clearSession(resumeCandidate.key);
-    setResumeCandidate(null);
-  };
-
 
 
   const handleLevelUp = async () => {

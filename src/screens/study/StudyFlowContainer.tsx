@@ -68,10 +68,7 @@ export function StudyFlowContainer(props: Props) {
         <div className="text-[#9CA3AF]">Нет карточек для изучения</div>
       </div>
     );
-  }
-
-  // тут импортируешь StudySession как сейчас
-  
+  }  
 
     return (
         <StudySession
