@@ -169,7 +169,7 @@ export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
       setErrorText(null);
       try {
         const deck = await ApiClient.getDeckWithCards(deckId);
-        setCards(deck.cards ?? []);
+        setCards(deck.cards);
         setSelectedCardId('');
         setLevels([defaultQaLevel()]);
         setActiveLevel(0);

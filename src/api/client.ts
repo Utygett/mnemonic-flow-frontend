@@ -7,6 +7,8 @@ import {
   GroupCreatePayload,
 } from '../types';
 import { PublicDeckSummary, StudyCard, StudyMode } from '../types';
+import type { ApiDeckWithCards } from '../types/api';
+
 
 export type StudyCardsResponse = {
   cards: StudyCard[];
@@ -20,8 +22,11 @@ export class ApiError extends Error {
     super(message);
     this.status = status;
     this.detail = detail;
+
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 }
+
 
 async function refreshAccessToken(): Promise<string> {
   const refresh = localStorage.getItem('refresh_token');
@@ -113,17 +118,18 @@ export class ApiClient {
     return apiRequest<PublicDeckSummary[]>(`/decks/`);
   }
 
-  static async getDeckCards(deckId: string) {
-    return apiRequest(`/decks/${deckId}/cards`);
-  }
+  // static async getDeckCards(deckId: string): Promise<unknown> {
+  //   return apiRequest<unknown>(`/decks/${deckId}/cards`);
+  // }
 
-  static async getDeckWithCards(deckId: string) {
-    return apiRequest(`/decks/${deckId}/with_cards`);
+  static async getDeckWithCards(deckId: string): Promise<ApiDeckWithCards> {
+    return apiRequest<ApiDeckWithCards>(`/decks/${deckId}/with_cards`);
   }
+  
+  // static async getDeckSession(deckId: string): Promise<unknown> {
+  //   return apiRequest<unknown>(`/decks/${deckId}/session`);
+  // }
 
-  static async getDeckSession(deckId: string) {
-    return apiRequest(`/decks/${deckId}/session`);
-  }
 
   static async createDeck(payload: {
     title: string;
@@ -136,20 +142,21 @@ export class ApiClient {
     });
   }
 
-  static async updateDeck(
-    deckId: string,
-    payload: {
-      title?: string;
-      description?: string | null;
-      color?: string | null;
-      is_public?: boolean;
-    }
-  ): Promise<any> {
-    return apiRequest<any>(`/decks/${deckId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
+static async updateDeck(
+  deckId: string,
+  payload: {
+    title?: string;
+    description?: string | null;
+    color?: string | null;
+    is_public?: boolean;
   }
+): Promise<PublicDeckSummary> {
+  return apiRequest<PublicDeckSummary>(`/decks/${deckId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 
   static async deleteDeck(deckId: string): Promise<void> {
     return apiRequest<void>(`/decks/${deckId}`, { method: 'DELETE' });
@@ -287,7 +294,22 @@ export class ApiClient {
       currentStreak: 4,
       totalCards: 20,
       weeklyActivity: [2, 4, 3, 5, 1, 0, 50],
-      achievements: ['Первый успех', '10 карточек'],
+      achievements: [
+        {
+          id: 'first',
+          title: 'Первый успех',
+          description: 'Первое достижение',
+          icon: '⭐',
+          unlocked: true,
+        },
+        {
+          id: 'ten',
+          title: '10 карточек',
+          description: 'Изучено 10 карточек',
+          icon: '🔟',
+          unlocked: true,
+        },
+      ],
     };
   }
 }
