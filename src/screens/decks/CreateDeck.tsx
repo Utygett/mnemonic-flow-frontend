@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ApiClient } from '../api/client';
+import { ApiClient } from '../../api/client';
 
 export function CreateDeck({
   onSave,

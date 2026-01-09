@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { StudyCard, DifficultyRating, isMultipleChoice } from '../types';
-import { FlipCard } from '../components/FlipCard';
-import { RatingButton } from '../components/RatingButton';
-import { Button } from '../components/Button/Button';
-import { ProgressBar } from '../components/ProgressBar';
+import { StudyCard, DifficultyRating, isMultipleChoice } from '../../../types';
+import { FlipCard } from '../../../components/FlipCard';
+import { RatingButton } from '../../../components/RatingButton';
+import { Button } from '../../../components/Button/Button';
+import { ProgressBar } from '../../../components/ProgressBar';
 import { X, SkipForward, Trash2 } from 'lucide-react';
-import { MarkdownView } from '../components/MarkdownView';
+import { MarkdownView } from '../../../components/MarkdownView';
 
 function getLevelIndex(l: any): number {
   return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;

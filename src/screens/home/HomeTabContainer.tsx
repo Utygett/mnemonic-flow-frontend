@@ -4,7 +4,7 @@ import type { Deck, Group, StudyMode, Statistics } from '../../types';
 
 import { HomeTab } from './HomeTab';
 import { CreateGroup } from '../group/CreateGroup';
-import AddDeck from '../AddDeck/AddDeck';
+import { AddDeck } from '../decks/add/AddDeck';
 import { DeckDetailsScreen } from '../deck/DeckDetailsScreen';
 
 type Props = {

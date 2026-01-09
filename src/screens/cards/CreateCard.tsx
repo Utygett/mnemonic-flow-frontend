@@ -1,11 +1,11 @@
 // src/screens/CreateCard.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Input } from '../components/Input';
-import { Button } from '../components/Button/Button';
-import { MarkdownField } from '../components/MarkdownField';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button/Button';
+import { MarkdownField } from '../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
-import type { PublicDeckSummary } from '../types';
-import { MarkdownView } from '../components/MarkdownView';
+import type { PublicDeckSummary } from '../../types';
+import { MarkdownView } from '../../components/MarkdownView';
 
 type CardType = 'flashcard' | 'multiple_choice';
 

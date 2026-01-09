@@ -1,10 +1,8 @@
 import React from 'react';
 
-import { CreateCard } from '../CreateCard';
-import { CreateDeck } from '../CreateDeck';
-import { EditCardFlow } from '../EditCardFlow';
-import { EditDeck } from '../EditDeck';
-import { Statistics } from '../Statistics';
+import { CreateCard, EditCardFlow } from '../cards';
+import { CreateDeck, EditDeck } from '../decks';
+import { Statistics } from '../stats';
 
 import { HomeTabContainer } from '../home/HomeTabContainer';
 import { ProfileContainer } from '../profile/ProfileContainer';

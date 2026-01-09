@@ -1,7 +1,7 @@
 // src/screens/study/StudyFlowView.tsx
 import React from 'react';
 import type { DifficultyRating, StudyCard } from '../../types';
-import { StudySession } from '../StudySession';
+import { StudySession } from './session/StudySession';
 
 import './StudyFlow.css';
 

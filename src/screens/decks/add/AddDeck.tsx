@@ -1,10 +1,10 @@
 // src/screens/AddDeck/AddDeck.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Trash2 } from 'lucide-react';
-import { Button } from '../../components/Button/Button';
-import { ApiClient } from '../../api/client';
-import { PublicDeckSummary } from '../../types';
-import { useAuth } from '../../auth/AuthContext';
+import { Button } from '../../../components/Button/Button';
+import { ApiClient } from '../../../api/client';
+import { PublicDeckSummary } from '../../../types';
+import { useAuth } from '../../../auth/AuthContext';
 import './AddDeck.css';
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
   onChanged?: (deckId: string, action: 'added' | 'removed') => void;
 };
 
-const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Props) => {
+ export const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
@@ -212,5 +212,3 @@ const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: Prop
     </div>
   );
 };
-
-export default AddDeck;

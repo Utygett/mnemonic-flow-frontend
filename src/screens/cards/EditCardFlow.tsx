@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { PublicDeckSummary } from '../types';
-import { ApiClient } from '../api/client';
-import { Button } from '../components/Button/Button';
-import { MarkdownField } from '../components/MarkdownField';
+import type { PublicDeckSummary } from '../../types';
+import { ApiClient } from '../../api/client';
+import { Button } from '../../components/Button/Button';
+import { MarkdownField } from '../../components/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
-import { useAuth } from '../auth/AuthContext';
-import { getErrorMessage } from '../utils/errorMessage';
+import { useAuth } from '../../auth/AuthContext';
+import { getErrorMessage } from '../../utils/errorMessage';
 
 type CardSummary = {
   card_id: string;

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Statistics as StatsType, Deck } from '../types';
-import { ProgressBar } from '../components/ProgressBar';
+import { Statistics as StatsType, Deck } from '../../types';
+import { ProgressBar } from '../../components/ProgressBar';
 import { Trophy, Target, Zap } from 'lucide-react';
 
 interface StatisticsProps {
