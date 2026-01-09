@@ -1,4 +1,4 @@
-import type { MainTab } from './main.types';
+import type { MainTab } from './mainShell.types';
 import type { Group, Statistics as AppStatistics, Deck, PublicDeckSummary } from '../../types';
 import type { StudyController } from '../study/StudyFlowStateContainer';
 

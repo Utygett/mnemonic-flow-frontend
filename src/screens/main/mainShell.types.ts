@@ -2,7 +2,7 @@ import React from 'react';
 
 export type MainTab = 'home' | 'study' | 'stats' | 'profile';
 
-export type MainTabsViewProps = {
+export type MainShellViewProps = {
   content: React.ReactNode;
   hideBottomNav: boolean;
   activeTab: MainTab;

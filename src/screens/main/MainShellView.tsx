@@ -5,9 +5,9 @@ import { InstallPrompt } from '../../components/InstallPrompt';
 import { OfflineStatus } from '../../app/overlays/OfflineStatus';
 import { PWAUpdatePrompt } from '../../app/overlays/PWAUpdatePrompt';
 
-import type { MainTabsViewProps } from './main.types';
+import type { MainShellViewProps } from './mainShell.types';
 
-export function MainTabsView(props: MainTabsViewProps) {
+export function MainShellView(props: MainShellViewProps) {
   return (
     <div className="relative">
       <PWAUpdatePrompt />

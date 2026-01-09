@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 import { useStatistics } from '../../hooks';
 import { useGroupsDecksController } from '../../hooks/useGroupsDecksController';
 import { StudyFlowStateContainer } from '../study/StudyFlowStateContainer';
-import { MainTabsView } from './MainTabsView';
-import type { MainTab } from './main.types';
+import { MainShellView } from './MainShellView';
+import type { MainTab } from './mainShell.types';
 import { useIsPWA } from '../../app/pwa/useIsPWA';
 import { useRegisterServiceWorker } from '../../app/pwa/useRegisterServiceWorker';
 import { MnemonicRootSwitch } from './MnemonicRootSwitch';
 import { ApiClient } from '../../api/client';
 
 
-export function MainTabsContainer() {
+export function MainShellContainer() {
   const {
     groups,
     activeGroupId,
@@ -169,7 +169,7 @@ export function MainTabsContainer() {
             );
 
         return (
-            <MainTabsView
+            <MainShellView
                 content={content}
                 hideBottomNav={hideBottomNav}
                 activeTab={activeTab}

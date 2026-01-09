@@ -4,7 +4,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 
 import { AppRouter } from './app/AppRouter';
-import { MainTabsContainer } from './screens/main/MainTabsContainer';
+import { MainShellContainer } from './screens/main';
 
 export default function App() {
   return (
@@ -12,7 +12,7 @@ export default function App() {
       <AppRouter
         renderMain={() => (
           <AuthGate>
-            <MainTabsContainer />
+            <MainShellContainer />
           </AuthGate>
         )}
       />
