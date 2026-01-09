@@ -86,11 +86,8 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
       <EditCardFlow
         decks={props.decks}
         onCancel={() => props.setIsEditingCard(false)}
-        onDone={() => {
-          props.refreshDecks();
-          props.refreshStats();
-          props.setIsEditingCard(false);
-        }}
+        onDone={props.onEditCardDone}
+
         onEditDeck={(deckId) => {
           props.setEditingDeckId(deckId);
           props.setIsEditingDeck(true);

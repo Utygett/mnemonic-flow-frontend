@@ -101,6 +101,12 @@ export function MainTabsContainer() {
     };
 
 
+    const handleEditCardDone = () => {
+        refreshDecks();
+        refreshStats();
+        setIsEditingCard(false);
+    };
+
   return (
     <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
       {(study) => {
@@ -157,6 +163,8 @@ export function MainTabsContainer() {
 
                 onDeckCreated={handleDeckCreated}
                 onDeckSaved={handleDeckSaved}
+
+                onEditCardDone={handleEditCardDone}
             />
             );
 
