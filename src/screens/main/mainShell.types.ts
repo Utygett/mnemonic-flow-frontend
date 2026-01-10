@@ -1,10 +1,2 @@
-import React from 'react';
-
-export type MainTab = 'home' | 'study' | 'stats' | 'profile';
-
-export type MainShellViewProps = {
-  content: React.ReactNode;
-  hideBottomNav: boolean;
-  activeTab: MainTab;
-  onTabChange: (tab: MainTab) => void;
-};
+// Proxy export (legacy import path)
+export type { MainTab, MainShellViewProps } from '../../pages/main/mainShell.types';
