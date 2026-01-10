@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { CreateCard } from '../../features/cards-create';
-import { EditCard } from '../cards';
+import { EditCard } from '../../features/cards-edit';
 import { CreateDeck, EditDeck } from '../decks';
 import { Statistics } from '../stats';
 
