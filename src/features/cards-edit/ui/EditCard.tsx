@@ -1,11 +1,12 @@
+// src\screens\cards\EditCard.tsx
 import React, { useEffect, useMemo, useState } from 'react';
-import type { PublicDeckSummary } from '../../types';
-import { ApiClient } from '../../api/client';
-import { Button } from '../../shared/ui/Button/Button';
-import { MarkdownField } from '../../shared/ui/MarkdownField';
+import type { PublicDeckSummary } from '../../../types';
+import { ApiClient } from '../../../api/client';
+import { Button } from '../../../shared/ui/Button/Button';
+import { MarkdownField } from '../../../shared/ui/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
-import { useAuth } from '../../auth/AuthContext';
-import { getErrorMessage } from '../../utils/errorMessage';
+import { useAuth } from '../../../auth/AuthContext';
+import { getErrorMessage } from '../../../utils/errorMessage';
 
 type CardSummary = {
   card_id: string;
@@ -131,7 +132,7 @@ function normalizeQaLevel(rawContent: any): QaLevelDraft {
   };
 }
 
-export function EditCardFlow({ decks, onCancel, onDone, onEditDeck }: Props) {
+export function EditCard({ decks, onCancel, onDone, onEditDeck }: Props) {
   const defaultDeckId = useMemo(() => decks?.[0]?.deck_id ?? '', [decks]);
   const [deckId, setDeckId] = useState(defaultDeckId);
 

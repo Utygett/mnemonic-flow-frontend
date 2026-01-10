@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { CreateCard } from '../../features/cards-create';
-import { EditCardFlow } from '../cards';
+import { EditCard } from '../cards';
 import { CreateDeck, EditDeck } from '../decks';
 import { Statistics } from '../stats';
 
@@ -89,7 +89,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
 
   if (props.cards.flow.isEditingCard) {
     return (
-      <EditCardFlow
+      <EditCard
         decks={props.data.decks}
         onCancel={props.cards.flow.closeEditCard}
         onDone={props.cards.actions.onEditCardDone}
