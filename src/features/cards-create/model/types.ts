@@ -1,6 +1,6 @@
 import type { PublicDeckSummary } from '../../../types';
 
-export type CardType = 'flashcard' | 'multiplechoice';
+export type CardType = 'flashcard' | 'multiple_choice';
 
 export type LevelQA = {
   question: string;
@@ -30,7 +30,7 @@ export type CreateCardData =
   | {
       deckId: string;
       term: string;
-      type: 'multiplechoice';
+      type: 'multiple_choice';
       levels: Array<{
         question: string;
         options: Array<{ id: string; text: string }>;

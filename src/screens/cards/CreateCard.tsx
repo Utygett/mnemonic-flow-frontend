@@ -1,46 +1,55 @@
 // src/screens/CreateCard.tsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button/Button';
 import { MarkdownField } from '../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
-import type { PublicDeckSummary } from '../../types';
 import { MarkdownView } from '../../components/MarkdownView';
-import type {
-  CardType,
-  LevelQA,
-  LevelMCQ,
-  McqOption,
-  CreateCardProps,
-} from '../../features/cards-create/model/types';
+
+import type { CardType, CreateCardProps } from '../../features/cards-create/model/types';
 import { parseCsvNameFrontBack } from '../../features/cards-create/model/csv';
-import { LAST_DECK_KEY, newId, clampInt } from '../../features/cards-create/model/utils';
-import { makeDefaultMcqLevel } from '../../features/cards-create/model/mcq';
+import { LAST_DECK_KEY } from '../../features/cards-create/model/utils';
+import { useCreateCardModel } from '../../features/cards-create/model/useCreateCardModel';
+import { useCreateCardLevelsModel } from '../../features/cards-create/model/useCreateCardLevelsModel';
 
 
 export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {
-  const [term, setTerm] = useState('');
-  const [cardType, setCardType] = useState<CardType>('flashcard');
+  const { term, setTerm, cardType, setCardType, deckId, setDeckId } = useCreateCardModel(decks);
 
-  const [activeLevel, setActiveLevel] = useState(0);
+  const {
+    activeLevel,
+    setActiveLevel,
 
-  const [deckId, setDeckId] = useState<string>(() => {
-    const saved = localStorage.getItem(LAST_DECK_KEY);
-    return saved ?? '';
-  });
+    // preview toggles
+    qPreview,
+    setQPreview,
+    aPreview,
+    setAPreview,
+    mcqQPreview,
+    setMcqQPreview,
+    mcqOptionsPreview,
+    setMcqOptionsPreview,
+    mcqExplanationPreview,
+    setMcqExplanationPreview,
 
-  // FLASHCARD levels
-  const [levelsQA, setLevelsQA] = useState<LevelQA[]>([{ question: '', answer: '' }]);
-  const [qPreview, setQPreview] = useState(false);
-  const [aPreview, setAPreview] = useState(false);
+    // derived
+    levelsCount,
+    activeQA,
+    activeMCQ,
 
-  // MCQ levels
-  const [levelsMCQ, setLevelsMCQ] = useState<LevelMCQ[]>([makeDefaultMcqLevel()]);
-  const [mcqQPreview, setMcqQPreview] = useState(false);
-  const [mcqOptionsPreview, setMcqOptionsPreview] = useState(false);
-  const [mcqExplanationPreview, setMcqExplanationPreview] = useState(false);
+    // actions
+    addLevel,
+    removeLevel,
+    patchLevelQA,
+    patchLevelMCQ,
+    patchMcqOption,
+    addMcqOption,
+    removeMcqOption,
 
-  const levelsCount = cardType === 'flashcard' ? levelsQA.length : levelsMCQ.length;
+    // cleaned (готово для onSave)
+    cleanedLevelsQA,
+    cleanedLevelsMCQ,
+  } = useCreateCardLevelsModel(cardType);
 
   // CSV import
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -52,115 +61,6 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
   const scrollToReport = () => {
     setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
-
-  const handleAddLevel = () => {
-    if (levelsCount >= 10) return;
-
-    if (cardType === 'flashcard') {
-      setLevelsQA(prev => [...prev, { question: '', answer: '' }]);
-      setActiveLevel(levelsQA.length);
-    } else {
-      setLevelsMCQ(prev => [...prev, makeDefaultMcqLevel()]);
-      setActiveLevel(levelsMCQ.length);
-    }
-  };
-
-  const handleRemoveLevel = (index: number) => {
-    if (levelsCount <= 1) return;
-
-    if (cardType === 'flashcard') {
-      const next = levelsQA.filter((_, i) => i !== index);
-      setLevelsQA(next);
-      if (activeLevel >= next.length) setActiveLevel(next.length - 1);
-    } else {
-      const next = levelsMCQ.filter((_, i) => i !== index);
-      setLevelsMCQ(next);
-      if (activeLevel >= next.length) setActiveLevel(next.length - 1);
-    }
-  };
-
-  const patchLevelQA = (index: number, patch: Partial<LevelQA>) => {
-    const next = [...levelsQA];
-    next[index] = { ...next[index], ...patch };
-    setLevelsQA(next);
-  };
-
-  const patchLevelMCQ = (index: number, patch: Partial<LevelMCQ>) => {
-    const next = [...levelsMCQ];
-    next[index] = { ...next[index], ...patch };
-    setLevelsMCQ(next);
-  };
-
-  const patchMcqOption = (levelIndex: number, optionId: string, patch: Partial<McqOption>) => {
-    const next = [...levelsMCQ];
-    const lvl = next[levelIndex];
-    const options = (lvl.options ?? []).map(o => (o.id === optionId ? { ...o, ...patch } : o));
-    next[levelIndex] = { ...lvl, options };
-    setLevelsMCQ(next);
-  };
-
-  const addMcqOption = (levelIndex: number) => {
-    const next = [...levelsMCQ];
-    const lvl = next[levelIndex];
-    const optId = newId();
-    const options = [...(lvl.options ?? []), { id: optId, text: '' }];
-    next[levelIndex] = {
-      ...lvl,
-      options,
-      correctOptionId: lvl.correctOptionId || optId,
-    };
-    setLevelsMCQ(next);
-  };
-
-  const removeMcqOption = (levelIndex: number, optionId: string) => {
-    const next = [...levelsMCQ];
-    const lvl = next[levelIndex];
-    const options = (lvl.options ?? []).filter(o => o.id !== optionId);
-    if (options.length < 2) return;
-
-    let correctOptionId = lvl.correctOptionId;
-    if (!options.some(o => o.id === correctOptionId)) {
-      correctOptionId = options[0]?.id ?? '';
-    }
-
-    next[levelIndex] = { ...lvl, options, correctOptionId };
-    setLevelsMCQ(next);
-  };
-
-  const cleanedLevelsQA = useMemo(
-    () =>
-      levelsQA
-        .map(l => ({ question: l.question.trim(), answer: l.answer.trim() }))
-        .filter(l => l.question && l.answer),
-    [levelsQA]
-  );
-
-  const cleanedLevelsMCQ = useMemo(() => {
-    return levelsMCQ
-      .map(l => {
-        const question = (l.question ?? '').trim();
-        const options = (l.options ?? [])
-          .map(o => ({ id: String(o.id), text: (o.text ?? '').trim() }))
-          .filter(o => o.id);
-
-        const correctOptionId = String(l.correctOptionId ?? '');
-        const explanation = (l.explanation ?? '').trim();
-        const timerSec =
-          typeof l.timerSec === 'number' && l.timerSec > 0 ? clampInt(l.timerSec, 1, 3600) : undefined;
-
-        return { question, options, correctOptionId, explanation, timerSec };
-      })
-      .filter(l => {
-        if (!l.question) return false;
-        if (l.options.length < 2) return false;
-        const nonEmpty = l.options.filter(o => o.text);
-        if (nonEmpty.length < 2) return false;
-        if (!l.correctOptionId) return false;
-        const correct = l.options.find(o => o.id === l.correctOptionId);
-        if (!correct || !correct.text) return false;
-        return true;
-      });
-  }, [levelsMCQ]);
 
   const canSave =
     term.trim() &&
@@ -177,7 +77,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
     }
   };
 
-    const handleImportCsv = async (file: File) => {
+  const handleImportCsv = async (file: File) => {
     if (!deckId) return;
 
     setImportReport(null);
@@ -190,11 +90,11 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
       // 1) Если ошибки парсинга — ОТВЕРГАЕМ импорт полностью
       if (errors.length > 0) {
         const head = `Импорт отменён: ошибок парсинга ${errors.length} из ${total} строк.\nИсправь CSV и попробуй снова.`;
-        const body =
-          `\n\nОшибки:\n- ${errors.slice(0, 20).join('\n- ')}${errors.length > 20 ? '\n- ...' : ''}`;
+        const body = `\n\nОшибки:\n- ${errors.slice(0, 20).join('\n- ')}${errors.length > 20 ? '\n- ...' : ''}`;
 
         const msg = head + body;
         setImportReport(msg);
+        scrollToReport();
         alert(msg);
         return;
       }
@@ -223,39 +123,30 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
 
       const msg = `Импорт завершён: отправлено ${sent}, создано в базе ${created}, ошибок API ${failed}.${tail}`;
       setImportReport(msg);
+      scrollToReport();
       alert(msg);
     } catch (e: any) {
       const msg = `Импорт не удался: ${String(e?.message ?? e)}`;
       setImportReport(msg);
+      scrollToReport();
       alert(msg);
     } finally {
       setImportBusy(false);
     }
   };
 
-
-  const activeQA = levelsQA[activeLevel];
-  const activeMCQ = levelsMCQ[activeLevel];
-
+  // default deck selection
   useEffect(() => {
     if (!decks || decks.length === 0) return;
-    if (deckId && decks.some(d => d.deck_id === deckId)) return;
+    if (deckId && decks.some((d) => d.deck_id === deckId)) return;
     setDeckId(decks[0].deck_id);
-  }, [decks, deckId]);
+  }, [decks, deckId, setDeckId]);
 
+  // persist last deck
   useEffect(() => {
     if (!deckId) return;
     localStorage.setItem(LAST_DECK_KEY, deckId);
   }, [deckId]);
-
-  useEffect(() => {
-    setActiveLevel(0);
-    setQPreview(false);
-    setAPreview(false);
-    setMcqQPreview(false);
-    setMcqOptionsPreview(false);
-    setMcqExplanationPreview(false);
-  }, [cardType]);
 
   return (
     <div className="min-h-screen bg-dark pb-24">
@@ -283,7 +174,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
             {decks.length === 0 ? (
               <option value="">Нет доступных колод</option>
             ) : (
-              decks.map(d => (
+              decks.map((d) => (
                 <option key={d.deck_id} value={d.deck_id}>
                   {d.title}
                 </option>
@@ -300,23 +191,17 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
           </select>
         </div>
 
-        <Input
-          value={term}
-          onChange={setTerm}
-          label="Название / Тема карточки"
-          placeholder="Например: Фотосинтез"
-        />
+        <Input value={term} onChange={setTerm} label="Название / Тема карточки" placeholder="Например: Фотосинтез" />
 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>
-              Уровни сложности ({levelsCount})
-            </label>
+            <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>Уровни сложности ({levelsCount})</label>
 
             {levelsCount < 10 && (
               <button
-                onClick={handleAddLevel}
+                onClick={addLevel}
                 style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
+                type="button"
               >
                 <Plus size={16} />
                 Добавить уровень
@@ -330,6 +215,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                 key={index}
                 onClick={() => setActiveLevel(index)}
                 className={`level-tab ${activeLevel === index ? 'level-tab--active' : 'level-tab--inactive'}`}
+                type="button"
               >
                 <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
               </button>
@@ -341,8 +227,9 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
               <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {levelsCount > 1 && (
                   <button
-                    onClick={() => handleRemoveLevel(activeLevel)}
+                    onClick={() => removeLevel(activeLevel)}
                     style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}
+                    type="button"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -357,7 +244,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   value={activeQA?.question ?? ''}
                   onChange={(v) => patchLevelQA(activeLevel, { question: v })}
                   preview={qPreview}
-                  onTogglePreview={() => setQPreview(v => !v)}
+                  onTogglePreview={() => setQPreview(!qPreview)}
                 />
 
                 <MarkdownField
@@ -365,7 +252,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   value={activeQA?.answer ?? ''}
                   onChange={(v) => patchLevelQA(activeLevel, { answer: v })}
                   preview={aPreview}
-                  onTogglePreview={() => setAPreview(v => !v)}
+                  onTogglePreview={() => setAPreview(!aPreview)}
                   className="mt-4"
                 />
               </>
@@ -376,7 +263,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   value={activeMCQ?.question ?? ''}
                   onChange={(v) => patchLevelMCQ(activeLevel, { question: v })}
                   preview={mcqQPreview}
-                  onTogglePreview={() => setMcqQPreview(v => !v)}
+                  onTogglePreview={() => setMcqQPreview(!mcqQPreview)}
                 />
 
                 <div className="form-row" style={{ marginTop: '1rem' }}>
@@ -388,8 +275,13 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                     max={3600}
                     value={typeof activeMCQ?.timerSec === 'number' ? String(activeMCQ.timerSec) : ''}
                     onChange={(e) => {
-                      const vRaw = e.target.value;
-                      const v = vRaw === '' ? undefined : clampInt(Number(vRaw), 0, 3600);
+                      const raw = e.target.value;
+                      if (raw === '') {
+                        patchLevelMCQ(activeLevel, { timerSec: undefined });
+                        return;
+                      }
+                      const n = Number(raw);
+                      const v = Number.isFinite(n) ? Math.max(0, Math.min(3600, Math.trunc(n))) : 0;
                       patchLevelMCQ(activeLevel, { timerSec: v });
                     }}
                     placeholder="Напр. 15"
@@ -449,14 +341,14 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                           value={opt.text}
                           onChange={(v) => patchMcqOption(activeLevel, opt.id, { text: v })}
                           preview={mcqOptionsPreview}
-                          onTogglePreview={() => setMcqOptionsPreview(v => !v)}
+                          onTogglePreview={() => setMcqOptionsPreview(!mcqOptionsPreview)}
                         />
                       </div>
                     ))}
                   </div>
 
                   {(() => {
-                    const correct = (activeMCQ?.options ?? []).find(o => o.id === activeMCQ?.correctOptionId);
+                    const correct = (activeMCQ?.options ?? []).find((o) => o.id === activeMCQ?.correctOptionId);
                     const text = correct?.text?.trim();
                     if (!text) return null;
                     return (
@@ -477,7 +369,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   value={activeMCQ?.explanation ?? ''}
                   onChange={(v) => patchLevelMCQ(activeLevel, { explanation: v })}
                   preview={mcqExplanationPreview}
-                  onTogglePreview={() => setMcqExplanationPreview(v => !v)}
+                  onTogglePreview={() => setMcqExplanationPreview(!mcqExplanationPreview)}
                   className="mt-4"
                 />
               </>
