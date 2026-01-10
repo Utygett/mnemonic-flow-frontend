@@ -13,12 +13,15 @@ import { useRegisterServiceWorker } from '../../app/pwa/useRegisterServiceWorker
 
 import { MnemonicRootSwitch } from './MnemonicRootSwitch';
 
-import { CardsActionsContainer, CardsFlowContainer } from '../cards';
-import { DecksActionsContainer, DecksFlowContainer } from '../decks';
-import { DecksFlowApi } from '../decks/DecksFlowContainer';
-import { DecksActionsApi } from '../decks/DecksActionsContainer';
-import { CardsFlowApi } from '../cards/CardsFlowContainer';
-import { CardsActionsApi } from '../cards/CardsActionsContainer';
+import { CardsActionsContainer } from '../../features/cards-actions';
+import type { CardsActionsApi } from '../../features/cards-actions';
+import { CardsFlowContainer } from '../../features/cards-flow';
+import type { CardsFlowApi } from '../../features/cards-flow';
+
+import { DecksActionsContainer } from '../../features/decks-actions';
+import type { DecksActionsApi } from '../../features/decks-actions';
+import { DecksFlowContainer } from '../../features/decks-flow';
+import type { DecksFlowApi } from '../../features/decks-flow';
 
 export function MainShellContainer() {
   const {
