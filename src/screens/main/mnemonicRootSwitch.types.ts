@@ -1,53 +1,47 @@
 import type { MainTab } from './mainShell.types';
-import type { Group, Statistics as AppStatistics, Deck, PublicDeckSummary } from '../../types';
-import type { StudyController } from '../study/StudyFlowStateContainer';
+import type { CardsFlowApi, CardsActionsApi } from '../cards';
+import type { DecksFlowApi, DecksActionsApi } from '../decks';
+
 
 export type MnemonicRootSwitchProps = {
+  study: any; // оставь как у тебя тип study
   activeTab: MainTab;
   isPWA: boolean;
 
-  isCreatingCard: boolean;
-  isEditingCard: boolean;
-  isCreatingDeck: boolean;
-  isEditingDeck: boolean;
-  editingDeckId: string | null;
+  cards: {
+    flow: CardsFlowApi;
+    actions: CardsActionsApi;
+  };
 
-  decks: PublicDeckSummary[];
-  groups: Group[];
-  activeGroupId: string | null;
-  setActiveGroupId: (id: string | null) => void;
-  currentGroupDeckIds: string[];
+  decks: {
+    flow: DecksFlowApi;
+    actions: DecksActionsApi;
+  };
 
-  statistics: AppStatistics | null;
-  dashboardStats: AppStatistics;
+  data: {
+    decks: any[];
+    groups: any[];
+    activeGroupId: string | null;
+    currentGroupDeckIds: string[];
+    statistics: any;
+    dashboardStats: any;
+  };
 
-  decksLoading: boolean;
-  statsLoading: boolean;
-  decksError: string | null;
-  statsError: string | null;
+  status: {
+    decksLoading: boolean;
+    statsLoading: boolean;
+    decksError: any;
+    statsError: any;
+  };
 
-  refreshDecks: () => void;
-  refreshGroups: () => void;
-  refreshStats: () => void;
-  deleteActiveGroup: () => void;
+    refresh: {
+        refreshGroups: () => Promise<void>;
+        refreshDecks: () => Promise<void>;
+        refreshStats: () => Promise<void>;
+    };
 
-    openCreateCard: () => void;
-    closeCreateCard: () => void;
-    openEditCard: () => void;
-    closeEditCard: () => void;
-
-    openCreateDeck: () => void;
-    closeCreateDeck: () => void;
-    openEditDeck: (deckId: string) => void;
-    closeEditDeck: () => void;
-
-  study: StudyController;
-
-    onCreateCardSave: (cardData: any) => Promise<void>;
-    onCreateCardSaveMany: (cards: any[]) => Promise<{ created: number; failed: number; errors?: string[] }>;
-
-    onDeckCreated: () => void;
-    onDeckSaved: () => void;
-
-    onEditCardDone: () => void;
+    groupsActions: {
+        setActiveGroupId: (id: string | null) => void;
+        deleteActiveGroup: () => Promise<void>;
+    };
 };

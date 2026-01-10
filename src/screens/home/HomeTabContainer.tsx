@@ -17,7 +17,7 @@ type Props = {
 
   // из твоего useGroupsDecksController
   refreshGroups: () => Promise<void>;
-  refreshDecks: () => void;
+  refreshDecks: () => Promise<void>;
   currentGroupDeckIds: string[];
   onDeleteActiveGroup: () => void;
 

@@ -1,10 +1,30 @@
 // src/hooks/useGroupsDecksController.ts
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
+
 import useDecks from './useDecks';
 import { ApiClient } from '../api/client';
 import type { Group } from '../types';
 
-export function useGroupsDecksController() {
+type UseDecksReturn = ReturnType<typeof useDecks>;
+
+export type GroupsDecksController = {
+  groups: Group[];
+  activeGroupId: string | null;
+  setActiveGroupId: Dispatch<SetStateAction<string | null>>;
+
+  decks: UseDecksReturn['decks'];
+  decksLoading: UseDecksReturn['loading'];
+  decksError: UseDecksReturn['error'];
+  refreshDecks: UseDecksReturn['refresh'];
+
+  refreshGroups: () => Promise<void>;
+  deleteActiveGroup: () => Promise<void>;
+
+  currentGroupDeckIds: string[];
+};
+
+export function useGroupsDecksController(): GroupsDecksController {
   const [activeGroupId, setActiveGroupId] = useState<string | null>(() => {
     const v = localStorage.getItem('active_group_id');
     if (!v || v === 'null' || v === 'undefined' || v.trim() === '') return null;
@@ -13,7 +33,7 @@ export function useGroupsDecksController() {
 
   const [groups, setGroups] = useState<Group[]>([]);
 
-  const refreshGroups = useCallback(async () => {
+  const refreshGroups = useCallback(async (): Promise<void> => {
     const gs = await ApiClient.getUserGroups();
     setGroups(gs);
 
@@ -39,13 +59,9 @@ export function useGroupsDecksController() {
   const { decks, loading: decksLoading, error: decksError, refresh: refreshDecks } =
     useDecks(activeGroupId);
 
-    const currentGroupDeckIds = useMemo(
-    () => decks.map((d) => d.deck_id),
-    [decks]
-    );
+  const currentGroupDeckIds = useMemo(() => decks.map((d: any) => d.deck_id), [decks]);
 
-
-  const deleteActiveGroup = useCallback(async () => {
+  const deleteActiveGroup = useCallback(async (): Promise<void> => {
     if (!activeGroupId) return;
 
     const g = groups.find((x) => x.id === activeGroupId);

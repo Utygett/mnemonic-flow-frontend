@@ -9,21 +9,9 @@ import { ProfileContainer } from '../profile/ProfileContainer';
 
 import type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
 
-
 export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
-  const {
-    decksLoading,
-    statsLoading,
-    decksError,
-    statsError,
-    isCreatingCard,
-    isCreatingDeck,
-    isEditingDeck,
-    editingDeckId,
-    isEditingCard,
-  } = props;
-
-  if (decksLoading || statsLoading) {
+  // loading
+  if (props.status.decksLoading || props.status.statsLoading) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center">
         <div className="text-center">
@@ -34,14 +22,23 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     );
   }
 
-  if (decksError || statsError) {
+  // error
+  if (props.status.decksError || props.status.statsError) {
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center p-4">
         <div className="card text-center">
           <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-[#E8EAF0] mb-2">Ошибка загрузки</h2>
-          <p className="text-[#9CA3AF] mb-4">{decksError || statsError}</p>
-          <button onClick={() => { props.refreshDecks(); props.refreshStats(); }} className="btn-primary">
+          <p className="text-[#9CA3AF] mb-4">
+            {String(props.status.decksError ?? props.status.statsError)}
+          </p>
+          <button
+            onClick={() => {
+              props.refresh.refreshDecks();
+              props.refresh.refreshStats();
+            }}
+            className="btn-primary"
+          >
             Попробовать снова
           </button>
         </div>
@@ -49,51 +46,59 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     );
   }
 
-  if (isCreatingCard) {
+  // flows
+  if (props.cards.flow.isCreatingCard) {
     return (
       <CreateCard
-        decks={props.decks}
-        onSave={props.onCreateCardSave}
-        onSaveMany={props.onCreateCardSaveMany}
-        onCancel={props.closeCreateCard}
+        decks={props.data.decks}
+        onSave={props.cards.actions.onCreateCardSave}
+        onSaveMany={props.cards.actions.onCreateCardSaveMany}
+        onCancel={props.cards.flow.closeCreateCard}
       />
     );
   }
 
-  if (props.isCreatingDeck) {
+  if (props.decks.flow.isCreatingDeck) {
     return (
       <CreateDeck
-        onCancel={() => props.closeCreateDeck()}
-        onSave={props.onDeckCreated}
-      />
-    );
-  }
+        onCancel={props.decks.flow.closeCreateDeck}
+        onSave={(createdDeckId?: string) => {
+          // refresh + close create deck modal/screen
+          props.decks.actions.onDeckCreated();
 
-  if (isEditingDeck && editingDeckId) {
-    return (
-      <EditDeck
-        deckId={editingDeckId}
-        onCancel={() => props.closeEditDeck()}
-        onSaved={props.onDeckSaved}
-      />
-    );
-  }
-
-  if (isEditingCard) {
-    return (
-      <EditCardFlow
-        decks={props.decks}
-        onCancel={props.closeEditCard}
-        onDone={props.onEditCardDone}
-
-        onEditDeck={(deckId) => {
-          props.openEditDeck(deckId)
+          // опционально: сразу открыть экран редактирования только что созданной колоды
+          if (createdDeckId) {
+            props.decks.flow.openEditDeck(createdDeckId);
+          }
         }}
       />
     );
   }
 
-  // обычный режим: табы
+  if (props.decks.flow.isEditingDeck && props.decks.flow.editingDeckId) {
+    return (
+      <EditDeck
+        deckId={props.decks.flow.editingDeckId}
+        onCancel={props.decks.flow.closeEditDeck}
+        onSaved={props.decks.actions.onDeckSaved}
+      />
+    );
+  }
+
+  if (props.cards.flow.isEditingCard) {
+    return (
+      <EditCardFlow
+        decks={props.data.decks}
+        onCancel={props.cards.flow.closeEditCard}
+        onDone={props.cards.actions.onEditCardDone}
+        onEditDeck={(deckId: string) => {
+          props.decks.flow.openEditDeck(deckId);
+        }}
+      />
+    );
+  }
+
+  // tabs
   return (
     <>
       {props.isPWA && (
@@ -104,15 +109,15 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
 
       {props.activeTab === 'home' && (
         <HomeTabContainer
-          statistics={props.dashboardStats}
-          decks={props.decks}
-          groups={props.groups}
-          activeGroupId={props.activeGroupId}
-          setActiveGroupId={props.setActiveGroupId}
-          refreshGroups={props.refreshGroups}
-          refreshDecks={props.refreshDecks}
-          currentGroupDeckIds={props.currentGroupDeckIds}
-          onDeleteActiveGroup={props.deleteActiveGroup}
+          statistics={props.data.dashboardStats}
+          decks={props.data.decks}
+          groups={props.data.groups}
+          activeGroupId={props.data.activeGroupId}
+          setActiveGroupId={props.groupsActions.setActiveGroupId}
+          refreshGroups={props.refresh.refreshGroups}
+          refreshDecks={props.refresh.refreshDecks}
+          currentGroupDeckIds={props.data.currentGroupDeckIds}
+          onDeleteActiveGroup={props.groupsActions.deleteActiveGroup}
           resumeCandidate={props.study.resumeCandidate}
           onResume={props.study.onResume}
           onDiscardResume={props.study.onDiscardResume}
@@ -120,7 +125,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
           onStartDeckStudy={props.study.onStartDeckStudy}
           onResumeDeckSession={props.study.onResumeDeckSession}
           onRestartDeckSession={props.study.onRestartDeckSession}
-          onOpenEditDeck={props.openEditDeck}
+          onOpenEditDeck={props.decks.flow.openEditDeck}
         />
       )}
 
@@ -136,26 +141,32 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
             <div className="text-center py-12">
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📖</div>
               <h2 style={{ marginBottom: '1rem', color: '#E8EAF0' }}>Создайте свою первую карточку</h2>
-              <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>Начните изучение с создания карточек</p>
+              <p style={{ color: '#9CA3AF', marginBottom: '1.5rem' }}>
+                Начните изучение с создания карточек
+              </p>
 
               <div className="actionsStack__study">
-                <button onClick={props.openCreateCard} className="btn-primary">
+                <button onClick={props.cards.flow.openCreateCard} className="btn-primary">
                   Создать карточку
                 </button>
 
-                <button onClick={() => props.openCreateDeck()} className="btn-primary">
+                <button onClick={props.decks.flow.openCreateDeck} className="btn-primary">
                   Создать колоду
                 </button>
 
-                <button onClick={props.openEditCard} className="btn-primary">
-                  Редактировать колоду
+                <button onClick={props.cards.flow.openEditCard} className="btn-primary">
+                  Редактировать карточки
                 </button>
               </div>
 
               {!props.isPWA && (
                 <div className="mt-8 card">
-                  <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>💡 Установите приложение для работы офлайн</p>
-                  <p style={{ color: '#6B7280', fontSize: '0.75rem' }}>Нажмите "Установить" в меню браузера</p>
+                  <p style={{ color: '#9CA3AF', marginBottom: '0.5rem' }}>
+                    💡 Установите приложение для работы офлайн
+                  </p>
+                  <p style={{ color: '#6B7280', fontSize: '0.75rem' }}>
+                    Нажмите "Установить" в меню браузера
+                  </p>
                 </div>
               )}
             </div>
@@ -163,8 +174,8 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
         </div>
       )}
 
-      {props.activeTab === 'stats' && props.statistics && (
-        <Statistics statistics={props.statistics} decks={props.decks} />
+      {props.activeTab === 'stats' && props.data.statistics && (
+        <Statistics statistics={props.data.statistics} decks={props.data.decks} />
       )}
 
       {props.activeTab === 'profile' && <ProfileContainer isPWA={props.isPWA} />}

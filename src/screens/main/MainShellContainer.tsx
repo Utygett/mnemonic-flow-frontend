@@ -92,51 +92,31 @@ export function MainShellContainer() {
                                 study={study}
                                 activeTab={activeTab}
                                 isPWA={isPWA}
-
-                                // cards flow (только команды, без setState)
-                                isCreatingCard={cardsFlow.isCreatingCard}
-                                isEditingCard={cardsFlow.isEditingCard}
-                                openCreateCard={cardsFlow.openCreateCard}
-                                closeCreateCard={cardsFlow.closeCreateCard}
-                                openEditCard={cardsFlow.openEditCard}
-                                closeEditCard={cardsFlow.closeEditCard}
-
-                                // decks flow (только команды, без setState)
-                                isCreatingDeck={decksFlow.isCreatingDeck}
-                                isEditingDeck={decksFlow.isEditingDeck}
-                                editingDeckId={decksFlow.editingDeckId}
-                                openCreateDeck={decksFlow.openCreateDeck}
-                                closeCreateDeck={decksFlow.closeCreateDeck}
-                                openEditDeck={decksFlow.openEditDeck}
-                                closeEditDeck={decksFlow.closeEditDeck}
-
-                                // data
-                                decks={decks}
-                                groups={groups}
-                                activeGroupId={activeGroupId}
-                                setActiveGroupId={setActiveGroupId}
-                                currentGroupDeckIds={currentGroupDeckIds}
-                                statistics={statistics}
-                                dashboardStats={dashboardStats}
-
-                                // loading/errors
-                                decksLoading={decksLoading}
-                                statsLoading={statsLoading}
-                                decksError={decksError}
-                                statsError={statsError}
-
-                                // refresh actions
-                                refreshDecks={refreshDecks}
-                                refreshGroups={refreshGroups}
-                                refreshStats={refreshStats}
-                                deleteActiveGroup={deleteActiveGroup}
-
-                                // feature actions
-                                onCreateCardSave={cardsApi.onCreateCardSave}
-                                onCreateCardSaveMany={cardsApi.onCreateCardSaveMany}
-                                onEditCardDone={cardsApi.onEditCardDone}
-                                onDeckCreated={decksApi.onDeckCreated}
-                                onDeckSaved={decksApi.onDeckSaved}
+                                cards={{ flow: cardsFlow, actions: cardsApi }}
+                                decks={{ flow: decksFlow, actions: decksApi }}
+                                data={{
+                                  decks,
+                                  groups,
+                                  activeGroupId,
+                                  currentGroupDeckIds,
+                                  statistics,
+                                  dashboardStats,
+                                }}
+                                status={{
+                                  decksLoading,
+                                  statsLoading,
+                                  decksError,
+                                  statsError,
+                                }}
+                                refresh={{
+                                  refreshDecks,
+                                  refreshGroups,
+                                  refreshStats,
+                                }}
+                                groupsActions={{
+                                  setActiveGroupId,
+                                  deleteActiveGroup,
+                                }}
                               />
                             }
                           />

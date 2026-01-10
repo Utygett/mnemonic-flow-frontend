@@ -36,12 +36,13 @@ export function useCards(deckId?: string) {
     fetchData(fetchCards);
   }, [deckId, fetchData, fetchCards]);
 
-  const refresh = useCallback(() => {
-    fetchData(fetchCards);
+  const refresh = useCallback((): Promise<void> => {
+    return fetchData(fetchCards);
   }, [fetchData, fetchCards]);
 
   return { cards: data || [], loading, error, refresh };
 }
+
 
 // export function useDecks() {
 //   const { data, loading, error, fetchData } = useApiData<Deck[]>();
@@ -64,12 +65,13 @@ export function useStatistics() {
     fetchData(() => ApiClient.getStatistics());
   }, [fetchData]);
 
-  const refresh = useCallback(() => {
-    fetchData(() => ApiClient.getStatistics());
+  const refresh = useCallback((): Promise<void> => {
+    return fetchData(() => ApiClient.getStatistics());
   }, [fetchData]);
 
   return { statistics: data, loading, error, refresh };
 }
+
 
 const parseDatesInCard = (card: any): Card => ({
   ...card,
