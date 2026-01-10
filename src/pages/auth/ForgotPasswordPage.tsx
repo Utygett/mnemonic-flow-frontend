@@ -27,7 +27,12 @@ export function ForgotPasswordPage() {
   return (
     <form onSubmit={submit}>
       <h1>Восстановление пароля</h1>
-      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" required />
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
       <button type="submit">Отправить ссылку</button>
       {error && <div>{error}</div>}
     </form>

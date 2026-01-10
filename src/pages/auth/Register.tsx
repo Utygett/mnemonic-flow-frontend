@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button/Button';
+
 import { register as registerApi } from '../../api/authClient';
+
 import styles from './Register.module.css';
 
 export function Register({ onSwitch }: { onSwitch: () => void }) {
@@ -21,8 +24,7 @@ export function Register({ onSwitch }: { onSwitch: () => void }) {
       const data = await registerApi(email, password);
 
       setInfo(data?.message ?? 'Регистрация успешна. Подтвердите email и затем войдите.');
-      setPassword(''); // чтобы не оставлять пароль в поле
-      // НЕ делаем onSwitch() автоматически, иначе ты не увидишь сообщение
+      setPassword('');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка регистрации';
       setError(msg || 'Ошибка регистрации');
@@ -47,7 +49,13 @@ export function Register({ onSwitch }: { onSwitch: () => void }) {
           }}
         >
           <Input label="Email" type="email" value={email} onChange={setEmail} disabled={loading} />
-          <Input label="Пароль" type="password" value={password} onChange={setPassword} disabled={loading} />
+          <Input
+            label="Пароль"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            disabled={loading}
+          />
 
           <Button variant="primary" size="large" fullWidth disabled={loading} type="submit">
             {loading ? 'Регистрируем...' : 'Зарегистрироваться'}

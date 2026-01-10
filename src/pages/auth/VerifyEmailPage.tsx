@@ -4,7 +4,6 @@ export function VerifyEmailPage({ token }: { token: string }) {
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [secondsLeft, setSecondsLeft] = useState(5);
 
-  // 1) проверка токена
   useEffect(() => {
     if (!token) {
       setStatus('error');
@@ -20,7 +19,6 @@ export function VerifyEmailPage({ token }: { token: string }) {
       .catch(() => setStatus('error'));
   }, [token]);
 
-  // 2) редирект через 5 секунд после успеха
   useEffect(() => {
     if (status !== 'ok') return;
 
@@ -31,8 +29,6 @@ export function VerifyEmailPage({ token }: { token: string }) {
     }, 1000);
 
     const timeoutId = window.setTimeout(() => {
-      // сюда поставь hash-роут твоего экрана логина/регистрации
-      // если вход по умолчанию на "#/" — оставь так:
       window.location.hash = '/';
     }, 5000);
 
@@ -44,13 +40,13 @@ export function VerifyEmailPage({ token }: { token: string }) {
 
   if (status === 'loading') return <div>Проверяем токен…</div>;
 
-  if (status === 'error') return (
-    <div>
-      Неверный или истёкший токен. <a href="/">Перейти ко входу</a>
-    </div>
-  );
+  if (status === 'error')
+    return (
+      <div>
+        Неверный или истёкший токен. <a href="/">Перейти ко входу</a>
+      </div>
+    );
 
-  // status === 'ok'
   return (
     <div>
       <div>Email подтверждён. Перенаправление на вход через {secondsLeft} сек…</div>

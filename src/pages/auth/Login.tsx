@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button/Button';
+
 import { useAuth } from '../../auth/AuthContext';
 import { login as loginApi } from '../../api/authClient';
+
 import styles from './Login.module.css';
 
 type Mode = 'login' | 'forgot';
@@ -57,10 +60,7 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
 
       if (!res.ok) {
         const msg =
-          payload?.detail?.message ??
-          payload?.detail ??
-          rawText ??
-          'Не удалось отправить ссылку';
+          payload?.detail?.message ?? payload?.detail ?? rawText ?? 'Не удалось отправить ссылку';
         setError(String(msg));
         return;
       }
@@ -74,9 +74,7 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <h1 className={styles.title}>
-          {mode === 'login' ? 'Вход' : 'Восстановление пароля'}
-        </h1>
+        <h1 className={styles.title}>{mode === 'login' ? 'Вход' : 'Восстановление пароля'}</h1>
 
         {error && <div className={styles.messageError}>{error}</div>}
         {info && <div className={styles.messageInfo}>{info}</div>}
@@ -110,7 +108,12 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
               Забыли пароль?
             </button>
 
-            <button onClick={onSwitch} className={styles.linkBtn} type="button" disabled={loading}>
+            <button
+              onClick={onSwitch}
+              className={styles.linkBtn}
+              type="button"
+              disabled={loading}
+            >
               Нет аккаунта? Зарегистрироваться
             </button>
           </form>

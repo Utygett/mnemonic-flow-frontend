@@ -36,7 +36,6 @@ export function ResetPasswordPage({ token }: { token: string }) {
     setStatus('ok');
   };
 
-  // редирект через 5 секунд после успеха (аналогично verify-email)
   useEffect(() => {
     if (status !== 'ok') return;
 
@@ -47,7 +46,7 @@ export function ResetPasswordPage({ token }: { token: string }) {
     }, 1000);
 
     const timeoutId = window.setTimeout(() => {
-      window.location.hash = '/'; // тот же hash-роут, что и в VerifyEmailPage
+      window.location.hash = '/';
     }, 5000);
 
     return () => {
