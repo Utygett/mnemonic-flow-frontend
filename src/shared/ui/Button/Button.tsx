@@ -1,7 +1,7 @@
 import React from 'react';
 // @ts-ignore: CSS module without type declarations
 import styles from './Button.module.css';
-import { cn } from '../ui/utils';
+import { cn } from '../../../components/ui/utils';
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'primary' | 'secondary';

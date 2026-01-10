@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { ApiClient } from '../../api/client';
-import { Button } from '../../components/Button/Button';
 import { getErrorMessage } from '../../utils/errorMessage';
 
 export function EditDeck({

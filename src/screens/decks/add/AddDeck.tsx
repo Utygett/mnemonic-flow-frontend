@@ -1,7 +1,7 @@
 // src/screens/AddDeck/AddDeck.tsx
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Trash2 } from 'lucide-react';
-import { Button } from '../../../components/Button/Button';
+import { Button } from '../../../shared/ui/Button/Button';
 import { ApiClient } from '../../../api/client';
 import { PublicDeckSummary } from '../../../types';
 import { useAuth } from '../../../auth/AuthContext';

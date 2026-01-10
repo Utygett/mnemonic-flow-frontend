@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '../../components/Button/Button';
+import { Button } from '../../shared/ui/Button/Button';
 import { ResumeSessionCard } from '../../components/ResumeSession';
 import type { DashboardActions, DashboardModel } from './dashboard.types';
 import { DashboardStats } from './components/DashboardStats';

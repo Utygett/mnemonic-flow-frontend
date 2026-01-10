@@ -1,7 +1,6 @@
 // src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Input } from '../../../components/Input';
-import { Button } from '../../../components/Button/Button';
+import { Input } from '../../../shared/ui/Input';
 import { MarkdownField } from '../../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { MarkdownView } from '../../../components/MarkdownView';
@@ -10,6 +9,7 @@ import { LAST_DECK_KEY } from '../model/utils';
 import { useCreateCardModel } from '../model/useCreateCardModel';
 import { useCreateCardLevelsModel } from '../model/useCreateCardLevelsModel';
 import type { CardType, CreateCardProps } from '../model/types';
+import { Button } from '../../../shared/ui/Button/Button';
 
 
 

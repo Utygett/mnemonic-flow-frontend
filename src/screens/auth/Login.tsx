@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Input } from '../../components/Input';
-import { Button } from '../../components/Button/Button';
+import { Input } from '../../shared/ui/Input';
+import { Button } from '../../shared/ui/Button/Button';
 import { useAuth } from '../../auth/AuthContext';
 import { login as loginApi } from '../../api/authClient';
 import styles from './Login.module.css';

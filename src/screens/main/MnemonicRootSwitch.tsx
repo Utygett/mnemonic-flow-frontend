@@ -1,3 +1,4 @@
+// src\screens\main\MnemonicRootSwitch.tsx
 import React from 'react';
 
 import { CreateCard } from '../../features/cards-create';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '../../components/Button/Button';
+import { Button } from '../../shared/ui/Button/Button';
 import { LevelIndicator } from '../../components/LevelIndicator';
 import { motion, AnimatePresence } from 'motion/react';
 
