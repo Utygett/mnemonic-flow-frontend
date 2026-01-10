@@ -8,31 +8,7 @@ import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useAuth } from '../../../auth/AuthContext';
 import { getErrorMessage } from '../../../utils/errorMessage';
 
-type CardSummary = {
-  card_id: string;
-  title: string;
-  type: string;
-  levels?: Array<{ level_index: number; content: any }>;
-};
 
-interface Props {
-  decks: PublicDeckSummary[];
-  onCancel: () => void;
-  onDone: () => void;
-  onEditDeck?: (deckId: string) => void;
-}
-
-type QaLevelDraft = { kind: 'qa'; question: string; answer: string };
-type McqOptionDraft = { id: string; text: string };
-type McqLevelDraft = {
-  kind: 'mcq';
-  question: string;
-  options: McqOptionDraft[];
-  correctOptionId: string;
-  explanation: string;
-  timerSec: number; // 0 = без таймера
-};
-type LevelDraft = QaLevelDraft | McqLevelDraft;
 
 function moveItem<T>(arr: T[], from: number, to: number): T[] {
   const next = [...arr];
