@@ -1,7 +1,8 @@
 export { CreateDeck } from '../../features/deck-create';
 export { EditDeck } from '../../features/deck-edit';
 export { AddDeck } from './add/AddDeck';
-export { DecksActionsContainer } from './DecksActionsContainer';
-export { DecksFlowContainer } from './DecksFlowContainer';
-export type { DecksActionsApi } from './DecksActionsContainer';
-export type { DecksFlowApi } from './DecksFlowContainer';
+
+export { DecksActionsContainer } from '../../features/decks-actions';
+export { DecksFlowContainer } from '../../features/decks-flow';
+export type { DecksActionsApi } from '../../features/decks-actions';
+export type { DecksFlowApi } from '../../features/decks-flow';
