@@ -63,7 +63,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
   if (props.isCreatingDeck) {
     return (
       <CreateDeck
-        onCancel={() => props.setIsCreatingDeck(false)}
+        onCancel={() => props.closeCreateDeck()}
         onSave={props.onDeckCreated}
       />
     );
@@ -73,7 +73,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
     return (
       <EditDeck
         deckId={editingDeckId}
-        onCancel={() => props.setIsEditingDeck(false)}
+        onCancel={() => props.closeEditDeck()}
         onSaved={props.onDeckSaved}
       />
     );
@@ -87,8 +87,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
         onDone={props.onEditCardDone}
 
         onEditDeck={(deckId) => {
-          props.setEditingDeckId(deckId);
-          props.setIsEditingDeck(true);
+          props.openEditDeck(deckId)
         }}
       />
     );
@@ -144,7 +143,7 @@ export function MnemonicRootSwitch(props: MnemonicRootSwitchProps) {
                   Создать карточку
                 </button>
 
-                <button onClick={() => props.setIsCreatingDeck(true)} className="btn-primary">
+                <button onClick={() => props.openCreateDeck()} className="btn-primary">
                   Создать колоду
                 </button>
 

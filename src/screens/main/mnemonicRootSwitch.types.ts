@@ -36,12 +36,10 @@ export type MnemonicRootSwitchProps = {
     openEditCard: () => void;
     closeEditCard: () => void;
 
-  setIsCreatingDeck: (v: boolean) => void;
-  setIsEditingDeck: (v: boolean) => void;
-
-  setEditingDeckId: (v: string | null) => void;
-
-  openEditDeck: (deckId: string) => void;
+    openCreateDeck: () => void;
+    closeCreateDeck: () => void;
+    openEditDeck: (deckId: string) => void;
+    closeEditDeck: () => void;
 
   study: StudyController;
 

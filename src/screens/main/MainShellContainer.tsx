@@ -14,7 +14,7 @@ import { useRegisterServiceWorker } from '../../app/pwa/useRegisterServiceWorker
 import { MnemonicRootSwitch } from './MnemonicRootSwitch';
 
 import { CardsActionsContainer, CardsFlowContainer } from '../cards';
-import { DecksActionsContainer } from '../decks';
+import { DecksActionsContainer, DecksFlowContainer } from '../decks';
 
 export function MainShellContainer() {
   const {
@@ -45,103 +45,106 @@ export function MainShellContainer() {
 
   const [activeTab, setActiveTab] = useState<MainTab>('home');
 
-  const [isCreatingDeck, setIsCreatingDeck] = useState(false);
-  const [isEditingDeck, setIsEditingDeck] = useState(false);
-  const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
-
   useRegisterServiceWorker();
   const isPWA = useIsPWA();
-
-  const openEditDeck = (deckId: string) => {
-    setEditingDeckId(deckId);
-    setIsEditingDeck(true);
-  };
 
   return (
     <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
       {(study) => (
-        <DecksActionsContainer
-          refreshDecks={refreshDecks}
-          closeCreateDeck={() => setIsCreatingDeck(false)}
-          closeEditDeck={() => setIsEditingDeck(false)}
-        >
-          {(decksApi: any) => (
-            <CardsFlowContainer>
-              {(cardsFlow: any) => {
-                const hideBottomNav =
-                  study.isStudying ||
-                  decksLoading ||
-                  statsLoading ||
-                  Boolean(statsError) ||
-                  cardsFlow.isCreatingCard ||
-                  isCreatingDeck ||
-                  cardsFlow.isEditingCard ||
-                  isEditingDeck;
+        <DecksFlowContainer>
+          {(decksFlow: any) => (
+            <DecksActionsContainer
+              refreshDecks={refreshDecks}
+              closeCreateDeck={decksFlow.closeCreateDeck}
+              closeEditDeck={decksFlow.closeEditDeck}
+            >
+              {(decksApi: any) => (
+                <CardsFlowContainer>
+                  {(cardsFlow: any) => {
+                    const hideBottomNav =
+                      study.isStudying ||
+                      decksLoading ||
+                      statsLoading ||
+                      Boolean(statsError) ||
+                      cardsFlow.isCreatingCard ||
+                      cardsFlow.isEditingCard ||
+                      decksFlow.isCreatingDeck ||
+                      decksFlow.isEditingDeck;
 
-                return (
-                  <CardsActionsContainer
-                    refreshDecks={refreshDecks}
-                    refreshStats={refreshStats}
-                    closeCreateCard={cardsFlow.closeCreateCard}
-                    closeEditCard={cardsFlow.closeEditCard}
-                  >
-                    {(cardsApi: any) => (
-                      <MainShellView
-                        hideBottomNav={hideBottomNav}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                        content={
-                          <MnemonicRootSwitch
-                            study={study}
+                    return (
+                      <CardsActionsContainer
+                        refreshDecks={refreshDecks}
+                        refreshStats={refreshStats}
+                        closeCreateCard={cardsFlow.closeCreateCard}
+                        closeEditCard={cardsFlow.closeEditCard}
+                      >
+                        {(cardsApi: any) => (
+                          <MainShellView
+                            hideBottomNav={hideBottomNav}
                             activeTab={activeTab}
-                            isPWA={isPWA}
-                            // cards UI state теперь приходит из CardsFlowContainer
-                            isCreatingCard={cardsFlow.isCreatingCard}
-                            isEditingCard={cardsFlow.isEditingCard}
-                            openCreateCard={cardsFlow.openCreateCard}
-                            closeCreateCard={cardsFlow.closeCreateCard}
-                            openEditCard={cardsFlow.openEditCard}
-                            closeEditCard={cardsFlow.closeEditCard}
-                            // decks UI state пока остаётся в main (следующий шаг вынесем аналогично)
-                            isCreatingDeck={isCreatingDeck}
-                            isEditingDeck={isEditingDeck}
-                            editingDeckId={editingDeckId}
-                            decks={decks}
-                            groups={groups}
-                            activeGroupId={activeGroupId}
-                            setActiveGroupId={setActiveGroupId}
-                            currentGroupDeckIds={currentGroupDeckIds}
-                            statistics={statistics}
-                            dashboardStats={dashboardStats}
-                            decksLoading={decksLoading}
-                            statsLoading={statsLoading}
-                            decksError={decksError}
-                            statsError={statsError}
-                            refreshDecks={refreshDecks}
-                            refreshGroups={refreshGroups}
-                            refreshStats={refreshStats}
-                            deleteActiveGroup={deleteActiveGroup}
-                            // decks setters пока оставляем как есть
-                            setIsCreatingDeck={setIsCreatingDeck}
-                            setIsEditingDeck={setIsEditingDeck}
-                            setEditingDeckId={setEditingDeckId}
-                            openEditDeck={openEditDeck}
-                            // actions приходят из контейнеров действий
-                            onCreateCardSave={cardsApi.onCreateCardSave}
-                            onCreateCardSaveMany={cardsApi.onCreateCardSaveMany}
-                            onEditCardDone={cardsApi.onEditCardDone}
-                            onDeckCreated={decksApi.onDeckCreated}
-                            onDeckSaved={decksApi.onDeckSaved}
+                            onTabChange={setActiveTab}
+                            content={
+                              <MnemonicRootSwitch
+                                study={study}
+                                activeTab={activeTab}
+                                isPWA={isPWA}
+
+                                // cards flow (только команды, без setState)
+                                isCreatingCard={cardsFlow.isCreatingCard}
+                                isEditingCard={cardsFlow.isEditingCard}
+                                openCreateCard={cardsFlow.openCreateCard}
+                                closeCreateCard={cardsFlow.closeCreateCard}
+                                openEditCard={cardsFlow.openEditCard}
+                                closeEditCard={cardsFlow.closeEditCard}
+
+                                // decks flow (только команды, без setState)
+                                isCreatingDeck={decksFlow.isCreatingDeck}
+                                isEditingDeck={decksFlow.isEditingDeck}
+                                editingDeckId={decksFlow.editingDeckId}
+                                openCreateDeck={decksFlow.openCreateDeck}
+                                closeCreateDeck={decksFlow.closeCreateDeck}
+                                openEditDeck={decksFlow.openEditDeck}
+                                closeEditDeck={decksFlow.closeEditDeck}
+
+                                // data
+                                decks={decks}
+                                groups={groups}
+                                activeGroupId={activeGroupId}
+                                setActiveGroupId={setActiveGroupId}
+                                currentGroupDeckIds={currentGroupDeckIds}
+                                statistics={statistics}
+                                dashboardStats={dashboardStats}
+
+                                // loading/errors
+                                decksLoading={decksLoading}
+                                statsLoading={statsLoading}
+                                decksError={decksError}
+                                statsError={statsError}
+
+                                // refresh actions
+                                refreshDecks={refreshDecks}
+                                refreshGroups={refreshGroups}
+                                refreshStats={refreshStats}
+                                deleteActiveGroup={deleteActiveGroup}
+
+                                // feature actions
+                                onCreateCardSave={cardsApi.onCreateCardSave}
+                                onCreateCardSaveMany={cardsApi.onCreateCardSaveMany}
+                                onEditCardDone={cardsApi.onEditCardDone}
+                                onDeckCreated={decksApi.onDeckCreated}
+                                onDeckSaved={decksApi.onDeckSaved}
+                              />
+                            }
                           />
-                        }
-                      />
-                    )}
-                  </CardsActionsContainer>
-                );
-              }}
-            </CardsFlowContainer>
+                        )}
+                      </CardsActionsContainer>
+                    );
+                  }}
+                </CardsFlowContainer>
+              )}
+            </DecksActionsContainer>
           )}
-        </DecksActionsContainer>
+        </DecksFlowContainer>
       )}
     </StudyFlowStateContainer>
   );
