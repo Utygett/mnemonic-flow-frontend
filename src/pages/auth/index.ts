@@ -1,5 +1,5 @@
-export * from '../../screens/auth/Login';
-export * from '../../screens/auth/Register';
-export * from '../../screens/auth/ForgotPasswordPage';
-export * from '../../screens/auth/ResetPasswordPage';
-export * from '../../screens/auth/VerifyEmailPage';
+export { Login } from './Login';
+export { Register } from './Register';
+export { ForgotPasswordPage } from './ForgotPasswordPage';
+export { ResetPasswordPage } from './ResetPasswordPage';
+export { VerifyEmailPage } from './VerifyEmailPage';
