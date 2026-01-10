@@ -1,7 +1,7 @@
 import React from 'react';
 import { StudyCard } from '../types';
 import { motion } from 'motion/react';
-import { MarkdownView } from './MarkdownView';
+import { MarkdownView } from '../shared/ui/MarkdownView';
 
 interface FlipCardProps {
   card: StudyCard;

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { PublicDeckSummary } from '../../types';
 import { ApiClient } from '../../api/client';
 import { Button } from '../../shared/ui/Button/Button';
-import { MarkdownField } from '../../components/MarkdownField';
+import { MarkdownField } from '../../shared/ui/MarkdownField';
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { getErrorMessage } from '../../utils/errorMessage';

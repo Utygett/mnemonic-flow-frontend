@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-import { convertBracketLatexToDollar } from '../utils/latexDelimiters';
+import { convertBracketLatexToDollar } from '../../utils/latexDelimiters';
 
 export function MarkdownView({ value }: { value: string }) {
   const processed = convertBracketLatexToDollar(value ?? '');

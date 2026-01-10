@@ -1,9 +1,9 @@
 // src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '../../../shared/ui/Input';
-import { MarkdownField } from '../../../components/MarkdownField';
+import { MarkdownField } from '../../../shared/ui/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
-import { MarkdownView } from '../../../components/MarkdownView';
+import { MarkdownView } from '../../../shared/ui/MarkdownView';
 import { parseCsvNameFrontBack } from '../lib/csv';
 import { LAST_DECK_KEY } from '../model/utils';
 import { useCreateCardModel } from '../model/useCreateCardModel';
