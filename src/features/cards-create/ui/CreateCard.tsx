@@ -1,16 +1,16 @@
-// src/screens/CreateCard.tsx
+// src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Input } from '../../components/Input';
-import { Button } from '../../components/Button/Button';
-import { MarkdownField } from '../../components/MarkdownField';
+import { Input } from '../../../components/Input';
+import { Button } from '../../../components/Button/Button';
+import { MarkdownField } from '../../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
-import { MarkdownView } from '../../components/MarkdownView';
+import { MarkdownView } from '../../../components/MarkdownView';
+import { parseCsvNameFrontBack } from '../model/csv';
+import { LAST_DECK_KEY } from '../model/utils';
+import { useCreateCardModel } from '../model/useCreateCardModel';
+import { useCreateCardLevelsModel } from '../model/useCreateCardLevelsModel';
+import type { CardType, CreateCardProps } from '../model/types';
 
-import type { CardType, CreateCardProps } from '../../features/cards-create/model/types';
-import { parseCsvNameFrontBack } from '../../features/cards-create/model/csv';
-import { LAST_DECK_KEY } from '../../features/cards-create/model/utils';
-import { useCreateCardModel } from '../../features/cards-create/model/useCreateCardModel';
-import { useCreateCardLevelsModel } from '../../features/cards-create/model/useCreateCardLevelsModel';
 
 
 export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {

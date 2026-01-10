@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { CreateCard, EditCardFlow } from '../cards';
+import { CreateCard } from '../../features/cards-create';
+import { EditCardFlow } from '../cards';
 import { CreateDeck, EditDeck } from '../decks';
 import { Statistics } from '../stats';
 
