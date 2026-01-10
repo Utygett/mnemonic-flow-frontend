@@ -1,4 +1,4 @@
-export { CreateDeck } from './CreateDeck';
+export { CreateDeck } from '../../features/deck-create';
 export { EditDeck } from '../../features/deck-edit';
 export { AddDeck } from './add/AddDeck';
 export { DecksActionsContainer } from './DecksActionsContainer';
