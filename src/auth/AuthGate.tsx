@@ -1,8 +1,7 @@
 // src/auth/AuthGate.tsx
 import React from 'react';
 import { useAuth } from './AuthContext';
-import { Login } from '../screens/auth/Login';
-import { Register } from '../screens/auth/Register';
+import { Login, Register } from '../pages/auth';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { token, currentUser } = useAuth();

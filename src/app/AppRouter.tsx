@@ -1,8 +1,7 @@
 // src/app/AppRouter.tsx
 import React from 'react';
 
-import { ResetPasswordPage } from '../screens/auth/ResetPasswordPage';
-import { VerifyEmailPage } from '../screens/auth/VerifyEmailPage';
+import { ResetPasswordPage, VerifyEmailPage } from '../pages/auth';
 
 type AppRouterProps = {
   renderMain: () => React.ReactNode;
