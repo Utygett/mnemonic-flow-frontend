@@ -1,6 +1,10 @@
 import type { MainTab } from './mainShell.types';
-import type { CardsFlowApi, CardsActionsApi } from '../cards';
-import type { DecksFlowApi, DecksActionsApi } from '../decks';
+
+import type { CardsFlowApi } from '../../features/cards-flow';
+import type { CardsActionsApi } from '../../features/cards-actions';
+
+import type { DecksFlowApi } from '../../features/decks-flow';
+import type { DecksActionsApi } from '../../features/decks-actions';
 
 export type MnemonicRootSwitchProps = {
   study: any; // оставь как у тебя тип study

@@ -2,11 +2,12 @@ import React from 'react';
 
 import { CreateCard } from '../../features/cards-create';
 import { EditCard } from '../../features/cards-edit';
-import { CreateDeck, EditDeck } from '../decks';
-import { Statistics } from '../stats';
+import { CreateDeck } from '../../features/deck-create';
+import { EditDeck } from '../../features/deck-edit';
+import { Statistics } from '../../features/statistics';
+import { ProfileContainer } from '../../features/profile';
 
 import { HomeTabContainer } from '../home/HomeTabContainer';
-import { ProfileContainer } from '../profile/ProfileContainer';
 
 import type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
 
