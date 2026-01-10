@@ -3,7 +3,7 @@ import type { PersistedSession } from '../../utils/sessionStore';
 import type { Deck, Group, StudyMode, Statistics } from '../../types';
 
 import { HomeTab } from './HomeTab';
-import { CreateGroup } from '../groups/CreateGroup';
+import { CreateGroup } from '../../features/group-create';
 import { AddDeck } from '../decks/add/AddDeck';
 import { DeckDetailsScreen } from '../../features/deck-details';
 
