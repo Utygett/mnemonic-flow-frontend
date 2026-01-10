@@ -6,143 +6,17 @@ import { MarkdownField } from '../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import type { PublicDeckSummary } from '../../types';
 import { MarkdownView } from '../../components/MarkdownView';
+import type {
+  CardType,
+  LevelQA,
+  LevelMCQ,
+  McqOption,
+  CreateCardProps,
+} from '../../features/cards-create/model/types';
+import { parseCsvNameFrontBack } from '../../features/cards-create/model/csv';
+import { LAST_DECK_KEY, newId, clampInt } from '../../features/cards-create/model/utils';
+import { makeDefaultMcqLevel } from '../../features/cards-create/model/mcq';
 
-type CardType = 'flashcard' | 'multiple_choice';
-
-type LevelQA = { question: string; answer: string };
-
-type McqOption = { id: string; text: string };
-type LevelMCQ = {
-  question: string;
-  options: McqOption[];
-  correctOptionId: string;
-  explanation?: string;
-  timerSec?: number;
-};
-
-type CsvRow = { name: string; front: string; back: string };
-
-interface CreateCardProps {
-  decks: PublicDeckSummary[];
-  onSave: (cardData: { deckId: string; term: string; type: CardType; levels: any[] }) => void;
-
-  onSaveMany: (
-    cards: Array<{ deckId: string; term: string; type: 'flashcard'; levels: Array<{ question: string; answer: string }> }>
-  ) => Promise<{ created: number; failed: number; errors?: string[] }>;
-
-  onCancel: () => void;
-}
-
-const LAST_DECK_KEY = 'mnemonicFlow:lastDeckId';
-
-function newId() {
-  return Math.random().toString(16).slice(2);
-}
-
-function makeDefaultMcqLevel(): LevelMCQ {
-  const a = newId();
-  const b = newId();
-  return {
-    question: '',
-    options: [
-      { id: a, text: '' },
-      { id: b, text: '' },
-    ],
-    correctOptionId: a,
-    explanation: '',
-    timerSec: undefined,
-  };
-}
-
-function clampInt(n: number, min: number, max: number) {
-  if (!Number.isFinite(n)) return min;
-  return Math.max(min, Math.min(max, Math.trunc(n)));
-}
-
-/** Очень простой CSV: кавычки + запятая, без переносов строк внутри кавычек */
-function splitCsvLine(line: string): string[] {
-  const res: string[] = [];
-  let cur = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-
-    if (ch === '"') {
-      // "" -> "
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (ch === ',' && !inQuotes) {
-      res.push(cur);
-      cur = '';
-      continue;
-    }
-
-    cur += ch;
-  }
-
-  res.push(cur);
-  return res;
-}
-
-function parseCsvNameFrontBack(text: string): { rows: CsvRow[]; errors: string[]; total: number } {
-  const errors: string[] = [];
-
-  const rawLines = text.split(/\r?\n/);
-  const lines = rawLines.filter(l => l.length > 0);
-
-  if (lines.length === 0) return { rows: [], errors: ['CSV пустой'], total: 0 };
-
-  const first = splitCsvLine(lines[0]).map(s => String(s).toLowerCase());
-  const hasHeader = first.includes('name') && first.includes('front') && first.includes('back');
-
-  let nameIdx = 0;
-  let frontIdx = 1;
-  let backIdx = 2;
-  let start = 0;
-
-  if (hasHeader) {
-    nameIdx = first.indexOf('name');
-    frontIdx = first.indexOf('front');
-    backIdx = first.indexOf('back');
-    start = 1;
-  } else {
-    if (first.length < 3) {
-      return {
-        rows: [],
-        errors: ['Нет заголовка, но в первой строке меньше 3 колонок (нужно name,front,back).'],
-        total: 0,
-      };
-    }
-  }
-
-  const total = Math.max(0, lines.length - start);
-  const rows: CsvRow[] = [];
-
-  for (let i = start; i < lines.length; i++) {
-    const cols = splitCsvLine(lines[i]);
-
-    const name = (cols[nameIdx] ?? '').trim();
-    const front = (cols[frontIdx] ?? '').trim();
-    const back = (cols[backIdx] ?? '').trim();
-
-    if (!name || !front || !back) {
-      errors.push(`Строка ${i + 1}: нужно заполнить name/front/back`);
-      continue;
-    }
-
-    rows.push({ name, front, back });
-  }
-
-  return { rows, errors, total };
-}
 
 export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {
   const [term, setTerm] = useState('');
