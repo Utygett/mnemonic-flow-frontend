@@ -1,7 +1,7 @@
-// src/screens/study/StudyFlowView.tsx
 import React from 'react';
-import type { DifficultyRating, StudyCard } from '../../types';
-import { StudySession } from './session/StudySession';
+
+import type { DifficultyRating, StudyCard } from '../../../types';
+import { StudySession } from '../session/StudySession';
 
 import './StudyFlow.css';
 
@@ -21,7 +21,7 @@ type Props = {
   onRemoveFromProgress: () => void;
   onClose: () => void;
 
-  onBackToHome: () => void; // когда нет карточек / completed
+  onBackToHome: () => void;
 };
 
 export function StudyFlowView(props: Props) {

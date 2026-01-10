@@ -1,6 +1,6 @@
-// src/hooks/useResumeCandidate.ts
 import { useEffect, useState } from 'react';
-import { clearSession, loadLastSession, saveSession, type PersistedSession } from '../../../utils/sessionStore';
+
+import { clearSession, loadLastSession, saveSession, type PersistedSession } from '../../../../utils/sessionStore';
 
 type Input = {
   isStudying: boolean;
@@ -22,7 +22,6 @@ type Input = {
 export function useResumeCandidate(input: Input) {
   const [resumeCandidate, setResumeCandidate] = useState<PersistedSession | null>(null);
 
-  // initial load
   useEffect(() => {
     const saved = loadLastSession();
     if (!saved || !saved.isStudying) {
@@ -32,7 +31,6 @@ export function useResumeCandidate(input: Input) {
     setResumeCandidate(saved);
   }, []);
 
-  // autosave while studying
   useEffect(() => {
     if (!input.isStudying) return;
     if (input.loadingDeckCards) return;

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useStatistics } from '../../hooks';
 import { useGroupsDecksController } from '../../hooks/useGroupsDecksController';
 
-import { StudyFlowStateContainer } from '../study/StudyFlowStateContainer';
+import { StudyFlowStateContainer } from '../../features/study-flow';
 import { MainShellView } from './MainShellView';
 import type { MainTab } from './mainShell.types';
 
@@ -34,8 +34,7 @@ export function MainShellContainer() {
     currentGroupDeckIds,
   } = useGroupsDecksController();
 
-  const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } =
-    useStatistics();
+  const { statistics, loading: statsLoading, error: statsError, refresh: refreshStats } = useStatistics();
 
   const dashboardStats =
     statistics ?? {

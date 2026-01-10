@@ -1,9 +1,9 @@
-// src/hooks/useStudyLauncher.ts
 import { useCallback } from 'react';
-import { ApiClient } from '../../../api/client';
-import { toStudyCards } from '../../../utils/toStudyCards';
-import { clearSession, type PersistedSession } from '../../../utils/sessionStore';
-import type { StudyCard, StudyMode } from '../../../types';
+
+import { ApiClient } from '../../../../api/client';
+import { toStudyCards } from '../../../../utils/toStudyCards';
+import { clearSession, type PersistedSession } from '../../../../utils/sessionStore';
+import type { StudyCard, StudyMode } from '../../../../types';
 
 type Input = {
   setLoadingDeckCards: (v: boolean) => void;
@@ -22,10 +22,7 @@ export function useStudyLauncher(input: Input) {
     async (deckId: string, mode: StudyMode, limit?: number) => {
       const key = `deck:${deckId}` as const;
 
-      const seed =
-        mode === 'random' || mode === 'new_random'
-          ? Date.now() % 1_000_000_000
-          : undefined;
+      const seed = mode === 'random' || mode === 'new_random' ? Date.now() % 1_000_000_000 : undefined;
 
       const limitNormalized =
         mode === 'new_random' || mode === 'new_ordered'
@@ -85,7 +82,7 @@ export function useStudyLauncher(input: Input) {
   );
 
   const restartDeckSession = useCallback((deckId: string) => {
-    clearSession((`deck:${deckId}` as const));
+    clearSession(`deck:${deckId}` as const);
   }, []);
 
   return { startDeckStudy, startReviewStudy, resumeDeckSession, restartDeckSession };

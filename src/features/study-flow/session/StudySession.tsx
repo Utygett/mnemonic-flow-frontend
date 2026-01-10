@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import { StudyCard, DifficultyRating, isMultipleChoice } from '../../../types';
 import { FlipCard } from '../../../components/FlipCard';
 import { RatingButton } from '../../../components/RatingButton';
@@ -33,7 +34,6 @@ export function StudySession({
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [timeLeftMs, setTimeLeftMs] = useState<number | null>(null);
-
 
   const currentCard = cards[currentIndex];
   if (!currentCard) {
@@ -76,110 +76,102 @@ export function StudySession({
   }, [currentCard?.id, currentCard?.activeLevel]);
 
   const level =
-    (currentCard.levels as any[]).find((l) => getLevelIndex(l) === currentCard.activeLevel) ??
-    currentCard.levels[0];
+    (currentCard.levels as any[]).find((l) => getLevelIndex(l) === currentCard.activeLevel) ?? currentCard.levels[0];
 
   const mcq = isMultipleChoice(currentCard) ? ((level as any)?.content as any) : null;
   const timerSec = typeof mcq?.timerSec === 'number' && mcq.timerSec > 0 ? mcq.timerSec : 0;
 
-useEffect(() => {
-  if (!currentCard) return;
-  if (!isMultipleChoice(currentCard)) return;
-  if (isFlipped) {
-    setTimeLeftMs(null);
-    return;
-  }
-  if (!timerSec) {
-    setTimeLeftMs(null);
-    return;
-  }
-
-  const endAt = Date.now() + timerSec * 1000;
-
-  // чтобы сразу отрисовалось "timerSec"
-  setTimeLeftMs(timerSec * 1000);
-
-  const id = window.setInterval(() => {
-    const left = endAt - Date.now();
-    if (left <= 0) {
-      window.clearInterval(id);
-      setTimeLeftMs(0);
-      setIsFlipped(true); // авто-переворот когда время вышло
+  useEffect(() => {
+    if (!currentCard) return;
+    if (!isMultipleChoice(currentCard)) return;
+    if (isFlipped) {
+      setTimeLeftMs(null);
       return;
     }
-    setTimeLeftMs(left);
-  }, 200);
+    if (!timerSec) {
+      setTimeLeftMs(null);
+      return;
+    }
 
-  return () => window.clearInterval(id);
-}, [currentCard?.id, currentCard?.activeLevel, timerSec, isFlipped]);
+    const endAt = Date.now() + timerSec * 1000;
 
-const renderMcqFront = () => {
-  const c = mcq;
-  if (!c) return null;
+    setTimeLeftMs(timerSec * 1000);
 
-  const correctId = String(c.correctOptionId ?? "");
-  const showResult = selectedOptionId !== null;
-  const leftSec = timerSec > 0
-  ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000))
-  : 0;
+    const id = window.setInterval(() => {
+      const left = endAt - Date.now();
+      if (left <= 0) {
+        window.clearInterval(id);
+        setTimeLeftMs(0);
+        setIsFlipped(true);
+        return;
+      }
+      setTimeLeftMs(left);
+    }, 200);
 
-const progressPct =
-  timerSec > 0 && timeLeftMs != null
-    ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100))
-    : 100;
+    return () => window.clearInterval(id);
+  }, [currentCard?.id, currentCard?.activeLevel, timerSec, isFlipped]);
 
+  const renderMcqFront = () => {
+    const c = mcq;
+    if (!c) return null;
 
-  return (
-    <div className="mcq">
-      <div className="mcq-question">
-        <MarkdownView value={String(c.question ?? "")} />
-      </div>
+    const correctId = String(c.correctOptionId ?? '');
+    const showResult = selectedOptionId !== null;
+    const leftSec = timerSec > 0 ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000)) : 0;
 
-      <div className="mcq-options">
-        {(c.options ?? []).map((opt: any) => {
-          const optId = String(opt.id);
+    const progressPct =
+      timerSec > 0 && timeLeftMs != null ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100)) : 100;
 
-          const isSelected = selectedOptionId === optId;
-          const isCorrect = optId === correctId;
-
-          const className = [
-            "mcq-option",
-            showResult && isCorrect ? "mcq-option--correct" : "",
-            showResult && isSelected && !isCorrect ? "mcq-option--wrong" : "",
-          ]
-            .join(" ")
-            .trim();
-
-          return (
-            <button
-              key={optId}
-              type="button"
-              className={className}
-              disabled={isFlipped}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedOptionId(optId);
-                setIsFlipped(true);
-              }}
-            >
-              <MarkdownView value={String(opt.text ?? "")} />
-            </button>
-          );
-        })}
-      </div>
-
-      {timerSec > 0 ? (
-        <div className="mcq-timer">
-          <div className="mcq-timer-text">⏳ {leftSec}s</div>
-          <div className="mcq-timer-bar">
-            <div className="mcq-timer-fill" style={{ width: `${progressPct}%` }} />
-          </div>
+    return (
+      <div className="mcq">
+        <div className="mcq-question">
+          <MarkdownView value={String(c.question ?? '')} />
         </div>
-      ) : null}
-    </div>
-  );
-};
 
+        <div className="mcq-options">
+          {(c.options ?? []).map((opt: any) => {
+            const optId = String(opt.id);
+
+            const isSelected = selectedOptionId === optId;
+            const isCorrect = optId === correctId;
+
+            const className = [
+              'mcq-option',
+              showResult && isCorrect ? 'mcq-option--correct' : '',
+              showResult && isSelected && !isCorrect ? 'mcq-option--wrong' : '',
+            ]
+              .join(' ')
+              .trim();
+
+            return (
+              <button
+                key={optId}
+                type="button"
+                className={className}
+                disabled={isFlipped}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedOptionId(optId);
+                  setIsFlipped(true);
+                }}
+              >
+                <MarkdownView value={String(opt.text ?? '')} />
+              </button>
+            );
+          })}
+        </div>
+
+        {timerSec > 0 ? (
+          <div className="mcq-timer">
+            <div className="mcq-timer-text">⏳ {leftSec}s</div>
+            <div className="mcq-timer-bar">
+              <div className="mcq-timer-fill" style={{ width: `${progressPct}%` }} />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   const renderMcqBack = () => {
     if (!mcq) return null;
@@ -226,12 +218,7 @@ const progressPct =
             </span>
 
             <div className="flex items-center" style={{ columnGap: 32 }}>
-              <button
-                onClick={handleSkip}
-                className="icon-btn"
-                aria-label="Пропустить карточку"
-                type="button"
-              >
+              <button onClick={handleSkip} className="icon-btn" aria-label="Пропустить карточку" type="button">
                 <SkipForward size={18} />
               </button>
 
