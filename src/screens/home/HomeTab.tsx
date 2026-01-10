@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Deck, Group, Statistics } from '../../types';
 import type { PersistedSession } from '../../utils/sessionStore';
-import { DashboardContainer } from '../dashboard/DashboardContainer';
+import { DashboardContainer } from '../../features/dashboard';
 
 type Props = {
   statistics: Statistics;
