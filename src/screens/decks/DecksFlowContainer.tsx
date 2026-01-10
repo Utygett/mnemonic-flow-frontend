@@ -1,6 +1,6 @@
 import React from 'react';
 
-type DecksFlowApi = {
+export type DecksFlowApi = {
   isCreatingDeck: boolean;
   isEditingDeck: boolean;
   editingDeckId: string | null;
@@ -32,7 +32,11 @@ export function DecksFlowContainer({
       setEditingDeckId(deckId);
       setIsEditingDeck(true);
     },
-    closeEditDeck: () => setIsEditingDeck(false),
+    closeEditDeck: () => {
+        setIsEditingDeck(false);
+        setEditingDeckId(null);
+    },
+
 
     clearEditingDeckId: () => setEditingDeckId(null),
   };

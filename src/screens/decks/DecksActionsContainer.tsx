@@ -1,5 +1,10 @@
 import React from 'react';
 
+export type DecksActionsApi = {
+  onDeckCreated: () => void;
+  onDeckSaved: () => void;
+};
+
 export function DecksActionsContainer({
   refreshDecks,
   closeCreateDeck,

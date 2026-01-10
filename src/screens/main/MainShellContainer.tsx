@@ -15,6 +15,10 @@ import { MnemonicRootSwitch } from './MnemonicRootSwitch';
 
 import { CardsActionsContainer, CardsFlowContainer } from '../cards';
 import { DecksActionsContainer, DecksFlowContainer } from '../decks';
+import { DecksFlowApi } from '../decks/DecksFlowContainer';
+import { DecksActionsApi } from '../decks/DecksActionsContainer';
+import { CardsFlowApi } from '../cards/CardsFlowContainer';
+import { CardsActionsApi } from '../cards/CardsActionsContainer';
 
 export function MainShellContainer() {
   const {
@@ -52,15 +56,15 @@ export function MainShellContainer() {
     <StudyFlowStateContainer onExitToHome={() => setActiveTab('home')} onRated={refreshStats}>
       {(study) => (
         <DecksFlowContainer>
-          {(decksFlow: any) => (
+          {(decksFlow: DecksFlowApi) => (
             <DecksActionsContainer
               refreshDecks={refreshDecks}
               closeCreateDeck={decksFlow.closeCreateDeck}
               closeEditDeck={decksFlow.closeEditDeck}
             >
-              {(decksApi: any) => (
+              {(decksApi: DecksActionsApi) => (
                 <CardsFlowContainer>
-                  {(cardsFlow: any) => {
+                  {(cardsFlow: CardsFlowApi) => {
                     const hideBottomNav =
                       study.isStudying ||
                       decksLoading ||
@@ -78,7 +82,7 @@ export function MainShellContainer() {
                         closeCreateCard={cardsFlow.closeCreateCard}
                         closeEditCard={cardsFlow.closeEditCard}
                       >
-                        {(cardsApi: any) => (
+                        {(cardsApi: CardsActionsApi) => (
                           <MainShellView
                             hideBottomNav={hideBottomNav}
                             activeTab={activeTab}
