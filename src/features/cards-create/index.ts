@@ -8,7 +8,7 @@ export type {
   CreateCardBulkResult,
 } from './model/types';
 
-export { parseCsvNameFrontBack } from './model/csv';
+export { parseCsvNameFrontBack } from './lib/csv';
 
 export { LAST_DECK_KEY } from './model/utils';
 

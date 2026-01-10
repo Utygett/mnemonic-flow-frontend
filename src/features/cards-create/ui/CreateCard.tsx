@@ -5,7 +5,7 @@ import { Button } from '../../../components/Button/Button';
 import { MarkdownField } from '../../../components/MarkdownField';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { MarkdownView } from '../../../components/MarkdownView';
-import { parseCsvNameFrontBack } from '../model/csv';
+import { parseCsvNameFrontBack } from '../lib/csv';
 import { LAST_DECK_KEY } from '../model/utils';
 import { useCreateCardModel } from '../model/useCreateCardModel';
 import { useCreateCardLevelsModel } from '../model/useCreateCardLevelsModel';
