@@ -5,8 +5,8 @@ import type { PersistedSession } from '../../utils/sessionStore';
 
 import { CreateGroup } from '../../features/group-create';
 import { DeckDetailsScreen } from '../../features/deck-details';
+import { AddDeck } from '../../features/deck-add';
 
-import { AddDeck } from '../../screens/decks/add/AddDeck';
 import { HomeTab } from './HomeTab';
 
 type Props = {
