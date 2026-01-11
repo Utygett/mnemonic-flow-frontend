@@ -4,7 +4,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
 
 import { AppRouter } from './app/AppRouter';
-import { MainShellContainer } from '../src/pages/main/MainShellContainer';
+import { MainShellContainer } from './app/main-shell';
 
 export default function App() {
   return (
