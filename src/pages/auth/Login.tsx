@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button/Button';
 
-import { useAuth } from '../../auth/AuthContext';
-import { login as loginApi } from '../../api/authClient';
+import { useAuth } from '../../app/providers/auth/AuthContext';
+import { login as loginApi } from '../../shared/api/auth-client';
 
 import styles from './Login.module.css';
 
@@ -28,7 +28,7 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
 
     try {
       const data = await loginApi(email, password);
-      await login(data.access_token);
+      await login(data.access_token, data.refresh_token);
     } catch (e: unknown) {
       console.error('Login error:', e);
       const msg = e instanceof Error ? e.message : 'Ошибка входа';
@@ -108,12 +108,7 @@ export function Login({ onSwitch }: { onSwitch: () => void }) {
               Забыли пароль?
             </button>
 
-            <button
-              onClick={onSwitch}
-              className={styles.linkBtn}
-              type="button"
-              disabled={loading}
-            >
+            <button onClick={onSwitch} className={styles.linkBtn} type="button" disabled={loading}>
               Нет аккаунта? Зарегистрироваться
             </button>
           </form>
