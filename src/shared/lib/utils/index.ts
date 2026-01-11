@@ -1,4 +1,3 @@
+// src/shared/lib/utils/index.ts
 export { getErrorMessage } from './error-message';
-export { latexDelimiters } from './latex-delimiters';
-export { sessionStore } from './session-store';
-export { toStudyCards } from './to-study-cards';
+export { convertBracketLatexToDollar } from './latex-delimiters';
