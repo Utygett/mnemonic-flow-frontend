@@ -1,7 +1,7 @@
 // src/hooks/useStudySession.ts
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { StudyCard, DifficultyRating } from '../types';
-import { ApiClient } from '../api/client';
+import { ApiClient } from '@/shared/api';
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 

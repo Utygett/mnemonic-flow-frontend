@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 
-import { ApiClient } from '../../../../api/client';
-import { toStudyCards } from '../../../../utils/toStudyCards';
-import { clearSession, type PersistedSession } from '../../../../utils/sessionStore';
+import { ApiClient } from '@/shared/api';
+import { toStudyCards } from '@/shared/lib/utils/toStudyCards';
+import { clearSession, type PersistedSession } from '@/shared/lib/utils/session-store';
 import type { StudyCard, StudyMode } from '../../../../types';
 
 type Input = {

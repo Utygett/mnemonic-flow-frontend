@@ -1,5 +1,5 @@
 import type { StudyMode } from '../../../types';
-import type { PersistedSession } from '../../../utils/sessionStore';
+import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
 export type DeckDetailsProps = {
   deckId: string;

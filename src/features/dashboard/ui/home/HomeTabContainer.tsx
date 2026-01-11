@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { Deck, Group, StudyMode, Statistics } from '../../../../types';
-import type { PersistedSession } from '../../../../utils/sessionStore';
+import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
 import { CreateGroup } from '../../../../features/group-create';
 import { DeckDetailsScreen } from '../../../../features/deck-details';

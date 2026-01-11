@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { ApiClient } from '../../../api/client';
+import { ApiClient } from '@/shared/api';
 
 import type { CreateGroupProps } from './types';
 

@@ -1,9 +1,9 @@
 import React from 'react';
 
 import type { DifficultyRating, StudyCard, StudyMode } from '../../../types';
-import type { PersistedSession } from '../../../utils/sessionStore';
-import { ApiClient } from '../../../api/client';
-import { saveSession, clearSession } from '../../../utils/sessionStore';
+import type { PersistedSession } from '@/shared/lib/utils/session-store';
+import { ApiClient } from '@/shared/api';
+import { saveSession, clearSession } from '@/shared/lib/utils/session-store';
 
 import { useStudySession } from '../../../hooks/useStudySession';
 import { useResumeCandidate } from './hooks/useResumeCandidate';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PublicDeckSummary } from '../types';
-import { ApiClient, ApiError } from '../api/client';
+import { ApiClient, ApiError } from '@/shared/api';
 
 export type UseDecksResult = {
   decks: PublicDeckSummary[];

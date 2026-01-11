@@ -1,4 +1,4 @@
-import { ApiClient } from '../../../api/client';
+import { ApiClient } from '@/shared/api';
 import type { ApiLevelIn } from '../../../types/api';
 
 export async function loadDeckWithCards(deckId: string) {
