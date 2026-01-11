@@ -1,5 +1,5 @@
 // Card domain types
-import type { CardContent } from '@/features/cards-flow/model/cardContentTypes';
+import type { CardContent } from './contentTypes';
 
 export type StudyMode = 'random' | 'ordered' | 'new_random' | 'new_ordered';
 export type DifficultyRating = 'again' | 'hard' | 'good' | 'easy';

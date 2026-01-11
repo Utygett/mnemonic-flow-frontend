@@ -1,5 +1,7 @@
 import React from 'react';
-import type { Deck, Group, Statistics } from '../../../types';
+import type { PublicDeckSummary } from '@/entities/deck';
+import type { Group } from '@/entities/group';
+import type { Statistics } from '@/entities/statistics';
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
 import { DashboardView } from './DashboardView';
@@ -7,7 +9,7 @@ import type { DashboardActions, DashboardModel, ResumeSessionProps } from '../mo
 
 type Props = {
   statistics: Statistics;
-  decks: Deck[];
+  decks: PublicDeckSummary[];
   groups: Group[];
   activeGroupId: string | null;
 
@@ -28,7 +30,7 @@ type Props = {
 
 function buildResumeSession(
   resume: PersistedSession,
-  decks: Deck[],
+  decks: PublicDeckSummary[],
   onResume: () => void,
   onDiscard: () => void,
 ): ResumeSessionProps {
