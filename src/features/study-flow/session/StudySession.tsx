@@ -4,7 +4,7 @@ import { StudyCard, DifficultyRating, isMultipleChoice } from '../../../types';
 import { FlipCard } from '../../../components/FlipCard';
 import { RatingButton } from '../../../components/RatingButton';
 import { Button } from '../../../shared/ui/Button/Button';
-import { ProgressBar } from '../../../components/ProgressBar';
+import { ProgressBar } from '../../../shared/ui/ProgressBar';
 import { X, SkipForward, Trash2 } from 'lucide-react';
 import { MarkdownView } from '../../../shared/ui/MarkdownView';
 

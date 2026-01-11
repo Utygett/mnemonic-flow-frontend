@@ -1,6 +1,6 @@
 import React from 'react';
 import { PublicDeckSummary } from '../types';
-import { ProgressBar } from './ProgressBar';
+import { ProgressBar } from '../shared/ui/ProgressBar';
 import { ChevronRight } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import './DeckCard.css';

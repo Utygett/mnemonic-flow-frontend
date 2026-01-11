@@ -3,7 +3,7 @@ import React from 'react';
 import { Trophy, Target, Zap } from 'lucide-react';
 
 import type { Deck, Statistics as StatsType } from '../../../types';
-import { ProgressBar } from '../../../components/ProgressBar';
+import { ProgressBar } from '../../../shared/ui/ProgressBar';
 
 export interface StatisticsProps {
   statistics: StatsType;
