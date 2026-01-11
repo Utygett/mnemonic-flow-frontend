@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { AuthProvider } from './auth/AuthContext';
-import { AuthGate } from './auth/AuthGate';
+import { AuthProvider } from './app/providers/auth/AuthContext';
+import { AuthGate } from './app/providers/auth/AuthGate';
 
 import { AppRouter } from './app/AppRouter';
 import { MainShellContainer } from './widgets/main-shell';
