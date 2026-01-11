@@ -1,11 +1,2 @@
-import type { StudyCard } from '../types';
-
-export const toStudyCards = (items: any[]): StudyCard[] =>
-  items.map((c: any) => ({
-    id: c.card_id,
-    deckId: c.deck_id,
-    title: c.title,
-    type: c.type,
-    levels: c.levels ?? [],
-    activeLevel: c.active_level ?? 0,
-  }));
+// DEPRECATED: use shared/lib/utils instead
+export * from '../shared/lib/utils';
