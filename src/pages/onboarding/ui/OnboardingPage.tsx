@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
 
-import { LevelIndicator } from '../../components/LevelIndicator';
-import { Button } from '../../shared/ui/Button/Button';
+import { LevelIndicator } from '../../../components/LevelIndicator';
+import { Button } from '../../../shared/ui/Button/Button';
 
-interface OnboardingProps {
+interface OnboardingPageProps {
   onComplete: () => void;
 }
 
-export function Onboarding({ onComplete }: OnboardingProps) {
+export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
@@ -80,10 +80,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
         <div className="container-centered">
           <div className="dots">
             {steps.map((_, index) => (
-              <div
-                key={index}
-                className={`dot ${index === currentStep ? 'dot--active' : ''}`}
-              />
+              <div key={index} className={`dot ${index === currentStep ? 'dot--active' : ''}`} />
             ))}
           </div>
 
