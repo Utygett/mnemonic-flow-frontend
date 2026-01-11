@@ -1,0 +1,59 @@
+.root {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 12px;
+}
+
+.clickArea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.count {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.description {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.editRow {
+  margin-top: 10px;
+}
+
+.editButton {
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  cursor: pointer;
+  font-size: 13px;
+  text-decoration: underline;
+
+  color: var(--muted);
+}
+
+.editButton:hover {
+  color: var(--text);
+}

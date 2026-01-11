@@ -8,7 +8,8 @@ import type { DashboardActions, DashboardModel } from '../model/types';
 import { DashboardStats } from './components/DashboardStats';
 import { GroupsBar } from './components/GroupsBar';
 import { DeckList } from './components/DeckList';
-import './Dashboard.css';
+
+import styles from './DashboardView.module.css';
 
 export function DashboardView({
   model,
@@ -18,16 +19,16 @@ export function DashboardView({
   actions: DashboardActions;
 }) {
   return (
-    <div className="dashboard">
-      <div className="dashboard__header">
-        <div className="dashboard__header-inner">
+    <div className={styles.dashboard}>
+      <div className={styles.header}>
+        <div className={styles.headerInner}>
           <DashboardStats statistics={model.statistics} />
         </div>
       </div>
 
       {model.resumeSession && <ResumeSessionCard {...model.resumeSession} />}
 
-      <div className="dashboard__action-section">
+      <div className={styles.actionSection}>
         <Button onClick={actions.onStartStudy} variant="primary" size="large" fullWidth>
           Начать обучение
         </Button>
@@ -43,7 +44,7 @@ export function DashboardView({
 
       <DeckList decks={model.decks} onDeckClick={actions.onDeckClick} onEditDeck={actions.onEditDeck} />
 
-      <div className="dashboard__footer-section">
+      <div className={styles.footerSection}>
         <Button onClick={actions.onAddDeck} variant="primary" size="medium" fullWidth>
           Добавить колоду
         </Button>

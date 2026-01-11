@@ -2,6 +2,8 @@ import React from 'react';
 
 import type { PublicDeckSummary } from '../model/types';
 
+import styles from './DeckCard.module.css';
+
 type Props = {
   deck: PublicDeckSummary;
   onClick: () => void;
@@ -10,20 +12,18 @@ type Props = {
 
 export function DeckCard({ deck, onClick, onEdit }: Props) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-      <button type="button" onClick={onClick} className="w-full text-left">
-        <div className="flex items-center justify-between">
-          <div style={{ fontWeight: 600 }}>{deck.title}</div>
-          {typeof deck.cards_count === 'number' ? (
-            <div className="text-muted text-sm">{deck.cards_count}</div>
-          ) : null}
+    <div className={styles.root}>
+      <button type="button" onClick={onClick} className={styles.clickArea}>
+        <div className={styles.headerRow}>
+          <div className={styles.title}>{deck.title}</div>
+          {typeof deck.cards_count === 'number' ? <div className={styles.count}>{deck.cards_count}</div> : null}
         </div>
-        {deck.description ? <div className="text-muted text-sm mt-1">{deck.description}</div> : null}
+        {deck.description ? <div className={styles.description}>{deck.description}</div> : null}
       </button>
 
       {onEdit ? (
-        <div className="mt-2">
-          <button type="button" className="text-sm underline opacity-80" onClick={onEdit}>
+        <div className={styles.editRow}>
+          <button type="button" className={styles.editButton} onClick={onEdit}>
             Редактировать
           </button>
         </div>

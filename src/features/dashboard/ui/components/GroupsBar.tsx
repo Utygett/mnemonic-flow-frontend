@@ -4,6 +4,8 @@ import type { Group } from '../../../../types';
 
 import { useGroupsCarousel } from '../../model/useGroupsCarousel';
 
+import styles from './GroupsBar.module.css';
+
 type Props = {
   groups: Group[];
   activeGroupId: string | null;
@@ -19,25 +21,24 @@ export function GroupsBar({
   onCreateGroup,
   onDeleteActiveGroup,
 }: Props) {
-  const { carouselRef, onWheelCarousel, onMouseDown, onMouseMove, onMouseUpOrLeave } =
-    useGroupsCarousel();
+  const { carouselRef, onWheelCarousel, onMouseDown, onMouseMove, onMouseUpOrLeave } = useGroupsCarousel();
 
   const safeGroups = groups ?? [];
 
   return (
-    <div className="groups-section">
-      <div className="groups-container">
-        <button className="groups-button groups-button-add" onClick={onCreateGroup}>
+    <div className={styles.section}>
+      <div className={styles.container}>
+        <button className={styles.buttonAdd} onClick={onCreateGroup} type="button">
           +
         </button>
 
-        <div className="groups-carousel-wrapper">
+        <div className={styles.carouselWrapper}>
           {safeGroups.length === 0 ? (
-            <p className="groups-empty-message">Создайте первую группу</p>
+            <p className={styles.emptyMessage}>Создайте первую группу</p>
           ) : (
             <div
               ref={carouselRef}
-              className="groups-carousel"
+              className={styles.carousel}
               onWheel={onWheelCarousel}
               onMouseDown={onMouseDown}
               onMouseMove={onMouseMove}
@@ -48,7 +49,7 @@ export function GroupsBar({
                 <button
                   key={g.id}
                   type="button"
-                  className={'group-pill' + (g.id === activeGroupId ? ' group-pill--active' : '')}
+                  className={g.id === activeGroupId ? `${styles.pill} ${styles.pillActive}` : styles.pill}
                   onClick={() => onGroupChange(g.id)}
                 >
                   {g.title}
@@ -59,10 +60,11 @@ export function GroupsBar({
         </div>
 
         <button
-          className="groups-button groups-button-delete"
+          className={styles.buttonDelete}
           onClick={onDeleteActiveGroup}
           disabled={!activeGroupId}
           title={!activeGroupId ? 'Нет активной группы' : 'Удалить группу'}
+          type="button"
         >
           <Trash2 size={18} />
         </button>

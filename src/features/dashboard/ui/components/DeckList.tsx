@@ -3,6 +3,8 @@ import React from 'react';
 import type { PublicDeckSummary } from '@/entities/deck';
 import { DeckCard } from '@/entities/deck';
 
+import styles from './DeckList.module.css';
+
 type Props = {
   decks: PublicDeckSummary[];
   onDeckClick: (deckId: string) => void;
@@ -11,8 +13,8 @@ type Props = {
 
 export function DeckList({ decks, onDeckClick, onEditDeck }: Props) {
   return (
-    <div className="p-4 container-centered max-w-390">
-      <div className="space-y-3">
+    <div className={styles.container}>
+      <div className={styles.list}>
         {decks.map((deck) => (
           <DeckCard
             key={deck.deck_id}

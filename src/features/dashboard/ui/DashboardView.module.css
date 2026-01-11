@@ -1,0 +1,28 @@
+.dashboard {
+  min-height: 100vh;
+  padding-bottom: 6rem;
+}
+
+.header {
+  padding: 3rem 1rem 1.5rem 1rem;
+}
+
+.headerInner {
+  max-width: 390px;
+  margin: 0 auto;
+}
+
+.actionSection {
+  padding: 1.5rem 1rem;
+  max-width: 390px;
+  margin: 0 auto;
+}
+
+.footerSection {
+  padding: 1rem;
+  max-width: 390px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
