@@ -62,20 +62,3 @@ export interface Achievement {
   unlocked: boolean;
   progress?: number;
 }
-
-// --- Deprecated shims ---
-// Card- and study-related types were moved into features to avoid a global types dump.
-// Prefer importing from:
-// - `features/cards-flow` (CardContent etc.)
-// - `features/study-flow` (StudyCard etc.)
-
-export type {
-  CardType,
-  FlashcardContent,
-  McqOption,
-  MultipleChoiceContent,
-  CardContent,
-} from '../features/cards-flow/model/cardContentTypes';
-
-export type { StudyMode, StudyCard, CardLevel } from '../features/study-flow/model/studyCardTypes';
-export { isMultipleChoice } from '../features/study-flow/model/studyCardTypes';
