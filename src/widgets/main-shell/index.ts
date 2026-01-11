@@ -1,4 +1,6 @@
-export { MainShellContainer } from '../../app/main-shell';
-export { MainShellView } from '../../app/main-shell';
-export { MnemonicRootSwitch } from '../../app/main-shell';
-export * from '../../app/main-shell';
+export { MainShellContainer } from './MainShellContainer';
+export { MainShellView } from './MainShellView';
+export { MnemonicRootSwitch } from './MnemonicRootSwitch';
+
+export type { MainTab, MainShellViewProps } from './mainShell.types';
+export type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
