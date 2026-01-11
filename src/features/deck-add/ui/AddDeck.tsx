@@ -9,7 +9,7 @@ import type { PublicDeckSummary } from '@/entities/deck';
 
 import type { AddDeckProps } from '../model/types';
 
-import './AddDeck.css';
+import styles from './AddDeck.module.css';
 
 async function addDeckToGroupCompat(groupId: string, deckId: string): Promise<void> {
   // Try common REST shapes.
@@ -153,46 +153,42 @@ export const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged 
   };
 
   return (
-    <div className="add-deck-container">
-      <div className="add-deck-header">
-        <h2>Колоды группы</h2>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Колоды группы</h2>
         <Button onClick={onClose} variant="secondary" size="small">
           Закрыть
         </Button>
       </div>
 
-      <div className="search-container">
-        <Search className="search-icon" size={20} />
+      <div className={styles.search}>
+        <Search className={styles.searchIcon} size={20} />
         <input
           type="text"
           placeholder="Поиск публичных колод..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
+          className={styles.searchInput}
         />
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className={styles.error}>{error}</div>}
 
-      <div className="decks-list">
+      <div className={styles.list}>
         {loading && decks.length === 0 ? (
-          <div className="loading">Загрузка...</div>
+          <div className={styles.stateText}>Загрузка...</div>
         ) : decks.length === 0 ? (
-          <div className="no-results">Колоды не найдены</div>
+          <div className={styles.stateText}>Колоды не найдены</div>
         ) : (
           <>
             {filteredDecks.map((deck) => {
               const inGroup = groupDeckIds.has(deck.deck_id);
 
               return (
-                <div key={deck.deck_id} className="deck-card">
-                  <div className="deck-info">
-                    <h3 className="deck-title">{deck.title}</h3>
-                    {deck.description ? (
-                      <div className="deck-meta">
-                        <span className="deck-author">{deck.description}</span>
-                      </div>
-                    ) : null}
+                <div key={deck.deck_id} className={styles.card}>
+                  <div className={styles.info}>
+                    <h3 className={styles.deckTitle}>{deck.title}</h3>
+                    {deck.description ? <div className={styles.deckMeta}>{deck.description}</div> : null}
                   </div>
 
                   {!inGroup ? (
@@ -211,13 +207,7 @@ export const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged 
             })}
 
             {hasMore && (
-              <Button
-                onClick={loadMore}
-                variant="secondary"
-                size="medium"
-                fullWidth
-                disabled={loading}
-              >
+              <Button onClick={loadMore} variant="secondary" size="medium" fullWidth disabled={loading}>
                 {loading ? 'Загрузка...' : 'Загрузить ещё'}
               </Button>
             )}
