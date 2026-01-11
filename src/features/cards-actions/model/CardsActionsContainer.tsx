@@ -1,10 +1,12 @@
 import React from 'react';
 
-import { ApiClient } from '@/shared/api';
+import { createCard } from '@/entities/card';
 
 export type CardsActionsApi = {
   onCreateCardSave: (cardData: any) => Promise<void>;
-  onCreateCardSaveMany: (cards: any[]) => Promise<{ created: number; failed: number; errors: string[] }>;
+  onCreateCardSaveMany: (
+    cards: any[],
+  ) => Promise<{ created: number; failed: number; errors: string[] }>;
   onEditCardDone: () => void;
 };
 
@@ -24,10 +26,10 @@ export function CardsActionsContainer({
   children,
 }: Props) {
   const onCreateCardSave = async (cardData: any) => {
-    await ApiClient.createCard({
+    await createCard({
       deck_id: cardData.deckId,
       title: cardData.term,
-      type: cardData.type,
+      card_type: cardData.type,
       levels: cardData.levels,
     });
 
@@ -43,10 +45,10 @@ export function CardsActionsContainer({
     for (let i = 0; i < cards.length; i++) {
       const c = cards[i];
       try {
-        await ApiClient.createCard({
+        await createCard({
           deck_id: c.deckId,
           title: c.term,
-          type: c.type,
+          card_type: c.type,
           levels: c.levels,
         });
         created++;
