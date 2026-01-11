@@ -2,6 +2,8 @@ import React from 'react';
 
 import type { CreateDeckViewModel } from '../model/useCreateDeckModel';
 
+import styles from './CreateDeckView.module.css';
+
 type Props = CreateDeckViewModel & {
   onCancel: () => void;
 };
@@ -10,15 +12,15 @@ export function CreateDeckView(props: Props) {
   const { title, setTitle, saving, error, canSubmit, submit, onCancel } = props;
 
   return (
-    <div className="min-h-screen bg-dark p-4">
-      <div className="container-centered max-w-390">
-        <div className="card">
-          <h2 className="page__title">Новая колода</h2>
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h2 className={styles.title}>Новая колода</h2>
 
-          <label className="field">
-            <div className="field__label">Название</div>
+          <label className={styles.field}>
+            <div className={styles.fieldLabel}>Название</div>
             <input
-              className="input"
+              className={styles.input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Например: Английские слова"
@@ -27,13 +29,18 @@ export function CreateDeckView(props: Props) {
             />
           </label>
 
-          {error && <div className="text-error">{error}</div>}
+          {error && <div className={styles.error}>{error}</div>}
 
-          <div className="actions">
-            <button className="btn-ghost" onClick={onCancel} disabled={saving}>
+          <div className={styles.actions}>
+            <button className={styles.btnGhost} onClick={onCancel} disabled={saving} type="button">
               Отмена
             </button>
-            <button className="btn-primary" onClick={submit} disabled={saving || !canSubmit}>
+            <button
+              className={styles.btnPrimary}
+              onClick={submit}
+              disabled={saving || !canSubmit}
+              type="button"
+            >
               {saving ? 'Сохранение…' : 'Создать'}
             </button>
           </div>
