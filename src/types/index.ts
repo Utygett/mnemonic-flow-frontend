@@ -1,50 +1,3 @@
-export type UserGroupResponse = {
-  user_group_id: string;
-  kind: string;
-  source_group_id: string | null;
-  title: string;
-  description: string | null;
-  parent_id: string | null;
-};
-
-export type GroupCreatePayload = {
-  title: string;
-  description?: string | null;
-  parent_id?: string | null;
-};
-
-export type Group = {
-  id: string;              // user_group_id
-  title: string;
-  description: string | null;
-  parent_id: string | null;
-  kind: string;
-  source_group_id: string | null;
-};
-
-export type PublicDeckSummary = {
-  deck_id: string;
-  title: string;
-  description: string | null;
-  color: string | null;
-  owner_id: string;
-  is_public: boolean;
-  count_repeat: number;
-  count_for_repeat: number;
-  cards_count: number;
-  completed_cards_count: number;
-};
-
-export interface Deck {
-  id: string;
-  name: string;
-  description: string;
-  cardsCount: number;
-  progress: number; // 0-100
-  averageLevel: number; // 0-3
-  color: string;
-}
-
 export interface Statistics {
   cardsStudiedToday: number;
   timeSpentToday: number; // minutes
@@ -62,3 +15,12 @@ export interface Achievement {
   unlocked: boolean;
   progress?: number;
 }
+
+// --- Deprecated shims ---
+// Group- and deck-related types were moved into features to avoid a global types dump.
+// Prefer importing from:
+// - `features/group-create` (Group etc.)
+// - `features/decks-flow` (Deck etc.)
+
+export type { UserGroupResponse, GroupCreatePayload, Group } from '../features/group-create/model/groupTypes';
+export type { PublicDeckSummary, Deck } from '../features/decks-flow/model/deckTypes';
