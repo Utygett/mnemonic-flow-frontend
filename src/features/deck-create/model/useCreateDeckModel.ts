@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { ApiClient } from '@/shared/api';
+import { createDeck } from '@/entities/deck';
 
 import type { CreateDeckProps } from './types';
 
@@ -31,8 +31,8 @@ export function useCreateDeckModel(props: CreateDeckProps): CreateDeckViewModel 
     try {
       setSaving(true);
       setError(null);
-      const created = await ApiClient.createDeck({ title: t });
-      onSave((created as any).id);
+      const created: any = await createDeck({ title: t });
+      onSave(String(created?.id ?? created?.deck_id ?? ''));
     } catch (e) {
       console.error(e);
       setError('Не удалось создать колоду');
