@@ -1,11 +1,11 @@
 import React from 'react';
 
-import type { Deck, Group, StudyMode, Statistics } from '../../types';
-import type { PersistedSession } from '../../utils/sessionStore';
+import type { Deck, Group, StudyMode, Statistics } from '../../../../types';
+import type { PersistedSession } from '../../../../utils/sessionStore';
 
-import { CreateGroup } from '../../features/group-create';
-import { DeckDetailsScreen } from '../../features/deck-details';
-import { AddDeck } from '../../features/deck-add';
+import { CreateGroup } from '../../../../features/group-create';
+import { DeckDetailsScreen } from '../../../../features/deck-details';
+import { AddDeck } from '../../../../features/deck-add';
 
 import { HomeTab } from './HomeTab';
 

@@ -1,9 +1,9 @@
 import React from 'react';
 
-import type { Deck, Group, Statistics } from '../../types';
-import type { PersistedSession } from '../../utils/sessionStore';
+import type { Deck, Group, Statistics } from '../../../../types';
+import type { PersistedSession } from '../../../../utils/sessionStore';
 
-import { DashboardContainer } from '../../features/dashboard';
+import { DashboardContainer } from '../DashboardContainer';
 
 type Props = {
   statistics: Statistics;

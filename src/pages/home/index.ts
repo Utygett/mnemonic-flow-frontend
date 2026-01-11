@@ -1,2 +1,2 @@
-export { HomeTab } from './HomeTab';
-export { HomeTabContainer } from './HomeTabContainer';
+export { HomeTab } from '../../features/dashboard';
+export { HomeTabContainer } from '../../features/dashboard';
