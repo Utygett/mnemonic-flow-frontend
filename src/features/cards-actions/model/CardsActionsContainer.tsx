@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ApiClient } from '../../../api/client';
+import { ApiClient } from '@/shared/api';
 
 export type CardsActionsApi = {
   onCreateCardSave: (cardData: any) => Promise<void>;

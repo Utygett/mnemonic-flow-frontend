@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { Deck, Group, Statistics } from '../../../../types';
-import type { PersistedSession } from '../../../../utils/sessionStore';
+import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
 import { DashboardContainer } from '../DashboardContainer';
 

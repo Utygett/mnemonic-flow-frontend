@@ -1,7 +1,7 @@
 import React from 'react';
 
 import type { StudyMode } from '../../../types';
-import type { PersistedSession } from '../../../utils/sessionStore';
+import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
 type Props = {
   deckId: string;

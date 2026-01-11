@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { ApiClient } from '../../../api/client';
+import { ApiClient } from '@/shared/api';
 
 import { ProfileView } from './ProfileView';
 import type { ApiHealth } from '../model/types';

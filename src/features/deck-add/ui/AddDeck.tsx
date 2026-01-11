@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Trash2 } from 'lucide-react';
 
 import { Button } from '../../../shared/ui/Button/Button';
-import { ApiClient } from '../../../api/client';
-import { useAuth } from '../../../auth/AuthContext';
+import { ApiClient } from '@/shared/api';
+import { useAuth } from '../../../AuthContext';
 import { PublicDeckSummary } from '../../../types';
 
 import type { AddDeckProps } from '../model/types';
