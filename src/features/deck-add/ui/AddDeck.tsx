@@ -3,7 +3,7 @@ import { Plus, Search, Trash2 } from 'lucide-react';
 
 import { Button } from '../../../shared/ui/Button/Button';
 import { ApiClient } from '@/shared/api';
-import { useAuth } from '../../../AuthContext';
+import { useAuth } from '../../../app/providers/auth/AuthContext';
 import { PublicDeckSummary } from '../../../types';
 
 import type { AddDeckProps } from '../model/types';
