@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-import { useStatistics } from '../../hooks/useApi';
-import { useGroupsDecksController } from '../../hooks/useGroupsDecksController';
+import { useStatistics } from './model/useStatistics';
+import { useGroupsDecksController } from './model/useGroupsDecksController';
 
 import { StudyFlowStateContainer } from '../../features/study-flow';
 
