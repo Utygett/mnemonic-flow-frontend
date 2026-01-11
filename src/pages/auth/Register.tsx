@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Input } from '../../shared/ui/Input';
 import { Button } from '../../shared/ui/Button/Button';
 
-import { register as registerApi } from '../../api/authClient';
+import { register as registerApi } from '../../shared/api/auth-client';
 
 import styles from './Register.module.css';
 
