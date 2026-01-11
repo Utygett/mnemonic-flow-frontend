@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { BottomNav } from '../../components/BottomNav';
-import { InstallPrompt } from '../../components/InstallPrompt';
+import { BottomNav } from '@/widgets/bottom-nav';
+import { InstallPrompt } from '@/shared/pwa/InstallPrompt';
 
 import { OfflineStatus } from '../../app/overlays/OfflineStatus';
 import { PWAUpdatePrompt } from '../../app/overlays/PWAUpdatePrompt';
