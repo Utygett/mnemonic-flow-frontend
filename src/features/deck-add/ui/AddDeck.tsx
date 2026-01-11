@@ -2,20 +2,43 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Trash2 } from 'lucide-react';
 
 import { Button } from '../../../shared/ui/Button/Button';
-import { ApiClient } from '@/shared/api';
+import { apiRequest, ApiError } from '@/shared/api';
 import { useAuth } from '../../../app/providers/auth/AuthContext';
-import { PublicDeckSummary } from '../../../types';
+import { searchPublicDecks } from '@/entities/deck';
+import type { PublicDeckSummary } from '@/entities/deck';
 
 import type { AddDeckProps } from '../model/types';
 
 import './AddDeck.css';
 
-export const AddDeck = ({
-  groupId,
-  initialGroupDeckIds = [],
-  onClose,
-  onChanged,
-}: AddDeckProps) => {
+async function addDeckToGroupCompat(groupId: string, deckId: string): Promise<void> {
+  // Try common REST shapes.
+  try {
+    await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, { method: 'POST' });
+    return;
+  } catch (e: any) {
+    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+  }
+
+  await apiRequest<void>(`/groups/${groupId}/decks`, {
+    method: 'POST',
+    body: JSON.stringify({ deck_id: deckId }),
+  });
+}
+
+async function removeDeckFromGroupCompat(groupId: string, deckId: string): Promise<void> {
+  try {
+    await apiRequest<void>(`/groups/${groupId}/decks/${deckId}`, { method: 'DELETE' });
+    return;
+  } catch (e: any) {
+    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+  }
+
+  const qs = new URLSearchParams({ deck_id: deckId });
+  await apiRequest<void>(`/groups/${groupId}/decks?${qs.toString()}`, { method: 'DELETE' });
+}
+
+export const AddDeck = ({ groupId, initialGroupDeckIds = [], onClose, onChanged }: AddDeckProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
@@ -26,16 +49,11 @@ export const AddDeck = ({
   const limit = 20;
   const [hasMore, setHasMore] = useState(true);
 
-  const [groupDeckIds, setGroupDeckIds] = useState<Set<string>>(
-    () => new Set(initialGroupDeckIds),
-  );
+  const [groupDeckIds, setGroupDeckIds] = useState<Set<string>>(() => new Set(initialGroupDeckIds));
 
   const { currentUser } = useAuth();
 
-  const filteredDecks = useMemo(
-    () => decks.filter((d) => d.owner_id !== currentUser?.id),
-    [decks, currentUser],
-  );
+  const filteredDecks = useMemo(() => decks.filter((d) => d.owner_id !== currentUser?.id), [decks, currentUser]);
 
   // если родитель может менять initialGroupDeckIds (например, после рефреша группы)
   useEffect(() => {
@@ -61,7 +79,7 @@ export const AddDeck = ({
         setLoading(true);
         setError(null);
 
-        const data = await ApiClient.searchPublicDecks({
+        const data = await searchPublicDecks({
           q: debouncedQuery,
           limit,
           offset: 0,
@@ -79,7 +97,7 @@ export const AddDeck = ({
       }
     };
 
-    run();
+    void run();
 
     return () => {
       cancelled = true;
@@ -95,7 +113,7 @@ export const AddDeck = ({
 
       const currentOffset = decks.length;
 
-      const data = await ApiClient.searchPublicDecks({
+      const data = await searchPublicDecks({
         q: debouncedQuery,
         limit,
         offset: currentOffset,
@@ -112,7 +130,7 @@ export const AddDeck = ({
 
   const handleAdd = async (deckId: string) => {
     try {
-      await ApiClient.addDeckToGroup(groupId, deckId);
+      await addDeckToGroupCompat(groupId, deckId);
       setGroupDeckIds((prev) => new Set(prev).add(deckId));
       onChanged?.(deckId, 'added');
     } catch (e: any) {
@@ -122,7 +140,7 @@ export const AddDeck = ({
 
   const handleRemove = async (deckId: string) => {
     try {
-      await ApiClient.removeDeckFromGroup(groupId, deckId);
+      await removeDeckFromGroupCompat(groupId, deckId);
       setGroupDeckIds((prev) => {
         const next = new Set(prev);
         next.delete(deckId);
@@ -178,20 +196,12 @@ export const AddDeck = ({
                   </div>
 
                   {!inGroup ? (
-                    <Button
-                      onClick={() => handleAdd(deck.deck_id)}
-                      variant="primary"
-                      size="small"
-                    >
+                    <Button onClick={() => handleAdd(deck.deck_id)} variant="primary" size="small">
                       <Plus size={16} />
                       Добавить
                     </Button>
                   ) : (
-                    <Button
-                      onClick={() => handleRemove(deck.deck_id)}
-                      variant="secondary"
-                      size="small"
-                    >
+                    <Button onClick={() => handleRemove(deck.deck_id)} variant="secondary" size="small">
                       <Trash2 size={16} />
                       Удалить
                     </Button>
