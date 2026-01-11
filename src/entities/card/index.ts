@@ -21,6 +21,7 @@ export type {
 
 export {
   getStudyCards,
+  getReviewSession,
   reviewCard,
   createCard,
   deleteCard,

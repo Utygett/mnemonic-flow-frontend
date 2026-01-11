@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 
-import { ApiClient } from '@/shared/api';
+import { getReviewSession, getStudyCards } from '@/entities/card';
+import type { StudyCard, StudyMode } from '@/entities/card';
+
 import { toStudyCards } from '@/shared/lib/utils/toStudyCards';
 import { clearSession, type PersistedSession } from '@/shared/lib/utils/session-store';
-import type { StudyCard, StudyMode } from '../../../../types';
 
 type Input = {
   setLoadingDeckCards: (v: boolean) => void;
@@ -32,7 +33,7 @@ export function useStudyLauncher(input: Input) {
       try {
         input.setLoadingDeckCards(true);
 
-        const res = await ApiClient.getStudyCards(deckId, {
+        const res = await getStudyCards(deckId, {
           mode,
           seed,
           limit: limitNormalized,
@@ -49,15 +50,15 @@ export function useStudyLauncher(input: Input) {
         input.setLoadingDeckCards(false);
       }
     },
-    [input]
+    [input],
   );
 
   const startReviewStudy = useCallback(async () => {
     try {
       input.setLoadingDeckCards(true);
 
-      const items = await ApiClient.getReviewSession(20);
-      input.setDeckCards(toStudyCards(items));
+      const items = await getReviewSession(20);
+      input.setDeckCards(toStudyCards(items as any[]));
       input.setActiveDeckId(null);
 
       input.setIsStudying(true);
@@ -78,7 +79,7 @@ export function useStudyLauncher(input: Input) {
       input.setDeckCards(saved.deckCards ?? []);
       input.setIsStudying(true);
     },
-    [input]
+    [input],
   );
 
   const restartDeckSession = useCallback((deckId: string) => {
