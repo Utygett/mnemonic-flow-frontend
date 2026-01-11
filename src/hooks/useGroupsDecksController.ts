@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import useDecks from './useDecks';
-import { ApiClient } from '../api/client';
+import { ApiClient } from '../shared/api/client';
 import type { Group } from '../types';
 
 type UseDecksReturn = ReturnType<typeof useDecks>;
