@@ -1,5 +1,4 @@
 import React from 'react';
-// @ts-ignore: CSS module without type declarations
 import styles from './Button.module.css';
 import { cn } from '../../lib/cn';
 
@@ -18,9 +17,10 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps) {
-  const variantClass = variant === 'primary' ? 'btn--primary' : 'btn--secondary';
-  const sizeClass = size === 'small' ? 'btn--small' : size === 'large' ? 'btn--large' : 'btn--medium';
-  const fullClass = fullWidth ? 'btn--full' : '';
+  const variantClass = variant === 'primary' ? styles['btn--primary'] : styles['btn--secondary'];
+  const sizeClass =
+    size === 'small' ? styles['btn--small'] : size === 'large' ? styles['btn--large'] : styles['btn--medium'];
+  const fullClass = fullWidth ? styles['btn--full'] : '';
 
   const classes = cn(styles.button, variantClass, sizeClass, fullClass, className);
 
