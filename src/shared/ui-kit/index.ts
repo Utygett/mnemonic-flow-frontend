@@ -14,6 +14,7 @@ export * from './collapsible';
 export * from './command';
 export * from './context-menu';
 export * from './dialog';
+export * from './drawer';
 export * from './dropdown-menu';
 export * from './form';
 export * from './hover-card';
