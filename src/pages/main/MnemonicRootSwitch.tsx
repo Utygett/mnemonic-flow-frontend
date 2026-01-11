@@ -7,7 +7,7 @@ import { EditDeck } from '../../features/deck-edit';
 import { Statistics } from '../../features/statistics';
 import { ProfileContainer } from '../../features/profile';
 
-import { HomeTabContainer } from '../home/HomeTabContainer';
+import { HomeTabContainer } from '../home';
 
 import type { MnemonicRootSwitchProps } from './mnemonicRootSwitch.types';
 
