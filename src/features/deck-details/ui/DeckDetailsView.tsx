@@ -2,6 +2,9 @@ import React from 'react';
 
 import type { StudyMode } from '../../../types';
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
+import { Button } from '@/shared/ui/Button/Button';
+
+import styles from './DeckDetailsView.module.css';
 
 type Props = {
   deckId: string;
@@ -20,57 +23,55 @@ type Props = {
 
 export function DeckDetailsView(props: Props) {
   return (
-    <div className="min-h-screen bg-dark pb-24">
-      <div className="page__header px-4 pt-12 pb-6">
-        <div className="page__header-inner">
-          <button className="btn-ghost" onClick={props.onBack} type="button">
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div className={styles.headerInner}>
+          <Button onClick={props.onBack} variant="secondary" size="small">
             Назад
-          </button>
-          <h1 className="page__title">Колода</h1>
-          <div style={{ color: '#9CA3AF', fontSize: 12 }}>id: {props.deckId}</div>
+          </Button>
+          <h1 className={styles.title}>Колода</h1>
+          <div className={styles.meta}>id: {props.deckId}</div>
         </div>
       </div>
 
-      <div className="container-centered max-w-390">
-        <div className="actionsStackstudy" style={{ display: 'grid', gap: 20 }}>
+      <div className={styles.container}>
+        <div className={styles.stack}>
           {props.hasSaved && props.saved && (
-            <div className="card">
-              <p className="text-[#E8EAF0]">Есть незавершённая сессия</p>
-              <p className="text-[#9CA3AF]">
+            <div className={styles.card}>
+              <p className={styles.cardTitle}>Есть незавершённая сессия</p>
+              <p className={styles.cardMeta}>
                 Карточка {((props.saved.currentIndex ?? 0) + 1)} из {props.saved.deckCards.length}
               </p>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn-primary" onClick={props.onResume}>
+              <div className={styles.inlineActions}>
+                <Button onClick={props.onResume} variant="primary" size="medium">
                   Продолжить
-                </button>
+                </Button>
               </div>
             </div>
           )}
 
-          <button className="btn btn--primary btn--full" onClick={() => props.onStart('random')}>
+          <Button onClick={() => props.onStart('random')} variant="primary" size="large" fullWidth>
             Случайно
-          </button>
+          </Button>
 
-          <button className="btn btn--secondary btn--full" onClick={() => props.onStart('ordered')}>
+          <Button onClick={() => props.onStart('ordered')} variant="secondary" size="large" fullWidth>
             По порядку
-          </button>
+          </Button>
 
-          <button className="btn btn--secondary btn--full" onClick={() => props.onStart('new_random')}>
+          <Button onClick={() => props.onStart('new_random')} variant="secondary" size="large" fullWidth>
             Новые случайно
-          </button>
+          </Button>
 
-          <button className="btn btn--secondary btn--full" onClick={() => props.onStart('new_ordered')}>
+          <Button onClick={() => props.onStart('new_ordered')} variant="secondary" size="large" fullWidth>
             Новые по порядку
-          </button>
+          </Button>
 
-          <div className="card" style={{ marginTop: 8 }}>
-            <div style={{ color: '#E8EAF0', fontSize: 14, marginBottom: 6 }}>
-              Кол-во карточек для “Новые …”
-            </div>
+          <div className={styles.card}>
+            <div className={styles.sectionLabel}>Кол-во карточек для “Новые …”</div>
 
             <input
-              className="input"
+              className={styles.input}
               type="number"
               min={1}
               max={200}
@@ -79,9 +80,7 @@ export function DeckDetailsView(props: Props) {
               placeholder="Напр. 20"
             />
 
-            <div style={{ color: '#9CA3AF', fontSize: 12, marginTop: 6 }}>
-              Будет использовано: {props.limitClamped}
-            </div>
+            <div className={styles.hint}>Будет использовано: {props.limitClamped}</div>
           </div>
         </div>
       </div>
