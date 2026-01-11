@@ -23,7 +23,6 @@ export {
   getStudyCards,
   reviewCard,
   createCard,
-  updateCard,
   deleteCard,
   replaceCardLevels,
   levelUp,
