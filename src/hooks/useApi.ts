@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ApiClient } from '../api/client';
+import { ApiClient } from '../shared/api/client';
 import { Statistics } from '../types';
 
 export function useApiData<T>() {
@@ -43,18 +43,17 @@ export function useCards(deckId?: string) {
   return { cards: data || [], loading, error, refresh };
 }
 
-
 // export function useDecks() {
 //   const { data, loading, error, fetchData } = useApiData<Deck[]>();
-
+//
 //   useEffect(() => {
 //     fetchData(() => ApiClient.getDecks());
 //   }, [fetchData]);
-
+//
 //   const refresh = useCallback(() => {
 //     fetchData(() => ApiClient.getDecks());
 //   }, [fetchData]);
-
+//
 //   return { decks: data || [], loading, error, refresh };
 // }
 
@@ -72,10 +71,8 @@ export function useStatistics() {
   return { statistics: data, loading, error, refresh };
 }
 
-
 const parseDatesInCard = (card: any): Card => ({
   ...card,
   nextReview: new Date(card.nextReview),
   lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : undefined,
 });
-
