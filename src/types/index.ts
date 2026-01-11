@@ -1,27 +1,3 @@
-export type StudyMode = 'random' | 'ordered' | 'new_random' | 'new_ordered';
-
-export type CardType = "flashcard" | "multiple_choice";
-
-export type FlashcardContent = {
-  question: string;
-  answer: string;
-  // можно хранить, но пока не используем для flashcard
-  timerSec?: number;
-};
-
-export type McqOption = { id: string; text: string };
-
-export type MultipleChoiceContent = {
-  question: string;
-  options: McqOption[];
-  correctOptionId: string;
-  explanation?: string;
-  timerSec?: number;
-};
-
-export type CardContent = FlashcardContent | MultipleChoiceContent;
-
-
 export type UserGroupResponse = {
   user_group_id: string;
   kind: string;
@@ -59,27 +35,6 @@ export type PublicDeckSummary = {
   completed_cards_count: number;
 };
 
-
-export interface CardLevel {
-  levelindex: number;
-  content: CardContent;
-}
-
-
-// helper’ы (удобно для StudySession/Create/Edit)
-export function isMultipleChoice(card: StudyCard | null | undefined): boolean {
-  return !!card && card.type === "multiple_choice";
-}
-
-export interface StudyCard {
-  id: string;
-  deckId: string;
-  title: string;
-  type: string;
-  levels: CardLevel[];
-  activeLevel: number;
-}
-
 export interface Deck {
   id: string;
   name: string;
@@ -107,3 +62,20 @@ export interface Achievement {
   unlocked: boolean;
   progress?: number;
 }
+
+// --- Deprecated shims ---
+// Card- and study-related types were moved into features to avoid a global types dump.
+// Prefer importing from:
+// - `features/cards-flow` (CardContent etc.)
+// - `features/study-flow` (StudyCard etc.)
+
+export type {
+  CardType,
+  FlashcardContent,
+  McqOption,
+  MultipleChoiceContent,
+  CardContent,
+} from '../features/cards-flow/model/cardContentTypes';
+
+export type { StudyMode, StudyCard, CardLevel } from '../features/study-flow/model/studyCardTypes';
+export { isMultipleChoice } from '../features/study-flow/model/studyCardTypes';
