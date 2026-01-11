@@ -1,7 +1,10 @@
 import { apiRequest } from '@/shared/api/request';
 
-import { getDeckWithCards, deleteDeck } from '@/entities/deck';
-import { replaceCardLevels as replaceCardLevelsApi, deleteCard as deleteCardApi } from '@/entities/card';
+import { getDeckWithCards, deleteDeck as deleteDeckEntity } from '@/entities/deck';
+import {
+  replaceCardLevels as replaceCardLevelsEntity,
+  deleteCard as deleteCardEntity,
+} from '@/entities/card';
 import type { ApiLevelIn } from '@/entities/card';
 
 export async function loadDeckWithCards(deckId: string) {
@@ -9,15 +12,15 @@ export async function loadDeckWithCards(deckId: string) {
 }
 
 export async function replaceCardLevels(cardId: string, levels: ApiLevelIn[]) {
-  return replaceCardLevelsApi(cardId, levels);
+  return replaceCardLevelsEntity(cardId, levels);
 }
 
 export async function deleteCard(cardId: string) {
-  return deleteCardApi(cardId);
+  return deleteCardEntity(cardId);
 }
 
-export async function deleteDeckById(deckId: string) {
-  return deleteDeck(deckId);
+export async function deleteDeck(deckId: string) {
+  return deleteDeckEntity(deckId);
 }
 
 export async function updateCardTitle(cardId: string, title: string) {
