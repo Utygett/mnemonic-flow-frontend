@@ -107,5 +107,3 @@ export interface Achievement {
   unlocked: boolean;
   progress?: number;
 }
-
-export type DifficultyRating = 'again' | 'hard' | 'good' | 'easy';
