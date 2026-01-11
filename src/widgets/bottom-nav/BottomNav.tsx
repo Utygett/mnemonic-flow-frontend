@@ -1,6 +1,8 @@
 import React from 'react';
 import { BarChart3, BookOpen, Home, User } from 'lucide-react';
 
+import styles from './BottomNav.module.css';
+
 interface BottomNavProps {
   activeTab: 'home' | 'study' | 'stats' | 'profile';
   onTabChange: (tab: 'home' | 'study' | 'stats' | 'profile') => void;
@@ -15,16 +17,18 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   ];
 
   return (
-    <nav className="bottom-nav">
-      <div className="bottom-nav__inner">
+    <nav className={styles.nav} aria-label="Нижняя навигация">
+      <div className={styles.inner}>
         {tabs.map(({ id, icon: Icon, label }) => (
           <button
             key={id}
+            type="button"
             onClick={() => onTabChange(id)}
-            className={`bottom-nav__item ${activeTab === id ? 'bottom-nav__item--active' : ''}`}
+            className={activeTab === id ? `${styles.item} ${styles.itemActive}` : styles.item}
+            aria-current={activeTab === id ? 'page' : undefined}
           >
-            <Icon size={24} strokeWidth={2} />
-            <span className="bottom-nav__label">{label}</span>
+            <Icon size={22} strokeWidth={2} />
+            <span className={styles.label}>{label}</span>
           </button>
         ))}
       </div>
