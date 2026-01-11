@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import App from "./app/App.tsx";
 import "./app/styles/globals.css";
 import "./app/styles/components.css";
 import 'katex/dist/katex.min.css';
