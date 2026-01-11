@@ -1,6 +1,6 @@
 // src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Input, MarkdownField, MarkdownView, Button, } from '../../../shared/ui';
+import { Input, MarkdownField, MarkdownView, Button } from '../../../shared/ui';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { parseCsvNameFrontBack } from '../lib/csv';
 import { LAST_DECK_KEY } from '../model/utils';
@@ -8,6 +8,7 @@ import { useCreateCardModel } from '../model/useCreateCardModel';
 import { useCreateCardLevelsModel } from '../model/useCreateCardLevelsModel';
 import type { CardType, CreateCardProps } from '../model/types';
 
+import styles from './CreateCard.module.css';
 
 export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardProps) {
   const { term, setTerm, cardType, setCardType, deckId, setDeckId } = useCreateCardModel(decks);
@@ -145,26 +146,26 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
   }, [deckId]);
 
   return (
-    <div className="min-h-screen bg-dark pb-24">
-      <div className="page__header" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-        <div className="page__header-inner">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button onClick={onCancel} style={{ color: '#9CA3AF', background: 'transparent', border: 0 }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div className={styles.headerInner}>
+          <div className={styles.headerRow}>
+            <button onClick={onCancel} className={styles.iconButton} type="button" aria-label="Закрыть">
               <X size={24} />
             </button>
-            <h2 style={{ color: '#E8EAF0' }}>Новая карточка</h2>
-            <div style={{ width: 24 }} />
+            <h2 className={styles.headerTitle}>Новая карточка</h2>
+            <div className={styles.headerSpacer} />
           </div>
         </div>
       </div>
 
-      <main className="container-centered w-full max-w-4xl space-y-6 py-6">
-        <div className="form-row">
-          <label className="form-label">Колода</label>
+      <main className={styles.main}>
+        <div className={styles.formRow}>
+          <label className={styles.formLabel}>Колода</label>
           <select
             value={deckId}
             onChange={(e) => setDeckId(e.target.value)}
-            className="input"
+            className={styles.input}
             disabled={decks.length === 0}
           >
             {decks.length === 0 ? (
@@ -179,9 +180,13 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
           </select>
         </div>
 
-        <div className="form-row">
-          <label className="form-label">Тип карточки</label>
-          <select value={cardType} onChange={(e) => setCardType(e.target.value as CardType)} className="input">
+        <div className={styles.formRow}>
+          <label className={styles.formLabel}>Тип карточки</label>
+          <select
+            value={cardType}
+            onChange={(e) => setCardType(e.target.value as CardType)}
+            className={styles.input}
+          >
             <option value="flashcard">Flashcard</option>
             <option value="multiple_choice">Multiple choice</option>
           </select>
@@ -190,43 +195,39 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
         <Input value={term} onChange={setTerm} label="Название / Тема карточки" placeholder="Например: Фотосинтез" />
 
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>Уровни сложности ({levelsCount})</label>
+          <div className={styles.levelsHeader}>
+            <label className={styles.levelsLabel}>Уровни сложности ({levelsCount})</label>
 
             {levelsCount < 10 && (
-              <button
-                onClick={addLevel}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
-                type="button"
-              >
+              <button onClick={addLevel} className={styles.inlineAction} type="button">
                 <Plus size={16} />
                 Добавить уровень
               </button>
             )}
           </div>
 
-          <div className="level-tabs">
+          <div className={styles.levelTabs}>
             {Array.from({ length: levelsCount }).map((_, index) => (
               <button
                 key={index}
                 onClick={() => setActiveLevel(index)}
-                className={`level-tab ${activeLevel === index ? 'level-tab--active' : 'level-tab--inactive'}`}
+                className={
+                  activeLevel === index
+                    ? `${styles.levelTab} ${styles.levelTabActive}`
+                    : `${styles.levelTab} ${styles.levelTabInactive}`
+                }
                 type="button"
               >
-                <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
+                <span className={styles.levelTabText}>Уровень {index + 1}</span>
               </button>
             ))}
           </div>
 
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <div className={styles.card}>
+            <div className={styles.cardTopBar}>
+              <div className={styles.cardTopBarLeft}>
                 {levelsCount > 1 && (
-                  <button
-                    onClick={() => removeLevel(activeLevel)}
-                    style={{ color: '#E53E3E', padding: 4, background: 'transparent', border: 0 }}
-                    type="button"
-                  >
+                  <button onClick={() => removeLevel(activeLevel)} className={styles.dangerIconButton} type="button">
                     <Trash2 size={16} />
                   </button>
                 )}
@@ -249,7 +250,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   onChange={(v) => patchLevelQA(activeLevel, { answer: v })}
                   preview={aPreview}
                   onTogglePreview={() => setAPreview(!aPreview)}
-                  className="mt-4"
+                  className={styles.mt4}
                 />
               </>
             ) : (
@@ -262,10 +263,10 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   onTogglePreview={() => setMcqQPreview(!mcqQPreview)}
                 />
 
-                <div className="form-row" style={{ marginTop: '1rem' }}>
-                  <label className="form-label">Таймер (сек) — опционально</label>
+                <div className={styles.formRow} style={{ marginTop: '1rem' }}>
+                  <label className={styles.formLabel}>Таймер (сек) — опционально</label>
                   <input
-                    className="input"
+                    className={styles.input}
                     type="number"
                     min={0}
                     max={3600}
@@ -284,27 +285,23 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   />
                 </div>
 
-                <div style={{ marginTop: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label className="form-label" style={{ marginBottom: 0 }}>
+                <div className={styles.mt4}>
+                  <div className={styles.optionsHeader}>
+                    <label className={styles.formLabel} style={{ marginBottom: 0 }}>
                       Варианты (выбери правильный)
                     </label>
 
-                    <button
-                      onClick={() => addMcqOption(activeLevel)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
-                      type="button"
-                    >
+                    <button onClick={() => addMcqOption(activeLevel)} className={styles.inlineAction} type="button">
                       <Plus size={16} />
                       Добавить вариант
                     </button>
                   </div>
 
-                  <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.75rem' }}>
+                  <div className={styles.optionsList}>
                     {(activeMCQ?.options ?? []).map((opt, idx) => (
-                      <div key={opt.id} className="card" style={{ padding: '0.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#E8EAF0' }}>
+                      <div key={opt.id} className={styles.optionCard}>
+                        <div className={styles.optionHeaderRow}>
+                          <label className={styles.radioLabel}>
                             <input
                               type="radio"
                               name={`mcq-correct-${activeLevel}`}
@@ -314,18 +311,13 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                             Правильный
                           </label>
 
-                          <div style={{ flex: 1 }} />
+                          <div className={styles.flex1} />
 
                           <button
                             type="button"
                             onClick={() => removeMcqOption(activeLevel, opt.id)}
                             disabled={(activeMCQ?.options?.length ?? 0) <= 2}
-                            style={{
-                              color: (activeMCQ?.options?.length ?? 0) <= 2 ? '#6B7280' : '#E53E3E',
-                              padding: 4,
-                              background: 'transparent',
-                              border: 0,
-                            }}
+                            className={styles.deleteOptionButton}
                             title="Удалить вариант"
                           >
                             <Trash2 size={16} />
@@ -348,11 +340,9 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                     const text = correct?.text?.trim();
                     if (!text) return null;
                     return (
-                      <div style={{ marginTop: '1rem' }}>
-                        <div style={{ color: '#9CA3AF', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                          Предпросмотр правильного ответа
-                        </div>
-                        <div className="card" style={{ padding: '0.75rem' }}>
+                      <div className={styles.mt4}>
+                        <div className={styles.previewLabel}>Предпросмотр правильного ответа</div>
+                        <div className={styles.optionCard}>
                           <MarkdownView value={text} />
                         </div>
                       </div>
@@ -366,14 +356,14 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   onChange={(v) => patchLevelMCQ(activeLevel, { explanation: v })}
                   preview={mcqExplanationPreview}
                   onTogglePreview={() => setMcqExplanationPreview(!mcqExplanationPreview)}
-                  className="mt-4"
+                  className={styles.mt4}
                 />
               </>
             )}
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
+        <div className={styles.bottomActions}>
           <Button
             onClick={() => fileInputRef.current?.click()}
             variant="secondary"
@@ -381,7 +371,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
             fullWidth
             disabled={!deckId || importBusy}
           >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span className={styles.buttonIconRow}>
               <Upload size={16} />
               Импорт CSV
             </span>
@@ -397,15 +387,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
         </div>
 
         {importReport && (
-          <div
-            ref={reportRef}
-            style={{
-              color: '#9CA3AF',
-              fontSize: '0.875rem',
-              marginTop: '0.5rem',
-              whiteSpace: 'pre-wrap',
-            }}
-          >
+          <div ref={reportRef} className={styles.report}>
             {importReport}
           </div>
         )}
