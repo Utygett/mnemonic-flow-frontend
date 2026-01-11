@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-import { StudyCard, DifficultyRating, isMultipleChoice } from '../../../types';
+import { isMultipleChoice } from '../model/studyCardTypes';
+import { StudyCard } from '../model/studyCardTypes';
+import { DifficultyRating } from '../model/difficultyRating';
 import { FlipCard } from '../../../components/FlipCard';
 import { RatingButton } from '../ui/RatingButton';
 import { Button } from '../../../shared/ui/Button/Button';
