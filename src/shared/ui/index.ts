@@ -1,2 +1,2 @@
 export * from './kit';
-export * from './legacy';
+export * as Legacy from './legacy';
