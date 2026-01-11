@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { ApiClient } from '@/shared/api';
+import { apiRequest } from '@/shared/api';
 
 import { ProfileView } from './ProfileView';
 import type { ApiHealth } from '../model/types';
@@ -15,7 +15,8 @@ export function ProfileContainer(props: ProfileContainerProps) {
   useEffect(() => {
     const checkApiHealth = async () => {
       try {
-        await ApiClient.healthCheck();
+        // Expected to return 200 when backend is up
+        await apiRequest<void>(`/health`);
         setApiHealth('healthy');
       } catch (error) {
         setApiHealth('unhealthy');
@@ -23,7 +24,7 @@ export function ProfileContainer(props: ProfileContainerProps) {
       }
     };
 
-    checkApiHealth();
+    void checkApiHealth();
   }, []);
 
   return (
