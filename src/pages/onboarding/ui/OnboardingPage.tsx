@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 import { motion, AnimatePresence } from 'motion/react';
 
-import { LevelIndicator } from '../../../components/LevelIndicator';
 import { Button } from '../../../shared/ui/Button/Button';
+import { LevelIndicator } from '../../../shared/ui/LevelIndicator';
 
 interface OnboardingPageProps {
   onComplete: () => void;
