@@ -7,6 +7,8 @@ import { MarkdownField } from '../../../shared/ui/MarkdownField';
 
 import type { EditCardViewModel } from '../model/useEditCardModel';
 
+import styles from './EditCardView.module.css';
+
 type Props = EditCardViewModel & {
   onCancel: () => void;
 };
@@ -65,37 +67,36 @@ export function EditCardView(props: Props) {
   const active = levels[activeLevel];
 
   return (
-    <div className="min-h-screen bg-dark pb-24">
-      <div className="page__header" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-        <div className="page__header-inner">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button onClick={onCancel} style={{ color: '#9CA3AF', background: 'transparent', border: 0 }}>
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <div className={styles.headerInner}>
+          <div className={styles.headerRow}>
+            <button onClick={onCancel} className={styles.iconButton}>
               <X size={24} />
             </button>
-            <h2 style={{ color: '#E8EAF0' }}>Редактирование уровней</h2>
-            <div style={{ width: 24 }} />
+            <h2 className={styles.headerTitle}>Редактирование уровней</h2>
+            <div className={styles.headerSpacer} />
           </div>
         </div>
       </div>
 
-      <main className="container-centered max-w-390 space-y-6 py-6">
+      <main className={styles.main}>
         {errorText && (
-          <div className="card" style={{ border: '1px solid rgba(229,62,62,0.4)' }}>
-            <div style={{ color: '#FEB2B2' }}>{errorText}</div>
+          <div className={styles.errorCard}>
+            <div className={styles.errorText}>{errorText}</div>
           </div>
         )}
 
         {/* Deck */}
-        <div className="form-row">
-          <label className="form-label">Колода</label>
+        <div className={styles.formRow}>
+          <label className={styles.formLabel}>Колода</label>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className={styles.rowWithActions}>
             <select
               value={deckId}
               onChange={(e) => setDeckId(e.target.value)}
-              className="input"
+              className={styles.input}
               disabled={decks.length === 0 || saving}
-              style={{ flex: 1 }}
             >
               {decks.length === 0 ? (
                 <option value="">Нет доступных колод</option>
@@ -112,15 +113,7 @@ export function EditCardView(props: Props) {
               onClick={deleteCurrentDeck}
               disabled={!deckId || decks.length === 0 || saving}
               title="Удалить колоду"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 10,
-                border: '1px solid rgba(229,62,62,0.35)',
-                background: 'transparent',
-                color: '#E53E3E',
-                opacity: !deckId || decks.length === 0 || saving ? 0.4 : 1,
-              }}
+              className={`${styles.squareButton} ${styles.squareButtonDanger}`}
             >
               <Trash2 size={18} />
             </button>
@@ -132,14 +125,7 @@ export function EditCardView(props: Props) {
                   onEditDeck(deckId);
                 }}
                 title="Редактировать колоду"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 10,
-                  border: '1px solid rgba(156,163,175,0.12)',
-                  background: 'transparent',
-                  color: '#E8EAF0',
-                }}
+                className={`${styles.squareButton} ${styles.squareButtonNeutral}`}
               >
                 <Pencil size={18} />
               </button>
@@ -148,16 +134,15 @@ export function EditCardView(props: Props) {
         </div>
 
         {/* Card */}
-        <div className="form-row">
-          <label className="form-label">Карточка</label>
+        <div className={styles.formRow}>
+          <label className={styles.formLabel}>Карточка</label>
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className={styles.rowWithActions}>
             <select
               value={selectedCardId}
               onChange={(e) => setSelectedCardId(e.target.value)}
-              className="input"
+              className={styles.input}
               disabled={loading || cards.length === 0 || saving}
-              style={{ flex: 1 }}
             >
               <option value="">{loading ? 'Загрузка…' : 'Выбери карточку'}</option>
               {cards.map((c) => (
@@ -171,15 +156,7 @@ export function EditCardView(props: Props) {
               onClick={deleteSelectedCard}
               disabled={!selectedCard || saving}
               title="Удалить карточку"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 10,
-                border: '1px solid rgba(229,62,62,0.35)',
-                background: 'transparent',
-                color: '#E53E3E',
-                opacity: !selectedCard || saving ? 0.4 : 1,
-              }}
+              className={`${styles.squareButton} ${styles.squareButtonDanger}`}
             >
               <Trash2 size={18} />
             </button>
@@ -188,10 +165,10 @@ export function EditCardView(props: Props) {
 
         {!selectedCard ? null : (
           <>
-            <div className="form-row">
-              <label className="form-label">Название</label>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel}>Название</label>
               <input
-                className="input"
+                className={styles.input}
                 value={titleDraft}
                 onChange={(e) => setTitleDraft(e.target.value)}
                 disabled={!selectedCardId || saving}
@@ -199,21 +176,18 @@ export function EditCardView(props: Props) {
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <label style={{ fontSize: '0.875rem', color: '#E8EAF0' }}>Уровни ({levels.length})</label>
+              <div className={styles.levelsHeader}>
+                <label className={styles.levelsLabel}>Уровни ({levels.length})</label>
 
                 {levels.length < 10 && (
-                  <button
-                    onClick={addLevel}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
-                  >
+                  <button onClick={addLevel} className={styles.inlineAction}>
                     <Plus size={16} />
                     Добавить уровень
                   </button>
                 )}
               </div>
 
-              <div className="level-tabs">
+              <div className={styles.levelTabs}>
                 {levels.map((_, index) => {
                   const isActive = activeLevel === index;
 
@@ -221,30 +195,31 @@ export function EditCardView(props: Props) {
                     <div
                       key={index}
                       onClick={() => setActiveLevel(index)}
-                      className={`level-tab ${isActive ? 'level-tab--active' : 'level-tab--inactive'}`}
+                      className={
+                        isActive
+                          ? `${styles.levelTab} ${styles.levelTabActive} ${styles.levelTabRow}`
+                          : `${styles.levelTab} ${styles.levelTabInactive} ${styles.levelTabRow}`
+                      }
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') setActiveLevel(index);
                       }}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}
                     >
-                      <span style={{ fontSize: '0.875rem' }}>Уровень {index + 1}</span>
+                      <span className={styles.levelTabText}>Уровень {index + 1}</span>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div className={styles.reorderGroup}>
                         <span
                           onClick={(e) => {
                             e.stopPropagation();
                             moveLevel(index, index - 1);
                           }}
                           title="Вверх"
-                          style={{
-                            display: 'inline-flex',
-                            padding: 4,
-                            color: '#9CA3AF',
-                            opacity: index === 0 ? 0.35 : 1,
-                            pointerEvents: index === 0 ? 'none' : 'auto',
-                          }}
+                          className={
+                            index === 0
+                              ? `${styles.reorderIcon} ${styles.reorderIconDisabled}`
+                              : styles.reorderIcon
+                          }
                         >
                           <ChevronUp size={16} />
                         </span>
@@ -255,13 +230,11 @@ export function EditCardView(props: Props) {
                             moveLevel(index, index + 1);
                           }}
                           title="Вниз"
-                          style={{
-                            display: 'inline-flex',
-                            padding: 4,
-                            color: '#9CA3AF',
-                            opacity: index === levels.length - 1 ? 0.35 : 1,
-                            pointerEvents: index === levels.length - 1 ? 'none' : 'auto',
-                          }}
+                          className={
+                            index === levels.length - 1
+                              ? `${styles.reorderIcon} ${styles.reorderIconDisabled}`
+                              : styles.reorderIcon
+                          }
                         >
                           <ChevronDown size={16} />
                         </span>
@@ -271,7 +244,7 @@ export function EditCardView(props: Props) {
                 })}
               </div>
 
-              <div className="card">
+              <div className={styles.card}>
                 {/* QA */}
                 {active.kind === 'qa' ? (
                   <>
@@ -291,7 +264,7 @@ export function EditCardView(props: Props) {
                       preview={aPreview}
                       onTogglePreview={() => setAPreview((p) => !p)}
                       disabled={saving}
-                      className="mt-4"
+                      className={styles.mt4}
                     />
                   </>
                 ) : (
@@ -306,33 +279,24 @@ export function EditCardView(props: Props) {
                       disabled={saving}
                     />
 
-                    <div style={{ marginTop: 12 }}>
-                      <label className="form-label">Варианты</label>
+                    <div className={styles.mt3}>
+                      <label className={styles.formLabel}>Варианты</label>
 
                       {active.options.map((o, i) => (
-                        <div key={o.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                        <div key={o.id} className={styles.mcqOptionRow}>
                           <input
-                            className="input"
+                            className={styles.input}
                             value={o.text}
                             onChange={(e) => patchOptionText(i, e.target.value)}
                             disabled={saving}
                             placeholder={`Вариант ${i + 1}`}
-                            style={{ flex: 1 }}
                           />
 
                           <button
                             onClick={() => moveOption(i, i - 1)}
                             disabled={i === 0 || saving}
                             title="Вверх"
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 10,
-                              border: '1px solid rgba(156,163,175,0.12)',
-                              background: 'transparent',
-                              color: '#9CA3AF',
-                              opacity: i === 0 || saving ? 0.35 : 1,
-                            }}
+                            className={`${styles.square40Button} ${styles.square40ButtonNeutral}`}
                           >
                             <ChevronUp size={16} />
                           </button>
@@ -341,15 +305,7 @@ export function EditCardView(props: Props) {
                             onClick={() => moveOption(i, i + 1)}
                             disabled={i === active.options.length - 1 || saving}
                             title="Вниз"
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 10,
-                              border: '1px solid rgba(156,163,175,0.12)',
-                              background: 'transparent',
-                              color: '#9CA3AF',
-                              opacity: i === active.options.length - 1 || saving ? 0.35 : 1,
-                            }}
+                            className={`${styles.square40Button} ${styles.square40ButtonNeutral}`}
                           >
                             <ChevronDown size={16} />
                           </button>
@@ -358,15 +314,7 @@ export function EditCardView(props: Props) {
                             onClick={() => removeOption(i)}
                             disabled={active.options.length <= 2 || saving}
                             title="Удалить вариант"
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 10,
-                              border: '1px solid rgba(229,62,62,0.35)',
-                              background: 'transparent',
-                              color: '#E53E3E',
-                              opacity: active.options.length <= 2 || saving ? 0.35 : 1,
-                            }}
+                            className={`${styles.square40Button} ${styles.square40ButtonDanger}`}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -376,17 +324,17 @@ export function EditCardView(props: Props) {
                       <button
                         onClick={addOption}
                         disabled={saving || active.options.length >= 8}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#4A6FA5', background: 'transparent', border: 0 }}
+                        className={styles.inlineAction}
                       >
                         <Plus size={16} />
                         Добавить вариант
                       </button>
                     </div>
 
-                    <div style={{ marginTop: 12 }}>
-                      <label className="form-label">Правильный вариант</label>
+                    <div className={styles.mt3}>
+                      <label className={styles.formLabel}>Правильный вариант</label>
                       <select
-                        className="input"
+                        className={styles.input}
                         value={active.correctOptionId}
                         onChange={(e) => patchLevel(activeLevel, { correctOptionId: e.target.value } as any)}
                         disabled={saving}
@@ -400,17 +348,17 @@ export function EditCardView(props: Props) {
                       </select>
                     </div>
 
-                    <div style={{ marginTop: 12 }}>
-                      <label className="form-label">Таймер (сек)</label>
+                    <div className={styles.mt3}>
+                      <label className={styles.formLabel}>Таймер (сек)</label>
                       <input
-                        className="input"
+                        className={styles.input}
                         type="number"
                         min={0}
                         value={active.timerSec}
                         onChange={(e) => patchLevel(activeLevel, { timerSec: Number(e.target.value) || 0 } as any)}
                         disabled={saving}
                       />
-                      <div style={{ color: '#9CA3AF', fontSize: '0.8rem', marginTop: 6 }}>
+                      <div className={styles.hintText}>
                         0 = без таймера (карточка не будет автопереворачиваться по времени).
                       </div>
                     </div>
@@ -422,22 +370,20 @@ export function EditCardView(props: Props) {
                       preview={aPreview}
                       onTogglePreview={() => setAPreview((p) => !p)}
                       disabled={saving}
-                      className="mt-4"
+                      className={styles.mt4}
                     />
                   </>
                 )}
               </div>
 
               {levels.length !== cleanedCount && (
-                <div className="card">
-                  <div style={{ color: '#9CA3AF', fontSize: '0.875rem' }}>
-                    Пустые уровни (недозаполненные) не будут сохранены.
-                  </div>
+                <div className={styles.noticeCard}>
+                  <div className={styles.noticeText}>Пустые уровни (недозаполненные) не будут сохранены.</div>
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
+            <div className={styles.bottomActions}>
               <Button onClick={onCancel} variant="secondary" size="large" fullWidth disabled={saving}>
                 Отмена
               </Button>
