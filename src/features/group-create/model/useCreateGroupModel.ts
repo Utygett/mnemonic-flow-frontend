@@ -1,8 +1,13 @@
 import { useMemo, useState } from 'react';
 
-import { ApiClient } from '@/shared/api';
+import { apiRequest } from '@/shared/api';
 
 import type { CreateGroupProps } from './types';
+
+type ApiCreateGroupResponse = {
+  id?: string | number;
+  group_id?: string | number;
+};
 
 export type CreateGroupViewModel = {
   title: string;
@@ -36,13 +41,17 @@ export function useCreateGroupModel(props: CreateGroupProps): CreateGroupViewMod
       setSaving(true);
       setError(null);
 
-      const created = await ApiClient.createGroup({
-        title: t,
-        description: description.trim() || null,
-        parent_id: null,
+      const created = await apiRequest<ApiCreateGroupResponse>(`/groups`, {
+        method: 'POST',
+        body: JSON.stringify({
+          title: t,
+          description: description.trim() || null,
+          parent_id: null,
+        }),
       });
 
-      onSave((created as any)?.id);
+      const id = created?.id ?? created?.group_id;
+      onSave(id != null ? String(id) : '');
     } catch (e) {
       console.error(e);
       setError('Не удалось создать группу');
