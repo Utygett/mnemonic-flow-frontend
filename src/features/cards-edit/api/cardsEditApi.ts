@@ -1,29 +1,29 @@
-import { ApiClient } from '@/shared/api';
-import type { ApiLevelIn } from '../../../types/api';
+import { apiRequest } from '@/shared/api/request';
+
+import { getDeckWithCards, deleteDeck } from '@/entities/deck';
+import { replaceCardLevels as replaceCardLevelsApi, deleteCard as deleteCardApi } from '@/entities/card';
+import type { ApiLevelIn } from '@/entities/card';
 
 export async function loadDeckWithCards(deckId: string) {
-  return ApiClient.getDeckWithCards(deckId);
+  return getDeckWithCards(deckId);
 }
 
 export async function replaceCardLevels(cardId: string, levels: ApiLevelIn[]) {
-  return ApiClient.replaceCardLevels(cardId, levels);
+  return replaceCardLevelsApi(cardId, levels);
 }
 
 export async function deleteCard(cardId: string) {
-  return ApiClient.deleteCard(cardId);
+  return deleteCardApi(cardId);
 }
 
-export async function deleteDeck(deckId: string) {
-  return ApiClient.deleteDeck(deckId);
+export async function deleteDeckById(deckId: string) {
+  return deleteDeck(deckId);
 }
 
 export async function updateCardTitle(cardId: string, title: string) {
-  const token = localStorage.getItem('access_token');
-  if (!token) throw new Error('No auth token');
-
-  const res = await fetch(`/api/cards/${cardId}?title=${encodeURIComponent(title)}`, {
+  // Backend supports PATCH with title in query
+  const qs = new URLSearchParams({ title });
+  await apiRequest<void>(`/cards/${cardId}?${qs.toString()}`, {
     method: 'PATCH',
-    headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(await res.text());
 }
