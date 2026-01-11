@@ -2,6 +2,8 @@ import React from 'react';
 
 import type { EditDeckViewModel } from '../model/useEditDeckModel';
 
+import styles from './EditDeckView.module.css';
+
 type Props = EditDeckViewModel & {
   onCancel: () => void;
 };
@@ -23,19 +25,23 @@ export function EditDeckView(props: Props) {
   } = props;
 
   if (loading) {
-    return <div className="min-h-screen bg-dark flex items-center justify-center">Загрузка…</div>;
+    return (
+      <div className={styles.loadingPage}>
+        <div className={styles.loadingText}>Загрузка…</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-dark p-4">
-      <div className="container-centered max-w-390">
-        <div className="card">
-          <h2 className="page__title">Редактировать колоду</h2>
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h2 className={styles.title}>Редактировать колоду</h2>
 
-          <label className="field">
-            <div className="field__label">Название</div>
+          <label className={styles.field}>
+            <div className={styles.fieldLabel}>Название</div>
             <input
-              className="input"
+              className={styles.input}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Название колоды"
@@ -44,20 +50,21 @@ export function EditDeckView(props: Props) {
             />
           </label>
 
-          <label className="form-row">
+          <label className={styles.checkboxRow}>
             <input
+              className={styles.checkbox}
               type="checkbox"
               checked={isPublic}
               onChange={(e) => setIsPublic(e.target.checked)}
               disabled={saving}
             />
-            <span style={{ marginLeft: 8 }}>Сделать колоду публичной</span>
+            <span>Сделать колоду публичной</span>
           </label>
 
-          <label className="field">
-            <div className="field__label">Описание</div>
+          <label className={styles.field}>
+            <div className={styles.fieldLabel}>Описание</div>
             <textarea
-              className="input"
+              className={styles.textarea}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Краткое описание (опционально)"
@@ -65,13 +72,18 @@ export function EditDeckView(props: Props) {
             />
           </label>
 
-          {error && <div className="text-error">{error}</div>}
+          {error && <div className={styles.error}>{error}</div>}
 
-          <div className="actions">
-            <button className="btn-ghost" onClick={onCancel} disabled={saving}>
+          <div className={styles.actions}>
+            <button className={styles.btnGhost} onClick={onCancel} disabled={saving} type="button">
               Отмена
             </button>
-            <button className="btn-primary" onClick={submit} disabled={saving || !canSubmit}>
+            <button
+              className={styles.btnPrimary}
+              onClick={submit}
+              disabled={saving || !canSubmit}
+              type="button"
+            >
               {saving ? 'Сохранение…' : 'Сохранить'}
             </button>
           </div>
