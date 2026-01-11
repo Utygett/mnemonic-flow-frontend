@@ -40,5 +40,6 @@ export * from './switch';
 export * from './table';
 export * from './tabs';
 export * from './textarea';
+export * from './toggle';
 export * from './tooltip';
 export * from './use-mobile';
