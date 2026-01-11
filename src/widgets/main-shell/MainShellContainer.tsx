@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { useStatistics } from '../../hooks';
+import { useStatistics } from '../../hooks/useApi';
 import { useGroupsDecksController } from '../../hooks/useGroupsDecksController';
 
 import { StudyFlowStateContainer } from '../../features/study-flow';
