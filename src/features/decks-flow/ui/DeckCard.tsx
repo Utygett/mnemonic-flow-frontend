@@ -1,6 +1,6 @@
 import React from 'react';
 import type { PublicDeckSummary } from '../model/deckTypes';
-import { useAuth } from '../../../auth/AuthContext';
+import { useAuth } from '../../../app/providers/auth/AuthContext';
 
 import styles from './DeckCard.module.css';
 
