@@ -1,11 +1,12 @@
 import React from 'react';
 
-import type { DifficultyRating, StudyCard, StudyMode } from '../../../types';
+import type { DifficultyRating, StudyCard, StudyMode } from '@/entities/card';
+import { deleteCardProgress, levelDown, levelUp } from '@/entities/card';
+
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
-import { ApiClient } from '@/shared/api';
 import { saveSession, clearSession } from '@/shared/lib/utils/session-store';
 
-import { useStudySession } from '../../../hooks/useStudySession';
+import { useStudySession } from './hooks/useStudySession';
 import { useResumeCandidate } from './hooks/useResumeCandidate';
 import { useStudyLauncher } from './hooks/useStudyLauncher';
 import { StudyFlowView } from '../ui/StudyFlowView';
@@ -41,7 +42,10 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
   const [deckCards, setDeckCards] = React.useState<StudyCard[]>([]);
   const [sessionIndex, setSessionIndex] = React.useState(0);
 
-  const { cards, currentIndex, isCompleted, rateCard, skipCard, resetSession } = useStudySession(deckCards, sessionIndex);
+  const { cards, currentIndex, isCompleted, rateCard, skipCard, resetSession } = useStudySession(
+    deckCards,
+    sessionIndex,
+  );
 
   const {
     resumeCandidate,
@@ -74,7 +78,7 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
       setSessionKey,
       setSessionIndex,
     }),
-    []
+    [],
   );
 
   const {
@@ -106,21 +110,25 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
   const handleLevelUp = async () => {
     const card = cards[currentIndex];
     if (!card) return;
-    const r = await ApiClient.levelUp(card.id);
-    setDeckCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, activeLevel: r.active_level } : c)));
+
+    const r: any = await levelUp(card.id);
+    const nextLevel = typeof r?.active_level === 'number' ? r.active_level : card.activeLevel;
+    setDeckCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, activeLevel: nextLevel } : c)));
   };
 
   const handleLevelDown = async () => {
     const card = cards[currentIndex];
     if (!card) return;
-    const r = await ApiClient.levelDown(card.id);
-    setDeckCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, activeLevel: r.active_level } : c)));
+
+    const r: any = await levelDown(card.id);
+    const nextLevel = typeof r?.active_level === 'number' ? r.active_level : card.activeLevel;
+    setDeckCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, activeLevel: nextLevel } : c)));
   };
 
   const handleRemoveFromProgress = async () => {
     const card = cards[currentIndex];
     if (!card) return;
-    await ApiClient.deleteCardProgress(card.id);
+    await deleteCardProgress(card.id);
     skipCard();
   };
 

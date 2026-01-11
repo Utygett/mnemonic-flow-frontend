@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { ApiClient } from '@/shared/api';
-import { getErrorMessage } from '../../../utils/errorMessage';
+import { getDeckWithCards, updateDeck } from '@/entities/deck';
+import { getErrorMessage } from '@/shared/lib/errors/getErrorMessage';
 
 import type { EditDeckProps } from './types';
 
@@ -38,11 +38,11 @@ export function useEditDeckModel(props: EditDeckProps): EditDeckViewModel {
       setLoading(true);
       setError(null);
       try {
-        const cardsWithDeck = await ApiClient.getDeckWithCards(deckId);
-        const deck = cardsWithDeck.deck;
-        setTitle(deck.title ?? (deck as any).name ?? '');
-        setDescription(deck.description ?? '');
-        setIsPublic(deck.is_public ?? false);
+        const cardsWithDeck = await getDeckWithCards(deckId);
+        const deck: any = (cardsWithDeck as any).deck;
+        setTitle(deck?.title ?? deck?.name ?? '');
+        setDescription(deck?.description ?? '');
+        setIsPublic(Boolean(deck?.is_public ?? false));
       } catch (e: unknown) {
         console.error(e);
         setError('Не удалось загрузить колоду: ' + getErrorMessage(e));
@@ -62,11 +62,11 @@ export function useEditDeckModel(props: EditDeckProps): EditDeckViewModel {
       setSaving(true);
       setError(null);
 
-      await ApiClient.updateDeck(deckId, {
+      await updateDeck(deckId, {
         title: t,
         description: description || null,
         is_public: isPublic,
-      });
+      } as any);
 
       onSaved();
     } catch (e) {

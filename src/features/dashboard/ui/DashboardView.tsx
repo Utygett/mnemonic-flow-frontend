@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { Button } from '../../../shared/ui/Button/Button';
-import { ResumeSessionCard } from '../../../components/ResumeSession';
+import { ResumeSessionCard } from '@/features/study-flow';
 
 import type { DashboardActions, DashboardModel } from '../model/types';
 
@@ -41,11 +41,7 @@ export function DashboardView({
         onDeleteActiveGroup={actions.onDeleteActiveGroup}
       />
 
-      <DeckList
-        decks={model.decks}
-        onDeckClick={actions.onDeckClick}
-        onEditDeck={actions.onEditDeck}
-      />
+      <DeckList decks={model.decks} onDeckClick={actions.onDeckClick} onEditDeck={actions.onEditDeck} />
 
       <div className="dashboard__footer-section">
         <Button onClick={actions.onAddDeck} variant="primary" size="medium" fullWidth>

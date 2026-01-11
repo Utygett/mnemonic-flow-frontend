@@ -3,12 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { isMultipleChoice } from '../model/studyCardTypes';
 import { StudyCard } from '../model/studyCardTypes';
 import { DifficultyRating } from '../model/difficultyRating';
-import { FlipCard } from '../../../components/FlipCard';
+
+import { FlipCard } from '../ui/FlipCard';
 import { RatingButton } from '../ui/RatingButton';
-import { Button } from '../../../shared/ui/Button/Button';
-import { ProgressBar } from '../../../shared/ui/ProgressBar';
+
+import { Button } from '@/shared/ui/Button/Button';
+import { ProgressBar } from '@/shared/ui/ProgressBar';
+import { MarkdownView } from '@/shared/ui/MarkdownView';
+
 import { X, SkipForward, Trash2 } from 'lucide-react';
-import { MarkdownView } from '../../../shared/ui/MarkdownView';
 
 function getLevelIndex(l: any): number {
   return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;
@@ -64,7 +67,7 @@ export function StudySession({
     const ok = window.confirm(
       'Удалить карточку из прогресса?\n\n' +
         'Она больше не будет отображаться в повторении. ' +
-        'Вернуть её можно будет, начав изучение снова (прогресс начнётся заново).'
+        'Вернуть её можно будет, начав изучение снова (прогресс начнётся заново).',
     );
     if (!ok) return;
 
@@ -78,7 +81,8 @@ export function StudySession({
   }, [currentCard?.id, currentCard?.activeLevel]);
 
   const level =
-    (currentCard.levels as any[]).find((l) => getLevelIndex(l) === currentCard.activeLevel) ?? currentCard.levels[0];
+    (currentCard.levels as any[]).find((l) => getLevelIndex(l) === currentCard.activeLevel) ??
+    currentCard.levels[0];
 
   const mcq = isMultipleChoice(currentCard) ? ((level as any)?.content as any) : null;
   const timerSec = typeof mcq?.timerSec === 'number' && mcq.timerSec > 0 ? mcq.timerSec : 0;
@@ -119,10 +123,15 @@ export function StudySession({
 
     const correctId = String(c.correctOptionId ?? '');
     const showResult = selectedOptionId !== null;
-    const leftSec = timerSec > 0 ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000)) : 0;
+    const leftSec =
+      timerSec > 0
+        ? Math.max(0, Math.ceil(((timeLeftMs ?? timerSec * 1000) as number) / 1000))
+        : 0;
 
     const progressPct =
-      timerSec > 0 && timeLeftMs != null ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100)) : 100;
+      timerSec > 0 && timeLeftMs != null
+        ? Math.max(0, Math.min(100, (timeLeftMs / (timerSec * 1000)) * 100))
+        : 100;
 
     return (
       <div className="mcq">

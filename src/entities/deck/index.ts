@@ -8,3 +8,5 @@ export {
   deleteDeck,
   searchPublicDecks,
 } from './api/decksApi';
+
+export { DeckCard } from './ui/DeckCard';

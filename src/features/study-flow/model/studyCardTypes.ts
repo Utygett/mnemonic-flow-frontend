@@ -1,4 +1,4 @@
-import type { CardContent } from '../../cards-flow/model/cardContentTypes';
+import type { CardContent } from '@/entities/card';
 
 export type StudyMode = 'random' | 'ordered' | 'new_random' | 'new_ordered';
 
@@ -18,5 +18,5 @@ export interface StudyCard {
 
 // helper’ы (удобно для StudySession/Create/Edit)
 export function isMultipleChoice(card: StudyCard | null | undefined): boolean {
-  return !!card && card.type === "multiple_choice";
+  return !!card && card.type === 'multiple_choice';
 }

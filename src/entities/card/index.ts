@@ -1,24 +1,32 @@
 // Public API for card entity
 export type {
-  StudyCard,
-  CardLevel,
   StudyMode,
   DifficultyRating,
+  CardLevel,
+  StudyCard,
   StudyCardsResponse,
+  ApiLevelIn,
+  ApiReplaceLevelsRequest,
   ApiCreateCardRequest,
   ApiCreateCardResponse,
 } from './model/types';
 
-export { isMultipleChoice } from './model/types';
+export type {
+  CardType,
+  CardContent,
+  FlashcardContent,
+  MultipleChoiceContent,
+  McqOption,
+} from './model/contentTypes';
 
 export {
   getStudyCards,
   reviewCard,
   createCard,
+  updateCard,
+  deleteCard,
   replaceCardLevels,
   levelUp,
   levelDown,
-  getReviewSession,
   deleteCardProgress,
-  deleteCard,
 } from './api/cardsApi';

@@ -1,9 +1,10 @@
 import React from 'react';
-import type { Deck } from '../../../../types';
-import { DeckCard } from '../../../../components/DeckCard';
+
+import type { PublicDeckSummary } from '@/entities/deck';
+import { DeckCard } from '@/entities/deck';
 
 type Props = {
-  decks: Deck[];
+  decks: PublicDeckSummary[];
   onDeckClick: (deckId: string) => void;
   onEditDeck?: (deckId: string) => void;
 };

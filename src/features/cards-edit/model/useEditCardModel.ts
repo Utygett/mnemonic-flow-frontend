@@ -1,10 +1,10 @@
 // src/features/cards-edit/model/useEditCardModel.ts
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../../app/providers/auth/AuthContext';
-import { getErrorMessage } from '../../../utils/errorMessage';
+import { getErrorMessage } from '@/shared/lib/errors/getErrorMessage';
 
 import type { Props, CardSummary, LevelDraft } from './types';
-import type { ApiLevelIn } from '../../../types/api';
+import type { ApiLevelIn } from '@/entities/card';
 
 import { isMcqType } from '../lib/cardType';
 import { moveItem } from '../lib/array';
@@ -95,7 +95,7 @@ export function useEditCardModel(props: Props): EditCardViewModel {
 
   const selectedCard = useMemo(
     () => cards.find((c) => c.card_id === selectedCardId) || null,
-    [cards, selectedCardId]
+    [cards, selectedCardId],
   );
 
   const [activeLevel, setActiveLevel] = useState(0);
@@ -119,7 +119,7 @@ export function useEditCardModel(props: Props): EditCardViewModel {
       setErrorText(null);
       try {
         const deck = await loadDeckWithCards(deckId);
-        setCards(deck.cards as any); // deck.cards уже совпадает с твоим CardSummary (title/type/levels)
+        setCards(deck.cards as any);
         setSelectedCardId('');
         setLevels([defaultQaLevel()]);
         setActiveLevel(0);
@@ -137,9 +137,7 @@ export function useEditCardModel(props: Props): EditCardViewModel {
   useEffect(() => {
     if (!selectedCard) return;
 
-    const sorted = [...(selectedCard.levels ?? [])].sort(
-      (a, b) => getLevelIndex(a) - getLevelIndex(b)
-    );
+    const sorted = [...(selectedCard.levels ?? [])].sort((a, b) => getLevelIndex(a) - getLevelIndex(b));
 
     if (isMcqType(selectedCard.type)) {
       const mapped: LevelDraft[] =
@@ -154,7 +152,7 @@ export function useEditCardModel(props: Props): EditCardViewModel {
     setActiveLevel(0);
     setQPreview(false);
     setAPreview(false);
-  }, [selectedCardId]); // intentionally tied to selection
+  }, [selectedCardId]);
 
   // title draft
   useEffect(() => {
@@ -198,7 +196,6 @@ export function useEditCardModel(props: Props): EditCardViewModel {
     });
   };
 
-  // ---- MCQ helpers (работают только если active level = mcq) ----
   const addOption = () => {
     setLevels((prev) => {
       const next = [...prev];
