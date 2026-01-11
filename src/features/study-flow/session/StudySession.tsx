@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import { StudyCard, DifficultyRating, isMultipleChoice } from '../../../types';
 import { FlipCard } from '../../../components/FlipCard';
-import { RatingButton } from '../../../components/RatingButton';
+import { RatingButton } from '../ui/RatingButton';
 import { Button } from '../../../shared/ui/Button/Button';
 import { ProgressBar } from '../../../shared/ui/ProgressBar';
 import { X, SkipForward, Trash2 } from 'lucide-react';
