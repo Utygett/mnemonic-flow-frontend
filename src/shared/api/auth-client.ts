@@ -1,4 +1,4 @@
-// src/api/authClient.ts
+// src/shared/api/auth-client.ts
 
 const API_URL = '/api';
 

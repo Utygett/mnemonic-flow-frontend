@@ -1,15 +1,15 @@
-// src/api/client.ts
+// src/shared/api/client.ts
 import {
   Statistics,
   DifficultyRating,
   UserGroupResponse,
   Group,
   GroupCreatePayload,
-} from '../types';
-import { PublicDeckSummary, StudyCard, StudyMode } from '../types';
-import type { ApiDeckWithCards } from '../types/api';
-import type { ApiLevelIn, ApiReplaceLevelsRequest } from '../types/api';
-import type { ApiCreateCardRequest, ApiCreateCardResponse } from '../types/api';
+} from '../../types';
+import { PublicDeckSummary, StudyCard, StudyMode } from '../../types';
+import type { ApiDeckWithCards } from '../../types/api';
+import type { ApiLevelIn, ApiReplaceLevelsRequest } from '../../types/api';
+import type { ApiCreateCardRequest, ApiCreateCardResponse } from '../../types/api';
 
 
 export type StudyCardsResponse = {

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import './ResumeSession.css';
+import styles from './ResumeSession.module.css';
 
 interface ResumeSessionCardProps {
   title: string;
@@ -18,21 +18,21 @@ export function ResumeSessionCard({
   onDiscard,
 }: ResumeSessionCardProps) {
   return (
-    <div className="resume-session">
-      <div className="resume-session__card">
-        <h3 className="resume-session__title">{title}</h3>
-        <p className="resume-session__subtitle">{subtitle}</p>
-        <p className="resume-session__info">{cardInfo}</p>
+    <div className={styles.resumeSession}>
+      <div className={styles.card}>
+        <h3 className={styles.title}>{title}</h3>
+        <p className={styles.subtitle}>{subtitle}</p>
+        <p className={styles.info}>{cardInfo}</p>
 
-        <div className="resume-session__buttons">
+        <div className={styles.buttons}>
           <button
-            className="resume-session__button resume-session__button--primary"
+            className={`${styles.button} ${styles.buttonPrimary}`}
             onClick={onResume}
           >
             Продолжить
           </button>
           <button
-            className="resume-session__button resume-session__button--secondary"
+            className={`${styles.button} ${styles.buttonSecondary}`}
             onClick={onDiscard}
           >
             Сбросить

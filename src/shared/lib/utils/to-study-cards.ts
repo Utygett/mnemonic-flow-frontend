@@ -1,4 +1,5 @@
-import type { StudyCard } from '../types';
+// src/shared/lib/utils/to-study-cards.ts
+import type { StudyCard } from '../../../types';
 
 export const toStudyCards = (items: any[]): StudyCard[] =>
   items.map((c: any) => ({

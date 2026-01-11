@@ -2,7 +2,7 @@ import React from 'react';
 import type { PublicDeckSummary } from '../model/deckTypes';
 import { useAuth } from '../../../auth/AuthContext';
 
-import './DeckCard.css';
+import styles from './DeckCard.module.css';
 
 interface DeckCardProps {
   deck: PublicDeckSummary;
@@ -24,27 +24,27 @@ export function DeckCard({ deck, onClick }: DeckCardProps) {
   const progress = totalCards > 0 ? Math.round((completedCards / totalCards) * 100) : 0;
 
   return (
-    <button onClick={onClick} className="deck-card">
-      <h3 className="deck-card__title">{deck.title}</h3>
+    <button onClick={onClick} className={styles.deckCard}>
+      <h3 className={styles.title}>{deck.title}</h3>
 
-      <div className="deck-card__description-box">
+      <div className={styles.descriptionBox}>
         {description ? (
-          <p className="deck-card__description">{description}</p>
+          <p className={styles.description}>{description}</p>
         ) : (
-          <p className="deck-card__description">Описание отсутствует</p>
+          <p className={styles.description}>Описание отсутствует</p>
         )}
       </div>
 
-      <div className="deck-card__stats">
-        <span className="deck-card__stat">Прогресс: {progress}%</span>
-        <span className="deck-card__stat">Количество повторений: {repetitionsCount}</span>
-        <span className="deck-card__stat">Для повторения: {forRepetition}</span>
+      <div className={styles.stats}>
+        <span className={styles.stat}>Прогресс: {progress}%</span>
+        <span className={styles.stat}>Количество повторений: {repetitionsCount}</span>
+        <span className={styles.stat}>Для повторения: {forRepetition}</span>
       </div>
 
-      <div className="deck-card__progress-container">
-        <div className="deck-card__progress-bar">
-          <div className="deck-card__progress-fill" style={{ width: `${progress}%` }} />
-          <span className="deck-card__progress-text">
+      <div className={styles.progressContainer}>
+        <div className={styles.progressBar}>
+          <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+          <span className={styles.progressText}>
             {completedCards} / {totalCards}
           </span>
         </div>

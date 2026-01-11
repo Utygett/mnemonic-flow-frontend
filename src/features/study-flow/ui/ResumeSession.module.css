@@ -1,10 +1,10 @@
-.resume-session {
+.resumeSession {
   max-width: 390px;
   margin: 0 auto -16px;
   padding: 16px 16px;
 }
 
-.resume-session__card {
+.card {
   background-color: rgba(79, 114, 172, 0.21);
   border-radius: 16px;
   border: 2px solid #334155;
@@ -12,34 +12,34 @@
   text-align: center;
 }
 
-.resume-session__title {
+.title {
   margin: -10px 0 4px 0;
   font-size: 18px;
   font-weight: bold;
   color: #E8EAF0;
 }
 
-.resume-session__subtitle {
+.subtitle {
   margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 400;
   color: #E8EAF0;
 }
 
-.resume-session__info {
+.info {
   margin: 0 0 16px 0;
   font-size: 14px;
   font-weight: 400;
   color: #E8EAF0;
 }
 
-.resume-session__buttons {
+.buttons {
   display: flex;
   gap: 12px;
   justify-content: center;
 }
 
-.resume-session__button {
+.button {
   flex: 1;
   max-width: 160px;
   padding: 12px 24px;
@@ -51,21 +51,21 @@
   border: none;
 }
 
-.resume-session__button--primary {
+.buttonPrimary {
   background-color: #5B7EBF;
   color: white;
 }
 
-.resume-session__button--primary:hover {
+.buttonPrimary:hover {
   background-color: #4A6DAE;
 }
 
-.resume-session__button--secondary {
+.buttonSecondary {
   background-color: transparent;
   color: #9CA3AF;
   border: 1px solid #4B5563;
 }
 
-.resume-session__button--secondary:hover {
+.buttonSecondary:hover {
   background-color: rgba(75, 85, 99, 0.2);
 }
