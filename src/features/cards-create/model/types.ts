@@ -5,6 +5,7 @@ export type CardType = 'flashcard' | 'multiple_choice';
 export type LevelQA = {
   question: string;
   answer: string;
+  timerSec?: number;
 };
 
 export type McqOption = {
@@ -25,7 +26,7 @@ export type CreateCardData =
       deckId: string;
       term: string;
       type: 'flashcard';
-      levels: Array<{ question: string; answer: string }>;
+      levels: Array<{ question: string; answer: string; timerSec?: number }>;
     }
   | {
       deckId: string;
@@ -44,7 +45,7 @@ export type CreateCardBulkItem = {
   deckId: string;
   term: string;
   type: 'flashcard';
-  levels: Array<{ question: string; answer: string }>;
+  levels: Array<{ question: string; answer: string; timerSec?: number }>;
 };
 
 export type CreateCardBulkResult = {

@@ -96,7 +96,7 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
         return;
       }
 
-      // 2) Парсинг ок → формируем payload и шлём
+      // 2) Парсинг ok → формируем payload и шлём
       const cards = rows.map((r) => ({
         deckId,
         term: r.name,
@@ -252,6 +252,28 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
                   onTogglePreview={() => setAPreview(!aPreview)}
                   className={styles.mt4}
                 />
+
+                <div className={styles.formRow} style={{ marginTop: '1rem' }}>
+                  <label className={styles.formLabel}>Таймер (сек) — опционально</label>
+                  <input
+                    className={styles.input}
+                    type="number"
+                    min={0}
+                    max={3600}
+                    value={typeof activeQA?.timerSec === 'number' ? String(activeQA.timerSec) : ''}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') {
+                        patchLevelQA(activeLevel, { timerSec: undefined });
+                        return;
+                      }
+                      const n = Number(raw);
+                      const v = Number.isFinite(n) ? Math.max(0, Math.min(3600, Math.trunc(n))) : 0;
+                      patchLevelQA(activeLevel, { timerSec: v });
+                    }}
+                    placeholder="Напр. 15"
+                  />
+                </div>
               </>
             ) : (
               <>
