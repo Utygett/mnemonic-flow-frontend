@@ -39,6 +39,12 @@ export function useStudyLauncher(input: Input) {
           limit: limitNormalized,
         });
 
+        // Проверка: если выбраны "новые карточки", а бэкенд вернул пустой массив
+        if ((mode === 'new_random' || mode === 'new_ordered') && res.cards.length === 0) {
+          alert('В этой колоде нет новых карточек. Все карточки уже добавлены для изучения.');
+          return; // Не запускаем сессию
+        }
+
         input.setDeckCards(res.cards);
         input.setActiveDeckId(deckId);
         input.setSessionMode('deck');
