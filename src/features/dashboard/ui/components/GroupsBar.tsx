@@ -25,6 +25,24 @@ export function GroupsBar({
 
   const safeGroups = groups ?? [];
 
+  // Прокручиваем к активной группе при её изменении
+  React.useEffect(() => {
+    if (!activeGroupId || !carouselRef.current) return;
+
+    const activeIndex = safeGroups.findIndex((g) => g.id === activeGroupId);
+    if (activeIndex === -1) return;
+
+    const activeButton = carouselRef.current.children[activeIndex] as HTMLElement;
+    if (!activeButton) return;
+
+    // Прокручиваем так, чтобы кнопка была в центре видимой области
+    activeButton.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+  }, [activeGroupId, safeGroups]);
+
   return (
     <div className={styles.section}>
       <div className={styles.container}>
