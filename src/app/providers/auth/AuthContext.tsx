@@ -19,6 +19,28 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 const API_URL = '/api';
 
+/**
+ * Проверяет, истекает ли JWT токен или скоро истечёт (менее 5 минут до exp).
+ * @param token JWT токен
+ * @returns true, если токен истёк или скоро истечёт
+ */
+function isTokenExpiredOrExpiring(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const exp = payload.exp;
+    if (!exp) return false;
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const fiveMinutes = 5 * 60;
+
+    // Если токен уже истёк или истечёт через меньше 5 минут
+    return exp - nowSeconds < fiveMinutes;
+  } catch (e) {
+    // Не смогли распарсить — считаем невалидным
+    return true;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem('access_token'));
   const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem('refresh_token'));
@@ -62,8 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
       const newAccessToken = data.access_token;
+      const newRefreshToken = data.refresh_token ?? refreshToken;
+
       localStorage.setItem('access_token', newAccessToken);
+      localStorage.setItem('refresh_token', newRefreshToken);
       setToken(newAccessToken);
+      setRefreshToken(newRefreshToken);
       return newAccessToken;
     } catch (err) {
       logout();
@@ -91,18 +117,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Подтягиваем пользователя при старте, если access token есть
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    const initAuth = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-    fetchMe(token)
-      .catch((err) => {
-        if (err.message === 'unauthorized') logout();
+      // Проверяем, не истёк ли токен или скоро истечёт
+      if (isTokenExpiredOrExpiring(token)) {
+        console.log('[AuthContext] Token expired or expiring soon, refreshing...');
+        const newToken = await refreshAccessToken();
+        if (!newToken) {
+          setLoading(false);
+          return;
+        }
+        // Используем новый токен для fetchMe
+        try {
+          await fetchMe(newToken);
+        } catch (err) {
+          if ((err as Error).message === 'unauthorized') logout();
+          console.error('fetchMe error after refresh:', err);
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Токен ещё действителен, используем его
+      try {
+        await fetchMe(token);
+      } catch (err) {
+        if ((err as Error).message === 'unauthorized') logout();
         console.error('fetchMe error:', err);
-      })
-      .finally(() => setLoading(false));
-  }, [token]);
+      }
+      setLoading(false);
+    };
+
+    initAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <AuthContext.Provider value={{ token, refreshToken, currentUser, login, logout, refreshAccessToken }}>
