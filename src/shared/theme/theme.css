@@ -2,9 +2,15 @@
   Theme design tokens.
 
   How it works:
-  - Base tokens are defined on :root
+  - Base tokens are defined on :root (dark theme by default)
   - Presets override tokens via :root[data-theme='...']
   - Custom theme overrides are applied at runtime via JS (ThemeProvider) by setting CSS variables on :root
+
+  Available themes:
+  - dark (default)
+  - light
+  - blue (original blue theme from before refactoring)
+  - custom (user-defined, applied via ThemeProvider)
 */
 
 :root {
@@ -32,6 +38,7 @@
   color-scheme: dark;
 }
 
+/* Light theme */
 :root[data-theme='light'] {
   --bg: #ffffff;
   --surface: rgba(0, 0, 0, 0.04);
@@ -47,4 +54,28 @@
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
 
   color-scheme: light;
+}
+
+/* Blue theme (original pre-refactoring colors) */
+:root[data-theme='blue'] {
+  --bg: #0b1220;
+  --surface: rgba(96, 165, 250, 0.08);
+  --surface-2: rgba(96, 165, 250, 0.14);
+
+  --text: #e5e7eb;
+  --muted: rgba(229, 231, 235, 0.6);
+
+  --primary: #60a5fa;
+  --primary-contrast: #0b1220;
+
+  --border: rgba(96, 165, 250, 0.18);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+
+  color-scheme: dark;
+}
+
+/* Custom theme (values set dynamically by ThemeProvider) */
+:root[data-theme='custom'] {
+  /* Variables will be overridden at runtime via JS */
+  color-scheme: dark;
 }
