@@ -1,4 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '../../shared/ui/Button/Button';
+import { Input } from '../../shared/ui/Input';
+
+import styles from './ResetPasswordPage.module.css';
 
 export function ResetPasswordPage({ token }: { token: string }) {
   const [password, setPassword] = useState('');
@@ -55,29 +59,55 @@ export function ResetPasswordPage({ token }: { token: string }) {
     };
   }, [status]);
 
-  if (!token) return <div>Токен не найден в ссылке</div>;
+  if (!token) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Сброс пароля</h1>
+          <div className={styles.messageError}>Токен не найден в ссылке</div>
+        </div>
+      </div>
+    );
+  }
 
   if (status === 'ok') {
     return (
-      <div>
-        <div>Пароль изменён. Перенаправление на вход через {secondsLeft} сек…</div>
-        <a href="/">Перейти на вход сейчас</a>
+      <div className={styles.page}>
+        <div className={styles.card}>
+          <h1 className={styles.title}>Пароль изменён</h1>
+          <div className={styles.messageInfo}>
+            Перенаправление на вход через {secondsLeft} сек…
+          </div>
+          <a href="/" className={styles.linkBtn}>
+            Перейти на вход сейчас
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit}>
-      <h1>Новый пароль</h1>
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Введите новый пароль"
-        required
-      />
-      <button type="submit">Сохранить</button>
-      {error && <div>{error}</div>}
-    </form>
+    <div className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>Новый пароль</h1>
+
+        {error && <div className={styles.messageError}>{error}</div>}
+
+        <form onSubmit={submit} className={styles.form}>
+          <Input
+            type="password"
+            value={password}
+            onChange={setPassword}
+            label="Новый пароль"
+            placeholder="Введите новый пароль"
+            required
+          />
+
+          <Button type="submit" variant="primary" size="large" fullWidth>
+            Сохранить
+          </Button>
+        </form>
+      </div>
+    </div>
   );
 }
