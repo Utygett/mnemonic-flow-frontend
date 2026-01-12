@@ -18,6 +18,9 @@ export function DashboardView({
   model: DashboardModel;
   actions: DashboardActions;
 }) {
+  const activeGroup = model.groups.find((g) => g.id === model.activeGroupId);
+  const groupDescription = activeGroup?.description?.trim();
+
   return (
     <div className={styles.dashboard}>
       <div className={styles.header}>
@@ -41,6 +44,12 @@ export function DashboardView({
         onCreateGroup={actions.onCreateGroup}
         onDeleteActiveGroup={actions.onDeleteActiveGroup}
       />
+
+      {groupDescription && (
+        <div className={styles.groupDescriptionSection}>
+          <p className={styles.groupDescription}>{groupDescription}</p>
+        </div>
+      )}
 
       <DeckList decks={model.decks} onDeckClick={actions.onDeckClick} onEditDeck={actions.onEditDeck} />
 
