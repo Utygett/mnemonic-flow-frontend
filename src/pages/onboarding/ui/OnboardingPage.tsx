@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-
 import { motion, AnimatePresence } from 'motion/react';
 
 import { Button } from '../../../shared/ui/Button/Button';
 import { LevelIndicator } from '../../../shared/ui/LevelIndicator';
+
+import styles from './OnboardingPage.module.css';
 
 interface OnboardingPageProps {
   onComplete: () => void;
@@ -39,10 +40,10 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-dark layout-vertical-between">
+    <div className={styles.page}>
       {/* Контент */}
-      <div className="flex-1 center-vertical px-4">
-        <div className="max-w-390 w-full">
+      <div className={styles.content}>
+        <div className={styles.contentInner}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -50,21 +51,21 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="text-center"
+              className={styles.stepCard}
             >
-              <div className="onboarding__image mb-8">{steps[currentStep].image}</div>
+              <div className={styles.image}>{steps[currentStep].image}</div>
 
-              <h1 className="onboarding__title mb-4">{steps[currentStep].title}</h1>
+              <h1 className={styles.title}>{steps[currentStep].title}</h1>
 
-              <p className="onboarding__desc mb-8">{steps[currentStep].description}</p>
+              <p className={styles.description}>{steps[currentStep].description}</p>
 
               {/* Level Demo (только на шаге 1) */}
               {currentStep === 1 && (
-                <div className="onboarding__demo mb-8">
-                  <div className="space-y-4">
+                <div className={styles.demo}>
+                  <div className={styles.levelList}>
                     {[0, 1, 2, 3].map((level) => (
-                      <div key={level} className="onboarding__level-row">
-                        <span className="text-sm">Уровень {level}</span>
+                      <div key={level} className={styles.levelRow}>
+                        <span className={styles.levelLabel}>Уровень {level}</span>
                         <LevelIndicator currentLevel={level as 0 | 1 | 2 | 3} size="medium" />
                       </div>
                     ))}
@@ -76,15 +77,18 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
         </div>
       </div>
 
-      <div className="px-4 pb-8">
-        <div className="container-centered">
-          <div className="dots">
+      <div className={styles.footer}>
+        <div className={styles.footerInner}>
+          <div className={styles.dots}>
             {steps.map((_, index) => (
-              <div key={index} className={`dot ${index === currentStep ? 'dot--active' : ''}`} />
+              <div
+                key={index}
+                className={index === currentStep ? `${styles.dot} ${styles.dotActive}` : styles.dot}
+              />
             ))}
           </div>
 
-          <div className="mt-4">
+          <div className={styles.buttonContainer}>
             <Button onClick={handleNext} variant="primary" size="large" fullWidth>
               {currentStep < steps.length - 1 ? 'Далее' : 'Начать'}
             </Button>
