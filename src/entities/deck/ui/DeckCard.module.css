@@ -23,18 +23,73 @@
 }
 
 .title {
-  font-weight: 600;
+  font-weight: 650;
   color: var(--text);
+  line-height: 1.2;
 }
 
-.count {
-  font-size: 13px;
+.countBadge {
+  font-size: 12px;
   color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.descriptionBox {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg) 30%);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  max-height: 120px;
+  overflow: auto;
 }
 
 .description {
-  margin-top: 6px;
   font-size: 13px;
+  line-height: 1.35;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.statsRow {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.stat {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.progressWrap {
+  margin-top: 10px;
+}
+
+.progressBar {
+  height: 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 40%, var(--bg) 60%);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--accent) 70%, var(--text) 30%);
+  transition: width 220ms ease;
+}
+
+.progressText {
+  margin-top: 6px;
+  font-size: 12px;
   color: var(--muted);
 }
 

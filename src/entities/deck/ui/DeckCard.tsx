@@ -7,21 +7,56 @@ import styles from './DeckCard.module.css';
 type Props = {
   deck: PublicDeckSummary;
   onClick: () => void;
+
+  /** Показываем кнопку редактирования только если deck.owner_id === currentUserId */
+  currentUserId?: string | null;
   onEdit?: () => void;
 };
 
-export function DeckCard({ deck, onClick, onEdit }: Props) {
+export function DeckCard({ deck, onClick, onEdit, currentUserId }: Props) {
+  const description = deck.description?.trim();
+
+  const totalCards = Number(deck.cards_count ?? 0);
+  const completedCards = Number(deck.completed_cards_count ?? 0);
+  const repetitionsCount = Number(deck.count_repeat ?? 0);
+  const forRepetition = Number(deck.count_for_repeat ?? 0);
+
+  const progress = totalCards > 0 ? Math.round((completedCards / totalCards) * 100) : 0;
+
+  const isOwner = Boolean(currentUserId && deck.owner_id && String(currentUserId) === String(deck.owner_id));
+  const canEdit = Boolean(isOwner && onEdit);
+
   return (
     <div className={styles.root}>
       <button type="button" onClick={onClick} className={styles.clickArea}>
         <div className={styles.headerRow}>
           <div className={styles.title}>{deck.title}</div>
-          {typeof deck.cards_count === 'number' ? <div className={styles.count}>{deck.cards_count}</div> : null}
+          <div className={styles.countBadge} title="Всего карточек">
+            {totalCards}
+          </div>
         </div>
-        {deck.description ? <div className={styles.description}>{deck.description}</div> : null}
+
+        <div className={styles.descriptionBox}>
+          <div className={styles.description}>{description ? description : 'Описание отсутствует'}</div>
+        </div>
+
+        <div className={styles.statsRow}>
+          <div className={styles.stat}>Прогресс: {progress}%</div>
+          <div className={styles.stat}>Повторений: {repetitionsCount}</div>
+          <div className={styles.stat}>Для повтора: {forRepetition}</div>
+        </div>
+
+        <div className={styles.progressWrap}>
+          <div className={styles.progressBar} aria-label={`Прогресс ${progress}%`}>
+            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+          </div>
+          <div className={styles.progressText}>
+            {completedCards} / {totalCards}
+          </div>
+        </div>
       </button>
 
-      {onEdit ? (
+      {canEdit ? (
         <div className={styles.editRow}>
           <button type="button" className={styles.editButton} onClick={onEdit}>
             Редактировать
