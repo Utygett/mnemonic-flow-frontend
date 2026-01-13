@@ -49,19 +49,30 @@ export function useGroupsDecksController() {
 
   const refreshDecks = useCallback(async () => {
     setState((s) => ({ ...s, decksLoading: true, decksError: null }));
+
     try {
-      const decks = await getUserDecks();
+      // ВАЖНО:
+      // - /groups/:id/decks/summary отдаёт корректные счетчики (repeat/for_repeat/completed/etc)
+      // - /decks/ иногда возвращает "плоский" список без этих счетчиков (или с нулями)
+      // Поэтому для дашборда при выбранной группе грузим summary по группе.
+      const decks = state.activeGroupId ? await getGroupDecksSummary(state.activeGroupId) : await getUserDecks();
+
       setState((s) => ({ ...s, decks, decksLoading: false, decksError: null }));
     } catch (e) {
       setState((s) => ({ ...s, decks: [], decksLoading: false, decksError: e }));
     }
-  }, []);
+  }, [state.activeGroupId]);
 
   // initial load
   useEffect(() => {
     void refreshGroups();
     void refreshDecks();
   }, [refreshDecks, refreshGroups]);
+
+  // reload decks when active group changes (so we can switch between /decks/ and /groups/:id/decks/summary)
+  useEffect(() => {
+    void refreshDecks();
+  }, [state.activeGroupId, refreshDecks]);
 
   // load deck ids for active group (used for filtering/highlighting)
   useEffect(() => {
