@@ -3,6 +3,8 @@ import React from 'react';
 import type { Deck, Group, StudyMode, Statistics } from '../../../../types';
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
+import type { PublicDeckSummary } from '@/entities/deck';
+
 import { CreateGroup } from '../../../../features/group-create';
 import { DeckDetailsScreen } from '../../../../features/deck-details';
 import { AddDeck } from '../../../../features/deck-add';
@@ -43,6 +45,28 @@ type HomeView =
   | { kind: 'createGroup' }
   | { kind: 'addDeck' }
   | { kind: 'deckDetails'; deckId: string };
+
+function mapDeckToPublicSummary(deck: Deck): PublicDeckSummary {
+  // NOTE: это fallback-адаптер для старого типа Deck (из '../../../../types').
+  // Правильный источник для dashboard — API summary /decks/ (PublicDeckSummary).
+  return {
+    deck_id: deck.id,
+    title: deck.name,
+    description: deck.description ?? null,
+    color: deck.color ?? null,
+
+    // Эти поля в старом типе Deck отсутствуют — подставляем безопасные значения,
+    // чтобы DeckCard мог корректно рисоваться.
+    owner_id: '',
+    is_public: false,
+    can_edit: false,
+
+    cards_count: deck.cardsCount ?? 0,
+    completed_cards_count: Math.round(((deck.progress ?? 0) / 100) * (deck.cardsCount ?? 0)),
+    count_repeat: 0,
+    count_for_repeat: 0,
+  };
+}
 
 export function HomeTabContainer(props: Props) {
   const [view, setView] = React.useState<HomeView>({ kind: 'dashboard' });
@@ -98,10 +122,20 @@ export function HomeTabContainer(props: Props) {
   }
 
   // --- обычный home (dashboard) ---
+  // ВАЖНО: DashboardContainer ожидает PublicDeckSummary[] (deck_id, cards_count, count_repeat, ...),
+  // но сюда historically прокидывался Deck[] (id, name, progress...).
+  // Это и ломало отображение цифр (DeckCard читает поля *_count из summary).
+  const decksForDashboard = (props.decks as unknown as PublicDeckSummary[]).map((d: any) => {
+    // если это уже PublicDeckSummary из API — оставляем как есть
+    if (typeof d?.deck_id === 'string') return d as PublicDeckSummary;
+    // иначе адаптируем старый Deck
+    return mapDeckToPublicSummary(d as Deck);
+  });
+
   return (
     <HomeTab
       statistics={props.statistics}
-      decks={props.decks}
+      decks={decksForDashboard as unknown as Deck[]}
       groups={props.groups}
       activeGroupId={props.activeGroupId}
       resumeCandidate={props.resumeCandidate}

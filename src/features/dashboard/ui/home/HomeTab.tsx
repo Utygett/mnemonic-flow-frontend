@@ -3,6 +3,8 @@ import React from 'react';
 import type { Deck, Group, Statistics } from '../../../../types';
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
 
+import type { PublicDeckSummary } from '@/entities/deck';
+
 import { DashboardContainer } from '../DashboardContainer';
 
 type Props = {
@@ -29,7 +31,7 @@ export function HomeTab(props: Props) {
   return (
     <DashboardContainer
       statistics={props.statistics}
-      decks={props.decks}
+      decks={props.decks as unknown as PublicDeckSummary[]}
       groups={props.groups}
       activeGroupId={props.activeGroupId}
       resumeCandidate={props.resumeCandidate}
