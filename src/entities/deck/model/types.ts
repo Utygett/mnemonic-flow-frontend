@@ -7,6 +7,10 @@ export type PublicDeckSummary = {
   color: string | null;
   owner_id: string;
   is_public: boolean;
+
+  /** True if current user is allowed to edit this deck (owner or granted permission). */
+  can_edit?: boolean;
+
   count_repeat: number;
   count_for_repeat: number;
   cards_count: number;
@@ -31,6 +35,10 @@ export type ApiDeckWithCards = {
   color: string | null;
   owner_id: string;
   is_public: boolean;
+
+  /** True if current user is allowed to edit this deck (owner or granted permission). */
+  can_edit?: boolean;
+
   cards: ApiCard[];
 };
 

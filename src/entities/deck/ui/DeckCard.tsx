@@ -7,13 +7,10 @@ import styles from './DeckCard.module.css';
 type Props = {
   deck: PublicDeckSummary;
   onClick: () => void;
-
-  /** Показываем кнопку редактирования только если deck.owner_id === currentUserId */
-  currentUserId?: string | null;
   onEdit?: () => void;
 };
 
-export function DeckCard({ deck, onClick, onEdit, currentUserId }: Props) {
+export function DeckCard({ deck, onClick, onEdit }: Props) {
   const description = deck.description?.trim();
 
   const totalCards = Number(deck.cards_count ?? 0);
@@ -23,8 +20,7 @@ export function DeckCard({ deck, onClick, onEdit, currentUserId }: Props) {
 
   const progress = totalCards > 0 ? Math.round((completedCards / totalCards) * 100) : 0;
 
-  const isOwner = Boolean(currentUserId && deck.owner_id && String(currentUserId) === String(deck.owner_id));
-  const canEdit = Boolean(isOwner && onEdit);
+  const canEdit = Boolean(deck.can_edit && onEdit);
 
   return (
     <div className={styles.root}>
