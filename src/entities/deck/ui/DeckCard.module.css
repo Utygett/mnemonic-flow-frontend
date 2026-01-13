@@ -73,7 +73,8 @@
 }
 
 .progressBar {
-  height: 10px;
+  position: relative;
+  height: 12px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 40%, var(--bg) 60%);
@@ -83,14 +84,22 @@
 .progressFill {
   height: 100%;
   border-radius: inherit;
-  background: color-mix(in srgb, var(--accent) 70%, var(--text) 30%);
+  background: color-mix(in srgb, var(--success, #22c55e) 70%, var(--text) 30%);
   transition: width 220ms ease;
 }
 
-.progressText {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--muted);
+.progressTextInBar {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--text-on-accent, #ffffff);
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .editRow {

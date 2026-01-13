@@ -45,9 +45,9 @@ export function DeckCard({ deck, onClick, onEdit }: Props) {
         <div className={styles.progressWrap}>
           <div className={styles.progressBar} aria-label={`Прогресс ${progress}%`}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-          </div>
-          <div className={styles.progressText}>
-            {completedCards} / {totalCards}
+            <div className={styles.progressTextInBar}>
+              {completedCards} / {totalCards}
+            </div>
           </div>
         </div>
       </button>
