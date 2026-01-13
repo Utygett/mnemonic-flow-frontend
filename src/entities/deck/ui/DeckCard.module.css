@@ -30,16 +30,6 @@
   line-height: 1.2;
 }
 
-.countBadge {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
-
 .descriptionBox {
   margin-top: 8px;
   border: 1px solid var(--border);
@@ -107,24 +97,4 @@
   color: var(--text-on-accent, #ffffff);
   pointer-events: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-}
-
-.editRow {
-  margin-top: 10px;
-}
-
-.editButton {
-  border: none;
-  background: transparent;
-  padding: 0;
-
-  cursor: pointer;
-  font-size: 13px;
-  text-decoration: underline;
-
-  color: var(--muted);
-}
-
-.editButton:hover {
-  color: var(--text);
 }

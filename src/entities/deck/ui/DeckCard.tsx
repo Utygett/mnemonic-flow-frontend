@@ -7,10 +7,9 @@ import styles from './DeckCard.module.css';
 type Props = {
   deck: PublicDeckSummary;
   onClick: () => void;
-  onEdit?: () => void;
 };
 
-export function DeckCard({ deck, onClick, onEdit }: Props) {
+export function DeckCard({ deck, onClick }: Props) {
   const description = deck.description?.trim();
 
   const totalCards = Number(deck.cards_count ?? 0);
@@ -20,16 +19,11 @@ export function DeckCard({ deck, onClick, onEdit }: Props) {
 
   const progress = totalCards > 0 ? Math.round((completedCards / totalCards) * 100) : 0;
 
-  const canEdit = Boolean(deck.can_edit && onEdit);
-
   return (
     <div className={styles.root}>
       <button type="button" onClick={onClick} className={styles.clickArea}>
         <div className={styles.headerRow}>
           <div className={styles.title}>{deck.title}</div>
-          <div className={styles.countBadge} title="Всего карточек">
-            {totalCards}
-          </div>
         </div>
 
         <div className={styles.descriptionBox}>
@@ -51,14 +45,6 @@ export function DeckCard({ deck, onClick, onEdit }: Props) {
           </div>
         </div>
       </button>
-
-      {canEdit ? (
-        <div className={styles.editRow}>
-          <button type="button" className={styles.editButton} onClick={onEdit}>
-            Редактировать
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
