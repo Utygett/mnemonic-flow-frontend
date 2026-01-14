@@ -15,7 +15,7 @@
 }
 
 .headerInner {
-  max-width: 56rem;
+  max-width: 420px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -32,14 +32,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
   color: var(--muted);
   cursor: pointer;
 }
 
 .iconButton:hover {
   color: var(--text);
+  background: var(--surface-2);
 }
 
 .headerTitle {
@@ -55,11 +57,11 @@
 
 .main {
   width: 100%;
-  max-width: 56rem;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 16px 16px;
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 
 .formRow {
@@ -75,11 +77,11 @@
 
 .input {
   width: 100%;
-  padding: 12px 12px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 15px;
-  background: var(--surface);
+  border-radius: 12px;
+  font-size: 14px;
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg) 30%);
   color: var(--text);
 }
 
@@ -154,14 +156,14 @@
 }
 
 .levelTabText {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .card {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
-  padding: 16px;
+  padding: 12px;
 }
 
 .cardTopBar {
@@ -183,11 +185,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 1px solid color-mix(in srgb, #ff6b6b 45%, var(--border));
   background: transparent;
   color: #ff6b6b;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
 }
 
 .dangerIconButton:hover {
@@ -230,7 +232,7 @@
   align-items: center;
   gap: 8px;
   color: var(--text);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .flex1 {
@@ -243,11 +245,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  border: 1px solid color-mix(in srgb, #ff6b6b 45%, var(--border));
   background: transparent;
   color: #ff6b6b;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
 }
 
 .deleteOptionButton:hover:not(:disabled) {
@@ -261,15 +263,15 @@
 
 .previewLabel {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   margin-bottom: 8px;
 }
 
 .bottomActions {
-  display: flex;
-  gap: 12px;
-  padding-top: 16px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  padding-top: 12px;
 }
 
 .buttonIconRow {
@@ -280,7 +282,11 @@
 
 .report {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   margin-top: 8px;
   white-space: pre-wrap;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 12px;
 }
