@@ -1,6 +1,6 @@
 .resumeSession {
   max-width: 390px;
-  margin: 0 auto -16px;
+  margin: 12px auto -16px;
   padding: 16px 16px;
 }
 
@@ -52,7 +52,6 @@
 }
 
 .buttonPrimary {
-  /* в теме токен называется --primary (не --accent) */
   background: var(--primary);
   color: var(--primary-contrast, #fff);
 }
