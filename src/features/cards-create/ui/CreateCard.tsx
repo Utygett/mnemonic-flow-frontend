@@ -1,6 +1,7 @@
 // src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Input, MarkdownField, MarkdownView, Button } from '../../../shared/ui';
+import { Input, MarkdownField, MarkdownView } from '../../../shared/ui';
+import { Button } from '../../../shared/ui/legacy';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { parseCsvNameFrontBack } from '../lib/csv';
 import { LAST_DECK_KEY } from '../model/utils';
