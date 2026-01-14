@@ -52,12 +52,13 @@
 }
 
 .buttonPrimary {
-  background: var(--accent);
-  color: var(--text-on-accent, #fff);
+  /* в теме токен называется --primary (не --accent) */
+  background: var(--primary);
+  color: var(--primary-contrast, #fff);
 }
 
 .buttonPrimary:hover {
-  background: color-mix(in srgb, var(--accent) 85%, black);
+  background: color-mix(in srgb, var(--primary) 85%, black);
 }
 
 .buttonSecondary {
