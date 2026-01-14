@@ -9,7 +9,17 @@ type Props = CreateDeckViewModel & {
 };
 
 export function CreateDeckView(props: Props) {
-  const { title, setTitle, saving, error, canSubmit, submit, onCancel } = props;
+  const {
+    title,
+    setTitle,
+    description,
+    setDescription,
+    saving,
+    error,
+    canSubmit,
+    submit,
+    onCancel,
+  } = props;
 
   return (
     <div className={styles.page}>
@@ -26,6 +36,19 @@ export function CreateDeckView(props: Props) {
               placeholder="Например: Английские слова"
               maxLength={60}
               disabled={saving}
+            />
+          </label>
+
+          <label className={styles.field}>
+            <div className={styles.fieldLabel}>Описание</div>
+            <textarea
+              className={styles.textarea}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Для чего эта колода, какие темы покрывает, и т.д."
+              maxLength={500}
+              disabled={saving}
+              rows={4}
             />
           </label>
 
