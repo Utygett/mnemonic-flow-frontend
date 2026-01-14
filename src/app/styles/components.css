@@ -109,3 +109,136 @@
 .icon-btn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* Profile */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profileHeader__right {
+  position: relative;
+}
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profileCard__meta {
+  min-width: 0;
+}
+
+.profileCard__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.profileCard__email {
+  margin-top: 2px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileSection {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.profileSection__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.profileRow + .profileRow {
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.profileRow__label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.profileRow__value {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.text-ok {
+  color: #38a169;
+}
+
+.text-bad {
+  color: #e53e3e;
+}
+
+.text-warn {
+  color: #d69e2e;
+}
+
+/* Dropdown */
+.dropdown {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  min-width: 220px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg) 8%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  z-index: 20;
+}
+
+.dropdown__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+}
+
+.dropdown__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dropdown__sep {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 2px;
+}
+
+.dropdown__item--danger {
+  color: #ff6b6b;
+}
+
+.dropdown__item--danger:hover {
+  background: rgba(255, 107, 107, 0.12);
+}
