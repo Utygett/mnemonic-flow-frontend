@@ -13,6 +13,8 @@ import { MarkdownView } from '@/shared/ui/MarkdownView';
 
 import { X, SkipForward, Trash2 } from 'lucide-react';
 
+import './StudySession.css';
+
 function getLevelIndex(l: any): number {
   return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;
 }
