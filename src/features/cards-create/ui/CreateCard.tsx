@@ -1,7 +1,7 @@
 // src\features\cards-create\ui\CreateCard.tsx
 import React, { useEffect, useRef, useState } from 'react';
-import { Input, MarkdownField, MarkdownView } from '../../../shared/ui';
-import { Button } from '../../../shared/ui/legacy';
+import { MarkdownField, MarkdownView } from '../../../shared/ui';
+import { Input, Button } from '../../../shared/ui/legacy';
 import { X, Plus, Trash2, Upload } from 'lucide-react';
 import { parseCsvNameFrontBack } from '../lib/csv';
 import { LAST_DECK_KEY } from '../model/utils';
@@ -60,8 +60,10 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
     setTimeout(() => reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
   };
 
+  const safeTerm = typeof term === 'string' ? term : '';
+
   const canSave =
-    term.trim() &&
+    safeTerm.trim() &&
     deckId &&
     (cardType === 'flashcard' ? cleanedLevelsQA.length > 0 : cleanedLevelsMCQ.length > 0);
 
@@ -69,9 +71,9 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
     if (!canSave) return;
 
     if (cardType === 'flashcard') {
-      onSave({ deckId, term: term.trim(), type: 'flashcard', levels: cleanedLevelsQA });
+      onSave({ deckId, term: safeTerm.trim(), type: 'flashcard', levels: cleanedLevelsQA });
     } else {
-      onSave({ deckId, term: term.trim(), type: 'multiple_choice', levels: cleanedLevelsMCQ });
+      onSave({ deckId, term: safeTerm.trim(), type: 'multiple_choice', levels: cleanedLevelsMCQ });
     }
   };
 
@@ -193,7 +195,12 @@ export function CreateCard({ decks, onSave, onSaveMany, onCancel }: CreateCardPr
           </select>
         </div>
 
-        <Input value={term} onChange={setTerm} label="Название / Тема карточки" placeholder="Например: Фотосинтез" />
+        <Input
+          value={safeTerm}
+          onChange={setTerm}
+          label="Название / Тема карточки"
+          placeholder="Например: Фотосинтез"
+        />
 
         <div>
           <div className={styles.levelsHeader}>
