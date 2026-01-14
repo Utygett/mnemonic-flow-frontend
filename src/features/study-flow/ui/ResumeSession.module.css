@@ -5,32 +5,32 @@
 }
 
 .card {
-  background-color: rgba(79, 114, 172, 0.21);
-  border-radius: 16px;
-  border: 2px solid #334155;
+  border-radius: var(--radius-md, 16px);
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 16px;
   text-align: center;
 }
 
 .title {
-  margin: -10px 0 4px 0;
-  font-size: 18px;
-  font-weight: bold;
-  color: #E8EAF0;
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .subtitle {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 400;
-  color: #E8EAF0;
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .info {
   margin: 0 0 16px 0;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
-  color: #E8EAF0;
+  color: var(--muted);
 }
 
 .buttons {
@@ -42,30 +42,30 @@
 .button {
   flex: 1;
   max-width: 160px;
-  padding: 12px 24px;
+  padding: 10px 14px;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
   border: none;
 }
 
 .buttonPrimary {
-  background-color: #5B7EBF;
-  color: white;
+  background: var(--accent);
+  color: var(--text-on-accent, #fff);
 }
 
 .buttonPrimary:hover {
-  background-color: #4A6DAE;
+  background: color-mix(in srgb, var(--accent) 85%, black);
 }
 
 .buttonSecondary {
-  background-color: transparent;
-  color: #9CA3AF;
-  border: 1px solid #4B5563;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
 }
 
 .buttonSecondary:hover {
-  background-color: rgba(75, 85, 99, 0.2);
+  background: color-mix(in srgb, var(--surface) 60%, var(--bg) 40%);
 }
