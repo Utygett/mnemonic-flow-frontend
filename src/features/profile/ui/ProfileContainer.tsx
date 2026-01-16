@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 
-import { apiRequest } from '@/shared/api';
-
 import { ProfileView } from './ProfileView';
 import type { ApiHealth } from '../model/types';
 
@@ -15,8 +13,15 @@ export function ProfileContainer(props: ProfileContainerProps) {
   useEffect(() => {
     const checkApiHealth = async () => {
       try {
-        // Expected to return 200 when backend is up
-        await apiRequest<void>(`/health`);
+        // Health endpoint is public (no auth). Do not use apiRequest here,
+        // because apiRequest can trigger token refresh flow on 401.
+        const res = await fetch('/health', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         setApiHealth('healthy');
       } catch (error) {
         setApiHealth('unhealthy');
