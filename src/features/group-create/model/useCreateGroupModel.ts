@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react';
 
-import { apiRequest } from '@/shared/api';
+import { createGroup } from '@/entities/group';
 
 import type { CreateGroupProps } from './types';
-
-type ApiCreateGroupResponse = {
-  id?: string | number;
-  group_id?: string | number;
-};
 
 export type CreateGroupViewModel = {
   title: string;
@@ -41,17 +36,14 @@ export function useCreateGroupModel(props: CreateGroupProps): CreateGroupViewMod
       setSaving(true);
       setError(null);
 
-      const created = await apiRequest<ApiCreateGroupResponse>(`/groups`, {
-        method: 'POST',
-        body: JSON.stringify({
-          title: t,
-          description: description.trim() || null,
-          parent_id: null,
-        }),
+      // Use entity-level Group API methods (single source of truth for endpoints)
+      const created = await createGroup({
+        title: t,
+        description: description.trim() || null,
+        parent_id: null,
       });
 
-      const id = created?.id ?? created?.group_id;
-      onSave(id != null ? String(id) : '');
+      onSave(created?.id ?? '');
     } catch (e) {
       console.error(e);
       setError('Не удалось создать группу');
