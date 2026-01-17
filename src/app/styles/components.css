@@ -251,10 +251,41 @@
   gap: 12px;
 }
 
+.statsHeader__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .statsHeader__sub {
   margin-top: 4px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.segmented__btn {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.segmented__btn--active {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .statsRing {
@@ -289,6 +320,41 @@
 .statsRing__label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.65);
+}
+
+.miniChart {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.miniChart__col {
+  display: flex;
+  align-items: end;
+}
+
+.miniChart__track {
+  height: 90px;
+  width: 100%;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.miniChart__fill {
+  width: 100%;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 85%, white) 0%, var(--primary) 100%);
+  border-radius: 10px;
+}
+
+.miniChart__caption {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .statsGrid {

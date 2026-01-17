@@ -9,6 +9,7 @@ import {
   Brain,
   TrendingUp,
   CalendarDays,
+  Sparkles,
 } from 'lucide-react';
 
 import type { Deck, Statistics as StatsType } from '../../../types';
@@ -26,7 +27,11 @@ type StatCard = {
   icon: React.ReactNode;
 };
 
+type Period = 'week' | 'month';
+
 export function Statistics({ statistics, decks }: StatisticsProps) {
+  const [period, setPeriod] = React.useState<Period>('week');
+
   const totalProgress = decks.length
     ? decks.reduce((acc, deck) => acc + deck.progress, 0) / decks.length
     : 0;
@@ -35,12 +40,27 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
   const cardsTotal = decks.reduce((acc, d) => acc + (d.cardsCount ?? 0), 0);
   const cardsLearned = Math.round((cardsTotal * totalProgress) / 100);
   const streakDays = 6;
-  const focusedMinutes = 24;
-  const recallRate = 82;
-  const avgPerDay = 18;
+  const focusedMinutes = period === 'week' ? 24 : 310;
+  const recallRate = period === 'week' ? 82 : 76;
+  const avgPerDay = period === 'week' ? 18 : 21;
   const bestDayLabel = 'Ср';
 
+  // Mini progress chart (stub). Later can be derived from real history.
+  const progressSeries = React.useMemo(() => {
+    return period === 'week'
+      ? [12, 18, 26, 33, 41, 47, 53]
+      : [8, 12, 17, 22, 26, 31, 35, 39, 42, 46, 50, 53];
+  }, [period]);
+
+  const seriesMax = Math.max(...progressSeries, 1);
+
   const statCards: StatCard[] = [
+    {
+      label: 'Период',
+      value: period === 'week' ? 'Неделя' : 'Месяц',
+      hint: 'Переключатель влияет на заглушки и мини-график.',
+      icon: <Sparkles size={18} />,
+    },
     {
       label: 'Серия',
       value: `${streakDays} дн.`,
@@ -49,8 +69,8 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
     },
     {
       label: 'Фокус',
-      value: `${focusedMinutes} мин`,
-      hint: 'Время активной работы за сегодня (заглушка).',
+      value: period === 'week' ? `${focusedMinutes} мин` : `${focusedMinutes} мин/мес`,
+      hint: 'Время активной работы за период (заглушка).',
       icon: <Timer size={18} />,
     },
     {
@@ -90,31 +110,83 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
             <div className="statsHeader__sub">Заглушки метрик — можно подключить API позже</div>
           </div>
 
-          <div className="statsRing" aria-label="Общий прогресс">
-            <svg className="statsRing__svg" width="76" height="76" viewBox="0 0 76 76">
-              <circle cx="38" cy="38" r="32" stroke="rgba(255,255,255,0.10)" strokeWidth="8" fill="none" />
-              <circle
-                cx="38"
-                cy="38"
-                r="32"
-                stroke="var(--primary)"
-                strokeWidth="8"
-                fill="none"
-                strokeDasharray={`${2 * Math.PI * 32}`}
-                strokeDashoffset={`${2 * Math.PI * 32 * (1 - totalProgress / 100)}`}
-                strokeLinecap="round"
-                className="statsRing__bar"
-              />
-            </svg>
-            <div className="statsRing__center">
-              <div className="statsRing__value">{Math.round(totalProgress)}%</div>
-              <div className="statsRing__label">Общий</div>
+          <div className="statsHeader__right">
+            <div className="segmented" role="tablist" aria-label="Период">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={period === 'week'}
+                className={`segmented__btn ${period === 'week' ? 'segmented__btn--active' : ''}`}
+                onClick={() => setPeriod('week')}
+              >
+                Неделя
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={period === 'month'}
+                className={`segmented__btn ${period === 'month' ? 'segmented__btn--active' : ''}`}
+                onClick={() => setPeriod('month')}
+              >
+                Месяц
+              </button>
+            </div>
+
+            <div className="statsRing" aria-label="Общий прогресс">
+              <svg className="statsRing__svg" width="76" height="76" viewBox="0 0 76 76">
+                <circle
+                  cx="38"
+                  cy="38"
+                  r="32"
+                  stroke="rgba(255,255,255,0.10)"
+                  strokeWidth="8"
+                  fill="none"
+                />
+                <circle
+                  cx="38"
+                  cy="38"
+                  r="32"
+                  stroke="var(--primary)"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeDasharray={`${2 * Math.PI * 32}`}
+                  strokeDashoffset={`${2 * Math.PI * 32 * (1 - totalProgress / 100)}`}
+                  strokeLinecap="round"
+                  className="statsRing__bar"
+                />
+              </svg>
+              <div className="statsRing__center">
+                <div className="statsRing__value">{Math.round(totalProgress)}%</div>
+                <div className="statsRing__label">Общий</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="p-4 py-6 container-centered stats__content">
+        {/* Mini chart */}
+        <div className="card statsBlock">
+          <div className="statsBlock__head">
+            <h3 className="statsBlock__title">Прогресс</h3>
+            <span className="statsBlock__chip">{period === 'week' ? '7 дней' : '12 точек'}</span>
+          </div>
+
+          <div className="miniChart" aria-label="Мини-график прогресса (заглушка)">
+            {progressSeries.map((v, idx) => {
+              const h = (v / seriesMax) * 100;
+              return (
+                <div key={idx} className="miniChart__col" aria-hidden="true">
+                  <div className="miniChart__track">
+                    <div className="miniChart__fill" style={{ height: `${h}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="miniChart__caption">Тренд прогресса за период (заглушка)</div>
+        </div>
+
         {/* Quick metrics */}
         <div className="statsGrid">
           {statCards.map((c) => (
