@@ -29,21 +29,38 @@ type StatCard = {
 
 type Period = 'week' | 'month';
 
+function safeNumber(v: unknown): number {
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function rotateToToday(values: number[]): number[] {
+  // values are expected as [Mon..Sun]. Rotate so last element is today.
+  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
+  const todayMon0 = (todayJs + 6) % 7; // 0=Mon..6=Sun
+  const shift = (todayMon0 + 1) % 7; // move today to index 6
+  const a = values.slice(0, 7);
+  while (a.length < 7) a.push(0);
+  return [...a.slice(shift), ...a.slice(0, shift)];
+}
+
+const DOW_RU_MON0 = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const;
+
 export function Statistics({ statistics, decks }: StatisticsProps) {
   const [period, setPeriod] = React.useState<Period>('week');
 
-  const totalProgress = decks.length
-    ? decks.reduce((acc, deck) => acc + deck.progress, 0) / decks.length
+  const totalProgressRaw = decks.length
+    ? decks.reduce((acc, deck) => acc + safeNumber(deck.progress), 0) / decks.length
     : 0;
+  const totalProgress = safeNumber(totalProgressRaw);
 
   // Stub metrics (UI-first). Later can be wired to real backend stats.
-  const cardsTotal = decks.reduce((acc, d) => acc + (d.cardsCount ?? 0), 0);
+  const cardsTotal = decks.reduce((acc, d) => acc + safeNumber(d.cardsCount ?? 0), 0);
   const cardsLearned = Math.round((cardsTotal * totalProgress) / 100);
   const streakDays = 6;
   const focusedMinutes = period === 'week' ? 24 : 310;
   const recallRate = period === 'week' ? 82 : 76;
   const avgPerDay = period === 'week' ? 18 : 21;
-  const bestDayLabel = 'Ср';
 
   // Mini progress chart (stub). Later can be derived from real history.
   const progressSeries = React.useMemo(() => {
@@ -52,7 +69,7 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
       : [8, 12, 17, 22, 26, 31, 35, 39, 42, 46, 50, 53];
   }, [period]);
 
-  const seriesMax = Math.max(...progressSeries, 1);
+  const seriesMax = Math.max(...progressSeries.map(safeNumber), 1);
 
   const statCards: StatCard[] = [
     {
@@ -86,20 +103,28 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
       icon: <TrendingUp size={18} />,
     },
     {
-      label: 'Лучший день',
-      value: bestDayLabel,
-      hint: 'День недели с максимумом активности (заглушка).',
-      icon: <CalendarDays size={18} />,
-    },
-    {
       label: 'Изучено',
-      value: `${cardsLearned}/${cardsTotal}`,
+      value: `${Number.isFinite(cardsLearned) ? cardsLearned : 0}/${cardsTotal}`,
       hint: 'Оценка на основе прогресса колод (заглушка).',
       icon: <Target size={18} />,
     },
   ];
 
-  const weeklyMax = Math.max(...statistics.weeklyActivity, 1);
+  // Weekly activity: show last 7 days ending today.
+  // Source array is assumed to be [Mon..Sun].
+  const weeklyRaw = Array.isArray(statistics.weeklyActivity)
+    ? statistics.weeklyActivity.map(safeNumber)
+    : [];
+  const weekly = rotateToToday(weeklyRaw);
+  const weeklyMax = Math.max(...weekly, 1);
+  const weeklySum = weekly.reduce((a, b) => a + safeNumber(b), 0);
+
+  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
+  const todayMon0 = (todayJs + 6) % 7;
+  const labels = Array.from({ length: 7 }, (_, i) => {
+    const idx = (todayMon0 - 6 + i + 7 * 10) % 7;
+    return DOW_RU_MON0[idx];
+  });
 
   return (
     <div className="stats-page">
@@ -174,7 +199,7 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
 
           <div className="miniChart" aria-label="Мини-график прогресса (заглушка)">
             {progressSeries.map((v, idx) => {
-              const h = (v / seriesMax) * 100;
+              const h = (safeNumber(v) / seriesMax) * 100;
               return (
                 <div key={idx} className="miniChart__col" aria-hidden="true">
                   <div className="miniChart__track">
@@ -204,17 +229,17 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
         {/* Weekly Activity */}
         <div className="card statsBlock">
           <div className="statsBlock__head">
-            <h3 className="statsBlock__title">Активность за неделю</h3>
-            <span className="statsBlock__chip">{statistics.weeklyActivity.reduce((a, b) => a + b, 0)} действий</span>
+            <h3 className="statsBlock__title">Активность за 7 дней</h3>
+            <span className="statsBlock__chip">{weeklySum} действий</span>
           </div>
 
           <div className="statsBars">
-            {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, index) => {
-              const value = statistics.weeklyActivity[index] || 0;
+            {labels.map((day, index) => {
+              const value = safeNumber(weekly[index]);
               const height = (value / weeklyMax) * 100;
 
               return (
-                <div key={day} className="statsBars__col">
+                <div key={`${day}-${index}`} className="statsBars__col">
                   <div className="statsBars__track" aria-hidden="true">
                     <div className="statsBars__fill" style={{ height: `${height}%` }} />
                   </div>
@@ -241,23 +266,23 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
                 <div className="statsDeck__row">
                   <div className="statsDeck__left">
                     <div className="statsDeck__title">{deck.name}</div>
-                    <div className="statsDeck__meta">{deck.cardsCount} карточек</div>
+                    <div className="statsDeck__meta">{safeNumber(deck.cardsCount)} карточек</div>
                   </div>
 
                   <div className="statsDeck__right">
-                    <div className="statsDeck__percent">{deck.progress}%</div>
+                    <div className="statsDeck__percent">{Math.round(safeNumber(deck.progress))}%</div>
                   </div>
                 </div>
 
-                <ProgressBar progress={deck.progress} color={deck.color} />
+                <ProgressBar progress={safeNumber(deck.progress)} color={deck.color} />
 
                 <div className="statsDeck__levels">
                   <span className="statsDeck__levelsLabel">Уровни (заглушка):</span>
                   <div className="statsDeck__levelsList">
-                    <span>0: {Math.round(deck.cardsCount * 0.3)}</span>
-                    <span>1: {Math.round(deck.cardsCount * 0.3)}</span>
-                    <span>2: {Math.round(deck.cardsCount * 0.2)}</span>
-                    <span>3: {Math.round(deck.cardsCount * 0.2)}</span>
+                    <span>0: {Math.round(safeNumber(deck.cardsCount) * 0.3)}</span>
+                    <span>1: {Math.round(safeNumber(deck.cardsCount) * 0.3)}</span>
+                    <span>2: {Math.round(safeNumber(deck.cardsCount) * 0.2)}</span>
+                    <span>3: {Math.round(safeNumber(deck.cardsCount) * 0.2)}</span>
                   </div>
                 </div>
               </div>
