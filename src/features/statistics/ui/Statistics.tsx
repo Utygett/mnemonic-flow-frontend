@@ -1,6 +1,15 @@
 import React from 'react';
 
-import { Trophy, Target, Zap } from 'lucide-react';
+import {
+  Trophy,
+  Target,
+  Zap,
+  Flame,
+  Timer,
+  Brain,
+  TrendingUp,
+  CalendarDays,
+} from 'lucide-react';
 
 import type { Deck, Statistics as StatsType } from '../../../types';
 import { ProgressBar } from '../../../shared/ui/ProgressBar';
@@ -10,61 +19,137 @@ export interface StatisticsProps {
   decks: Deck[];
 }
 
+type StatCard = {
+  label: string;
+  value: string;
+  hint: string;
+  icon: React.ReactNode;
+};
+
 export function Statistics({ statistics, decks }: StatisticsProps) {
-  const totalProgress = decks.reduce((acc, deck) => acc + deck.progress, 0) / decks.length;
+  const totalProgress = decks.length
+    ? decks.reduce((acc, deck) => acc + deck.progress, 0) / decks.length
+    : 0;
+
+  // Stub metrics (UI-first). Later can be wired to real backend stats.
+  const cardsTotal = decks.reduce((acc, d) => acc + (d.cardsCount ?? 0), 0);
+  const cardsLearned = Math.round((cardsTotal * totalProgress) / 100);
+  const streakDays = 6;
+  const focusedMinutes = 24;
+  const recallRate = 82;
+  const avgPerDay = 18;
+  const bestDayLabel = 'Ср';
+
+  const statCards: StatCard[] = [
+    {
+      label: 'Серия',
+      value: `${streakDays} дн.`,
+      hint: 'Сколько дней подряд были занятия (заглушка).',
+      icon: <Flame size={18} />,
+    },
+    {
+      label: 'Фокус',
+      value: `${focusedMinutes} мин`,
+      hint: 'Время активной работы за сегодня (заглушка).',
+      icon: <Timer size={18} />,
+    },
+    {
+      label: 'Повторение',
+      value: `${recallRate}%`,
+      hint: 'Условный процент правильных ответов (заглушка).',
+      icon: <Brain size={18} />,
+    },
+    {
+      label: 'Темп',
+      value: `${avgPerDay}/день`,
+      hint: 'Среднее число карточек в день (заглушка).',
+      icon: <TrendingUp size={18} />,
+    },
+    {
+      label: 'Лучший день',
+      value: bestDayLabel,
+      hint: 'День недели с максимумом активности (заглушка).',
+      icon: <CalendarDays size={18} />,
+    },
+    {
+      label: 'Изучено',
+      value: `${cardsLearned}/${cardsTotal}`,
+      hint: 'Оценка на основе прогресса колод (заглушка).',
+      icon: <Target size={18} />,
+    },
+  ];
+
+  const weeklyMax = Math.max(...statistics.weeklyActivity, 1);
 
   return (
     <div className="stats-page">
-      {/* Header */}
-      <div className="page__header px-4 pt-12 pb-6">
-        <div className="page__header-inner">
-          <h1 className="page__title mb-6">Статистика</h1>
+      <div className="page__header">
+        <div className="page__header-inner statsHeader">
+          <div>
+            <h1 className="page__title">Статистика</h1>
+            <div className="statsHeader__sub">Заглушки метрик — можно подключить API позже</div>
+          </div>
 
-          {/* Overall Progress Circle */}
-          <div className="stats__progress-wrap">
-            <div className="stats__progress-circle">
-              <svg className="stats__svg">
-                <circle cx="80" cy="80" r="70" stroke="#E5E7EB" strokeWidth="12" fill="none" />
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  stroke="#FF9A76"
-                  strokeWidth="12"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 70}`}
-                  strokeDashoffset={`${2 * Math.PI * 70 * (1 - totalProgress / 100)}`}
-                  strokeLinecap="round"
-                  className="transition-all duration-500"
-                />
-              </svg>
-              <div className="stats__progress-center">
-                <div className="text-center">
-                  <div className="stats__progress-value">{Math.round(totalProgress)}%</div>
-                  <div className="stats__progress-label">Общий прогресс</div>
-                </div>
-              </div>
+          <div className="statsRing" aria-label="Общий прогресс">
+            <svg className="statsRing__svg" width="76" height="76" viewBox="0 0 76 76">
+              <circle cx="38" cy="38" r="32" stroke="rgba(255,255,255,0.10)" strokeWidth="8" fill="none" />
+              <circle
+                cx="38"
+                cy="38"
+                r="32"
+                stroke="var(--primary)"
+                strokeWidth="8"
+                fill="none"
+                strokeDasharray={`${2 * Math.PI * 32}`}
+                strokeDashoffset={`${2 * Math.PI * 32 * (1 - totalProgress / 100)}`}
+                strokeLinecap="round"
+                className="statsRing__bar"
+              />
+            </svg>
+            <div className="statsRing__center">
+              <div className="statsRing__value">{Math.round(totalProgress)}%</div>
+              <div className="statsRing__label">Общий</div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="p-4 py-6 container-centered stats__content">
+        {/* Quick metrics */}
+        <div className="statsGrid">
+          {statCards.map((c) => (
+            <div key={c.label} className="card statCard" title={c.hint}>
+              <div className="statCard__top">
+                <div className="statCard__icon">{c.icon}</div>
+                <div className="statCard__label">{c.label}</div>
+              </div>
+              <div className="statCard__value">{c.value}</div>
+              <div className="statCard__hint">{c.hint}</div>
+            </div>
+          ))}
+        </div>
+
         {/* Weekly Activity */}
-        <div className="card">
-          <h3 className="mb-4">Активность за неделю</h3>
-          <div className="stats__bars">
+        <div className="card statsBlock">
+          <div className="statsBlock__head">
+            <h3 className="statsBlock__title">Активность за неделю</h3>
+            <span className="statsBlock__chip">{statistics.weeklyActivity.reduce((a, b) => a + b, 0)} действий</span>
+          </div>
+
+          <div className="statsBars">
             {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((day, index) => {
               const value = statistics.weeklyActivity[index] || 0;
-              const maxValue = Math.max(...statistics.weeklyActivity, 1);
-              const height = (value / maxValue) * 100;
+              const height = (value / weeklyMax) * 100;
 
               return (
-                <div key={day} className="stats__bar-col">
-                  <div className="stats__bar-track" style={{ height: '100px' }}>
-                    <div className="stats__bar-fill" style={{ height: `${height}%` }} />
+                <div key={day} className="statsBars__col">
+                  <div className="statsBars__track" aria-hidden="true">
+                    <div className="statsBars__fill" style={{ height: `${height}%` }} />
                   </div>
-                  <span className="stats__bar-label">{day}</span>
+                  <div className="statsBars__meta">
+                    <span className="statsBars__day">{day}</span>
+                    <span className="statsBars__val">{value}</span>
+                  </div>
                 </div>
               );
             })}
@@ -73,25 +158,30 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
 
         {/* Decks Progress */}
         <div>
-          <h3 className="mb-4">Прогресс по темам</h3>
-          <div className="space-y-3">
+          <div className="statsSectionHead">
+            <h3 className="statsSectionHead__title">Прогресс по темам</h3>
+            <span className="statsSectionHead__sub">{decks.length} тем</span>
+          </div>
+
+          <div className="statsDecks">
             {decks.map((deck) => (
-              <div key={deck.id} className="card">
-                <div className="deck-row">
-                  <div>
-                    <h3 className="text-base">{deck.name}</h3>
-                    <p className="text-sm text-muted">{deck.cardsCount} карточек</p>
+              <div key={deck.id} className="card statsDeck">
+                <div className="statsDeck__row">
+                  <div className="statsDeck__left">
+                    <div className="statsDeck__title">{deck.name}</div>
+                    <div className="statsDeck__meta">{deck.cardsCount} карточек</div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg">{deck.progress}%</div>
+
+                  <div className="statsDeck__right">
+                    <div className="statsDeck__percent">{deck.progress}%</div>
                   </div>
                 </div>
 
                 <ProgressBar progress={deck.progress} color={deck.color} />
 
-                <div className="mt-3 deck-levels">
-                  <span className="text-muted">Уровни:</span>
-                  <div className="deck-levels__list">
+                <div className="statsDeck__levels">
+                  <span className="statsDeck__levelsLabel">Уровни (заглушка):</span>
+                  <div className="statsDeck__levelsList">
                     <span>0: {Math.round(deck.cardsCount * 0.3)}</span>
                     <span>1: {Math.round(deck.cardsCount * 0.3)}</span>
                     <span>2: {Math.round(deck.cardsCount * 0.2)}</span>
@@ -105,19 +195,23 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
 
         {/* Achievements */}
         <div>
-          <h3 className="mb-4">Достижения</h3>
-          <div className="achievements-grid">
+          <div className="statsSectionHead">
+            <h3 className="statsSectionHead__title">Достижения</h3>
+            <span className="statsSectionHead__sub">Заглушки</span>
+          </div>
+
+          <div className="achievementsGrid">
             {statistics.achievements.map((achievement) => (
               <div
                 key={achievement.id}
                 className={`achievement ${achievement.unlocked ? '' : 'achievement--locked'}`}
               >
                 <div className="achievement__icon">
-                  {achievement.icon === 'trophy' && <Trophy size={24} className="text-white" />}
-                  {achievement.icon === 'target' && <Target size={24} className="text-white" />}
-                  {achievement.icon === 'zap' && <Zap size={24} className="text-white" />}
+                  {achievement.icon === 'trophy' && <Trophy size={22} className="text-white" />}
+                  {achievement.icon === 'target' && <Target size={22} className="text-white" />}
+                  {achievement.icon === 'zap' && <Zap size={22} className="text-white" />}
                 </div>
-                <span className="text-xs">{achievement.title}</span>
+                <div className="achievement__title">{achievement.title}</div>
               </div>
             ))}
           </div>
