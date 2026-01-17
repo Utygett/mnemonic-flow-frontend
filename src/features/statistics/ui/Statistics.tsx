@@ -8,8 +8,8 @@ import {
   Timer,
   Brain,
   TrendingUp,
-  CalendarDays,
   Sparkles,
+  Layers,
 } from 'lucide-react';
 
 import type { Deck, Statistics as StatsType } from '../../../types';
@@ -46,6 +46,23 @@ function rotateToToday(values: number[]): number[] {
 
 const DOW_RU_MON0 = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const;
 
+function buildSparkPath(series: number[], width: number, height: number) {
+  const values = series.map(safeNumber);
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = Math.max(max - min, 1);
+
+  const step = values.length > 1 ? width / (values.length - 1) : width;
+
+  return values
+    .map((v, i) => {
+      const x = i * step;
+      const y = height - ((v - min) / range) * height;
+      return `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(' ');
+}
+
 export function Statistics({ statistics, decks }: StatisticsProps) {
   const [period, setPeriod] = React.useState<Period>('week');
 
@@ -54,28 +71,52 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
     : 0;
   const totalProgress = safeNumber(totalProgressRaw);
 
-  // Stub metrics (UI-first). Later can be wired to real backend stats.
   const cardsTotal = decks.reduce((acc, d) => acc + safeNumber(d.cardsCount ?? 0), 0);
   const cardsLearned = Math.round((cardsTotal * totalProgress) / 100);
+
   const streakDays = 6;
   const focusedMinutes = period === 'week' ? 24 : 310;
   const recallRate = period === 'week' ? 82 : 76;
   const avgPerDay = period === 'week' ? 18 : 21;
 
-  // Mini progress chart (stub). Later can be derived from real history.
-  const progressSeries = React.useMemo(() => {
+  // Weekly activity: show last 7 days ending today.
+  // Source array is assumed to be [Mon..Sun].
+  const weeklyRaw = Array.isArray(statistics.weeklyActivity)
+    ? statistics.weeklyActivity.map(safeNumber)
+    : [];
+  const weekly = rotateToToday(weeklyRaw);
+  const weeklyMax = Math.max(...weekly, 1);
+  const weeklySum = weekly.reduce((a, b) => a + safeNumber(b), 0);
+
+  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
+  const todayMon0 = (todayJs + 6) % 7;
+  const labels = Array.from({ length: 7 }, (_, i) => {
+    const idx = (todayMon0 - 6 + i + 7 * 10) % 7;
+    return DOW_RU_MON0[idx];
+  });
+
+  // New chart metric: "Нагрузка" = карточки/минуту за период (заглушка), with sparkline.
+  const paceSeries = React.useMemo(() => {
+    // values: cards per minute
     return period === 'week'
-      ? [12, 18, 26, 33, 41, 47, 53]
-      : [8, 12, 17, 22, 26, 31, 35, 39, 42, 46, 50, 53];
+      ? [0.2, 0.35, 0.28, 0.42, 0.55, 0.48, 0.6]
+      : [0.18, 0.22, 0.2, 0.25, 0.29, 0.33, 0.31, 0.37, 0.42, 0.4, 0.46, 0.52];
   }, [period]);
 
-  const seriesMax = Math.max(...progressSeries.map(safeNumber), 1);
+  const paceAvg =
+    paceSeries.length > 0
+      ? paceSeries.reduce((a, b) => a + safeNumber(b), 0) / Math.max(paceSeries.length, 1)
+      : 0;
+  const paceCaption =
+    period === 'week'
+      ? 'Карточки/мин за последние 7 дней (заглушка)'
+      : 'Карточки/мин за последние 4 недели (12 точек = 3 точки на неделю, заглушка)';
 
   const statCards: StatCard[] = [
     {
       label: 'Период',
       value: period === 'week' ? 'Неделя' : 'Месяц',
-      hint: 'Переключатель влияет на заглушки и мини-график.',
+      hint: 'Переключатель влияет на заглушки и график.',
       icon: <Sparkles size={18} />,
     },
     {
@@ -110,21 +151,9 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
     },
   ];
 
-  // Weekly activity: show last 7 days ending today.
-  // Source array is assumed to be [Mon..Sun].
-  const weeklyRaw = Array.isArray(statistics.weeklyActivity)
-    ? statistics.weeklyActivity.map(safeNumber)
-    : [];
-  const weekly = rotateToToday(weeklyRaw);
-  const weeklyMax = Math.max(...weekly, 1);
-  const weeklySum = weekly.reduce((a, b) => a + safeNumber(b), 0);
-
-  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
-  const todayMon0 = (todayJs + 6) % 7;
-  const labels = Array.from({ length: 7 }, (_, i) => {
-    const idx = (todayMon0 - 6 + i + 7 * 10) % 7;
-    return DOW_RU_MON0[idx];
-  });
+  const sparkW = 320;
+  const sparkH = 90;
+  const sparkPath = buildSparkPath(paceSeries, sparkW, sparkH);
 
   return (
     <div className="stats-page">
@@ -190,26 +219,19 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
       </div>
 
       <div className="p-4 py-6 container-centered stats__content">
-        {/* Mini chart */}
+        {/* Chart: Pace */}
         <div className="card statsBlock">
           <div className="statsBlock__head">
-            <h3 className="statsBlock__title">Прогресс</h3>
-            <span className="statsBlock__chip">{period === 'week' ? '7 дней' : '12 точек'}</span>
+            <h3 className="statsBlock__title">Нагрузка</h3>
+            <span className="statsBlock__chip">{paceAvg.toFixed(2)} кард/мин</span>
           </div>
 
-          <div className="miniChart" aria-label="Мини-график прогресса (заглушка)">
-            {progressSeries.map((v, idx) => {
-              const h = (safeNumber(v) / seriesMax) * 100;
-              return (
-                <div key={idx} className="miniChart__col" aria-hidden="true">
-                  <div className="miniChart__track">
-                    <div className="miniChart__fill" style={{ height: `${h}%` }} />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="spark" aria-label="График нагрузки (заглушка)">
+            <svg className="spark__svg" viewBox={`0 0 ${sparkW} ${sparkH}`} preserveAspectRatio="none">
+              <path d={sparkPath} className="spark__line" fill="none" />
+            </svg>
           </div>
-          <div className="miniChart__caption">Тренд прогресса за период (заглушка)</div>
+          <div className="spark__caption">{paceCaption}</div>
         </div>
 
         {/* Quick metrics */}
@@ -224,6 +246,17 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
               <div className="statCard__hint">{c.hint}</div>
             </div>
           ))}
+
+          <div className="card statCard" title="Сколько колод находится в активной работе (заглушка).">
+            <div className="statCard__top">
+              <div className="statCard__icon">
+                <Layers size={18} />
+              </div>
+              <div className="statCard__label">Активные темы</div>
+            </div>
+            <div className="statCard__value">{Math.max(0, decks.filter((d) => safeNumber(d.progress) < 100).length)}</div>
+            <div className="statCard__hint">Колод с прогрессом &lt; 100% (заглушка).</div>
+          </div>
         </div>
 
         {/* Weekly Activity */}

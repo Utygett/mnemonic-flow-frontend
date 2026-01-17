@@ -322,39 +322,52 @@
   color: rgba(255, 255, 255, 0.65);
 }
 
-.miniChart {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 8px;
-  align-items: end;
-}
-
-.miniChart__col {
-  display: flex;
-  align-items: end;
-}
-
-.miniChart__track {
+.spark {
   height: 90px;
   width: 100%;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.10);
   overflow: hidden;
-  display: flex;
-  align-items: flex-end;
 }
 
-.miniChart__fill {
+.spark__svg {
   width: 100%;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 85%, white) 0%, var(--primary) 100%);
-  border-radius: 10px;
+  height: 100%;
 }
 
-.miniChart__caption {
+.spark__line {
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}
+
+.spark__caption {
   margin-top: 8px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.miniChart {
+  display: none;
+}
+
+.miniChart__col {
+  display: none;
+}
+
+.miniChart__track {
+  display: none;
+}
+
+.miniChart__fill {
+  display: none;
+}
+
+.miniChart__caption {
+  display: none;
 }
 
 .statsGrid {
