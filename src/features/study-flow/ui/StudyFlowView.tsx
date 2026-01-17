@@ -1,7 +1,7 @@
 import React from 'react';
 
-import type { DifficultyRating, StudyCard } from '../../../types';
-import { StudySession, type ReviewTiming } from '../session/StudySession';
+import type { CardReviewInput, StudyCard } from '@/entities/card';
+import { StudySession } from '../session/StudySession';
 
 import './StudyFlow.css';
 
@@ -14,7 +14,7 @@ type Props = {
   currentIndex: number;
   isCompleted: boolean;
 
-  onRate: (r: DifficultyRating, timing: ReviewTiming) => void;
+  onRate: (review: CardReviewInput) => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
   onSkip: () => void;

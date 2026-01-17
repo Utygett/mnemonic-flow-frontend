@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { isMultipleChoice } from '../model/studyCardTypes';
 import { StudyCard } from '../model/studyCardTypes';
-import { DifficultyRating } from '../model/difficultyRating';
+
+import type { CardReviewInput, DifficultyRating } from '@/entities/card';
 
 import { FlipCard } from '../ui/FlipCard';
 import { RatingButton } from '../ui/RatingButton';
@@ -23,12 +24,6 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-export type ReviewTiming = {
-  shownAt: string;
-  revealedAt?: string;
-  ratedAt: string;
-};
-
 export function StudySession({
   cards,
   currentIndex,
@@ -41,7 +36,7 @@ export function StudySession({
 }: {
   cards: StudyCard[];
   currentIndex: number;
-  onRate: (rating: DifficultyRating, timing: ReviewTiming) => void;
+  onRate: (review: CardReviewInput) => void;
   onClose: () => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
@@ -67,16 +62,18 @@ export function StudySession({
 
   const progress = (currentIndex / cards.length) * 100;
 
-  const handleRate = (rating: DifficultyRating) => {
+  const submitReview = (rating: DifficultyRating) => {
     const ratedAt = nowIso();
-    const timing: ReviewTiming = {
+
+    const review: CardReviewInput = {
+      rating,
       shownAt: shownAtRef.current ?? ratedAt,
       revealedAt: revealedAtRef.current ?? undefined,
       ratedAt,
     };
 
     setIsFlipped(false);
-    setTimeout(() => onRate(rating, timing), 300);
+    setTimeout(() => onRate(review), 300);
   };
 
   const handleFlip = () => {
@@ -318,10 +315,10 @@ export function StudySession({
         ) : (
           <div className="study__actions-inner">
             <div className="rating-row">
-              <RatingButton rating="again" label="Снова" onClick={() => handleRate('again')} />
-              <RatingButton rating="hard" label="Трудно" onClick={() => handleRate('hard')} />
-              <RatingButton rating="good" label="Хорошо" onClick={() => handleRate('good')} />
-              <RatingButton rating="easy" label="Легко" onClick={() => handleRate('easy')} />
+              <RatingButton rating="again" label="Снова" onClick={() => submitReview('again')} />
+              <RatingButton rating="hard" label="Трудно" onClick={() => submitReview('hard')} />
+              <RatingButton rating="good" label="Хорошо" onClick={() => submitReview('good')} />
+              <RatingButton rating="easy" label="Легко" onClick={() => submitReview('easy')} />
             </div>
           </div>
         )}

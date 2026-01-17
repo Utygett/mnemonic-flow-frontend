@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { DifficultyRating, StudyCard, StudyMode } from '@/entities/card';
+import type { DifficultyRating, StudyCard, StudyMode, CardReviewInput } from '@/entities/card';
 import { deleteCardProgress, levelDown, levelUp } from '@/entities/card';
 
 import type { PersistedSession } from '@/shared/lib/utils/session-store';
@@ -132,8 +132,8 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
     skipCard();
   };
 
-  const handleRate = async (rating: DifficultyRating, timing: { shownAt: string; revealedAt?: string; ratedAt: string }) => {
-    await rateCard({ rating, ...timing });
+  const handleRate = async (review: CardReviewInput) => {
+    await rateCard(review);
     onRated();
   };
 
