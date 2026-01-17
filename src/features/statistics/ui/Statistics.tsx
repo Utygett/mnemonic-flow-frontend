@@ -1,24 +1,16 @@
 import React from 'react';
 
 import {
-  Trophy,
-  Target,
-  Zap,
   Flame,
   Timer,
-  Brain,
-  TrendingUp,
   Sparkles,
   Layers,
 } from 'lucide-react';
 
-import type { Deck, Statistics as StatsType } from '../../../types';
-import { ProgressBar } from '../../../shared/ui/ProgressBar';
+import { getStatsOverview } from '../../../shared/api';
+import type { StatsOverview, StatsPeriod } from '../model/statisticsTypes';
 
-export interface StatisticsProps {
-  statistics: StatsType;
-  decks: Deck[];
-}
+type Period = StatsPeriod;
 
 type StatCard = {
   label: string;
@@ -27,21 +19,9 @@ type StatCard = {
   icon: React.ReactNode;
 };
 
-type Period = 'week' | 'month';
-
 function safeNumber(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
-}
-
-function rotateToToday(values: number[]): number[] {
-  // values are expected as [Mon..Sun]. Rotate so last element is today.
-  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
-  const todayMon0 = (todayJs + 6) % 7; // 0=Mon..6=Sun
-  const shift = (todayMon0 + 1) % 7; // move today to index 6
-  const a = values.slice(0, 7);
-  while (a.length < 7) a.push(0);
-  return [...a.slice(shift), ...a.slice(0, shift)];
 }
 
 const DOW_RU_MON0 = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const;
@@ -63,91 +43,104 @@ function buildSparkPath(series: number[], width: number, height: number) {
     .join(' ');
 }
 
-export function Statistics({ statistics, decks }: StatisticsProps) {
+function dateToDowLabel(dateStr: string) {
+  // dateStr: YYYY-MM-DD
+  const d = new Date(`${dateStr}T00:00:00`);
+  const js = d.getDay(); // 0=Sun..6=Sat
+  const mon0 = (js + 6) % 7;
+  return DOW_RU_MON0[mon0];
+}
+
+export function Statistics() {
   const [period, setPeriod] = React.useState<Period>('week');
+  const [data, setData] = React.useState<StatsOverview | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const totalProgressRaw = decks.length
-    ? decks.reduce((acc, deck) => acc + safeNumber(deck.progress), 0) / decks.length
-    : 0;
-  const totalProgress = safeNumber(totalProgressRaw);
+  React.useEffect(() => {
+    let cancelled = false;
 
-  const cardsTotal = decks.reduce((acc, d) => acc + safeNumber(d.cardsCount ?? 0), 0);
-  const cardsLearned = Math.round((cardsTotal * totalProgress) / 100);
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await getStatsOverview(period);
+        if (cancelled) return;
+        setData(res);
+      } catch (e: any) {
+        if (cancelled) return;
+        setError(e?.message ?? 'Не удалось загрузить статистику');
+        setData(null);
+      } finally {
+        if (cancelled) return;
+        setLoading(false);
+      }
+    })();
 
-  const streakDays = 6;
-  const focusedMinutes = period === 'week' ? 24 : 310;
-  const recallRate = period === 'week' ? 82 : 76;
-  const avgPerDay = period === 'week' ? 18 : 21;
-
-  // Weekly activity: show last 7 days ending today.
-  // Source array is assumed to be [Mon..Sun].
-  const weeklyRaw = Array.isArray(statistics.weeklyActivity)
-    ? statistics.weeklyActivity.map(safeNumber)
-    : [];
-  const weekly = rotateToToday(weeklyRaw);
-  const weeklyMax = Math.max(...weekly, 1);
-  const weeklySum = weekly.reduce((a, b) => a + safeNumber(b), 0);
-
-  const todayJs = new Date().getDay(); // 0=Sun..6=Sat
-  const todayMon0 = (todayJs + 6) % 7;
-  const labels = Array.from({ length: 7 }, (_, i) => {
-    const idx = (todayMon0 - 6 + i + 7 * 10) % 7;
-    return DOW_RU_MON0[idx];
-  });
-
-  // New chart metric: "Нагрузка" = карточки/минуту за период (заглушка), with sparkline.
-  const paceSeries = React.useMemo(() => {
-    // values: cards per minute
-    return period === 'week'
-      ? [0.2, 0.35, 0.28, 0.42, 0.55, 0.48, 0.6]
-      : [0.18, 0.22, 0.2, 0.25, 0.29, 0.33, 0.31, 0.37, 0.42, 0.4, 0.46, 0.52];
+    return () => {
+      cancelled = true;
+    };
   }, [period]);
+
+  const learnedRate = data?.overall?.learnedRatePct ?? 0;
+
+  const weekly = data?.activity?.last7Days ?? [];
+  const weeklyMax = Math.max(...weekly.map((d) => safeNumber(d.reviews)), 1);
+  const weeklySum = weekly.reduce((a, b) => a + safeNumber(b.reviews), 0);
+
+  // Pace sparkline from API series if present, fallback to reviews/time
+  const paceSeries = React.useMemo(() => {
+    const series = data?.pace?.series ?? [];
+    if (series.length > 0) return series.map((s) => safeNumber(s.cardsPerMin));
+
+    // fallback: compute per-day from last7Days using avgPerReview totalMs
+    const avgTotalMs = data?.time?.avgPerReviewMs?.totalMs ?? 0;
+    if (!avgTotalMs) return weekly.map(() => 0);
+
+    return weekly.map((d) => {
+      const reviews = safeNumber(d.reviews);
+      const totalMs = reviews * avgTotalMs;
+      return totalMs > 0 ? reviews / (totalMs / 60000) : 0;
+    });
+  }, [data, weekly]);
 
   const paceAvg =
     paceSeries.length > 0
       ? paceSeries.reduce((a, b) => a + safeNumber(b), 0) / Math.max(paceSeries.length, 1)
       : 0;
+
   const paceCaption =
     period === 'week'
-      ? 'Карточки/мин за последние 7 дней (заглушка)'
-      : 'Карточки/мин за последние 4 недели (12 точек = 3 точки на неделю, заглушка)';
+      ? 'Карточки/мин за последние 7 дней'
+      : 'Карточки/мин за период';
+
+  const streakDays = data?.activity?.streakDays ?? 0;
+  const todayTotalMin = Math.round((data?.time?.today?.totalMs ?? 0) / 60000);
 
   const statCards: StatCard[] = [
     {
       label: 'Период',
       value: period === 'week' ? 'Неделя' : 'Месяц',
-      hint: 'Переключатель влияет на заглушки и график.',
+      hint: 'Переключатель влияет на период запроса статистики.',
       icon: <Sparkles size={18} />,
     },
     {
       label: 'Серия',
       value: `${streakDays} дн.`,
-      hint: 'Сколько дней подряд были занятия (заглушка).',
+      hint: 'Сколько дней подряд есть повторения.',
       icon: <Flame size={18} />,
     },
     {
-      label: 'Фокус',
-      value: period === 'week' ? `${focusedMinutes} мин` : `${focusedMinutes} мин/мес`,
-      hint: 'Время активной работы за период (заглушка).',
+      label: 'Сегодня',
+      value: `${todayTotalMin} мин`,
+      hint: 'Суммарное время (think+grade) за сегодня.',
       icon: <Timer size={18} />,
     },
     {
-      label: 'Повторение',
-      value: `${recallRate}%`,
-      hint: 'Условный процент правильных ответов (заглушка).',
-      icon: <Brain size={18} />,
-    },
-    {
-      label: 'Темп',
-      value: `${avgPerDay}/день`,
-      hint: 'Среднее число карточек в день (заглушка).',
-      icon: <TrendingUp size={18} />,
-    },
-    {
       label: 'Изучено',
-      value: `${Number.isFinite(cardsLearned) ? cardsLearned : 0}/${cardsTotal}`,
-      hint: 'Оценка на основе прогресса колод (заглушка).',
-      icon: <Target size={18} />,
+      value: `${data?.overall?.learnedCards ?? 0}/${data?.overall?.totalCards ?? 0}`,
+      hint: 'Карточки, достигшие порога difficulty (порог хранится в профиле).',
+      icon: <Layers size={18} />,
     },
   ];
 
@@ -161,7 +154,7 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
         <div className="page__header-inner statsHeader">
           <div>
             <h1 className="page__title">Статистика</h1>
-            <div className="statsHeader__sub">Заглушки метрик — можно подключить API позже</div>
+            <div className="statsHeader__sub">Глобальная статистика по пользователю</div>
           </div>
 
           <div className="statsHeader__right">
@@ -204,13 +197,13 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
                   strokeWidth="8"
                   fill="none"
                   strokeDasharray={`${2 * Math.PI * 32}`}
-                  strokeDashoffset={`${2 * Math.PI * 32 * (1 - totalProgress / 100)}`}
+                  strokeDashoffset={`${2 * Math.PI * 32 * (1 - learnedRate / 100)}`}
                   strokeLinecap="round"
                   className="statsRing__bar"
                 />
               </svg>
               <div className="statsRing__center">
-                <div className="statsRing__value">{Math.round(totalProgress)}%</div>
+                <div className="statsRing__value">{Math.round(learnedRate)}%</div>
                 <div className="statsRing__label">Общий</div>
               </div>
             </div>
@@ -219,6 +212,21 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
       </div>
 
       <div className="p-4 py-6 container-centered stats__content">
+        {loading ? (
+          <div className="card statsBlock">
+            <div className="statsBlock__head">
+              <h3 className="statsBlock__title">Загрузка…</h3>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="card statsBlock">
+            <div className="statsBlock__head">
+              <h3 className="statsBlock__title">Ошибка</h3>
+              <span className="statsBlock__chip">{error}</span>
+            </div>
+          </div>
+        ) : null}
+
         {/* Chart: Pace */}
         <div className="card statsBlock">
           <div className="statsBlock__head">
@@ -226,7 +234,7 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
             <span className="statsBlock__chip">{paceAvg.toFixed(2)} кард/мин</span>
           </div>
 
-          <div className="spark" aria-label="График нагрузки (заглушка)">
+          <div className="spark" aria-label="График нагрузки">
             <svg className="spark__svg" viewBox={`0 0 ${sparkW} ${sparkH}`} preserveAspectRatio="none">
               <path d={sparkPath} className="spark__line" fill="none" />
             </svg>
@@ -246,33 +254,23 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
               <div className="statCard__hint">{c.hint}</div>
             </div>
           ))}
-
-          <div className="card statCard" title="Сколько колод находится в активной работе (заглушка).">
-            <div className="statCard__top">
-              <div className="statCard__icon">
-                <Layers size={18} />
-              </div>
-              <div className="statCard__label">Активные темы</div>
-            </div>
-            <div className="statCard__value">{Math.max(0, decks.filter((d) => safeNumber(d.progress) < 100).length)}</div>
-            <div className="statCard__hint">Колод с прогрессом &lt; 100% (заглушка).</div>
-          </div>
         </div>
 
         {/* Weekly Activity */}
         <div className="card statsBlock">
           <div className="statsBlock__head">
             <h3 className="statsBlock__title">Активность за 7 дней</h3>
-            <span className="statsBlock__chip">{weeklySum} действий</span>
+            <span className="statsBlock__chip">{weeklySum} повторений</span>
           </div>
 
           <div className="statsBars">
-            {labels.map((day, index) => {
-              const value = safeNumber(weekly[index]);
+            {weekly.map((d) => {
+              const value = safeNumber(d.reviews);
               const height = (value / weeklyMax) * 100;
+              const day = dateToDowLabel(d.date);
 
               return (
-                <div key={`${day}-${index}`} className="statsBars__col">
+                <div key={d.date} className="statsBars__col">
                   <div className="statsBars__track" aria-hidden="true">
                     <div className="statsBars__fill" style={{ height: `${height}%` }} />
                   </div>
@@ -283,67 +281,6 @@ export function Statistics({ statistics, decks }: StatisticsProps) {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Decks Progress */}
-        <div>
-          <div className="statsSectionHead">
-            <h3 className="statsSectionHead__title">Прогресс по темам</h3>
-            <span className="statsSectionHead__sub">{decks.length} тем</span>
-          </div>
-
-          <div className="statsDecks">
-            {decks.map((deck) => (
-              <div key={deck.id} className="card statsDeck">
-                <div className="statsDeck__row">
-                  <div className="statsDeck__left">
-                    <div className="statsDeck__title">{deck.name}</div>
-                    <div className="statsDeck__meta">{safeNumber(deck.cardsCount)} карточек</div>
-                  </div>
-
-                  <div className="statsDeck__right">
-                    <div className="statsDeck__percent">{Math.round(safeNumber(deck.progress))}%</div>
-                  </div>
-                </div>
-
-                <ProgressBar progress={safeNumber(deck.progress)} color={deck.color} />
-
-                <div className="statsDeck__levels">
-                  <span className="statsDeck__levelsLabel">Уровни (заглушка):</span>
-                  <div className="statsDeck__levelsList">
-                    <span>0: {Math.round(safeNumber(deck.cardsCount) * 0.3)}</span>
-                    <span>1: {Math.round(safeNumber(deck.cardsCount) * 0.3)}</span>
-                    <span>2: {Math.round(safeNumber(deck.cardsCount) * 0.2)}</span>
-                    <span>3: {Math.round(safeNumber(deck.cardsCount) * 0.2)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Achievements */}
-        <div>
-          <div className="statsSectionHead">
-            <h3 className="statsSectionHead__title">Достижения</h3>
-            <span className="statsSectionHead__sub">Заглушки</span>
-          </div>
-
-          <div className="achievementsGrid">
-            {statistics.achievements.map((achievement) => (
-              <div
-                key={achievement.id}
-                className={`achievement ${achievement.unlocked ? '' : 'achievement--locked'}`}
-              >
-                <div className="achievement__icon">
-                  {achievement.icon === 'trophy' && <Trophy size={22} className="text-white" />}
-                  {achievement.icon === 'target' && <Target size={22} className="text-white" />}
-                  {achievement.icon === 'zap' && <Zap size={22} className="text-white" />}
-                </div>
-                <div className="achievement__title">{achievement.title}</div>
-              </div>
-            ))}
           </div>
         </div>
       </div>

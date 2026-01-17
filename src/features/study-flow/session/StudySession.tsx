@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { isMultipleChoice } from '../model/studyCardTypes';
 import { StudyCard } from '../model/studyCardTypes';
@@ -19,6 +19,10 @@ function getLevelIndex(l: any): number {
   return typeof l?.level_index === 'number' ? l.level_index : l?.levelindex;
 }
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
 export function StudySession({
   cards,
   currentIndex,
@@ -31,7 +35,7 @@ export function StudySession({
 }: {
   cards: StudyCard[];
   currentIndex: number;
-  onRate: (rating: DifficultyRating) => void;
+  onRate: (rating: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => void;
   onClose: () => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
@@ -43,6 +47,10 @@ export function StudySession({
   const [timeLeftMs, setTimeLeftMs] = useState<number | null>(null);
 
   const currentCard = cards[currentIndex];
+
+  const shownAtRef = useRef<string | null>(null);
+  const revealedAtRef = useRef<string | null>(null);
+
   if (!currentCard) {
     return (
       <div className="study-page flex items-center justify-center">
@@ -54,11 +62,24 @@ export function StudySession({
   const progress = (currentIndex / cards.length) * 100;
 
   const handleRate = (rating: DifficultyRating) => {
+    const ratedAt = nowIso();
+    const timing = {
+      shownAt: shownAtRef.current ?? ratedAt,
+      revealedAt: revealedAtRef.current ?? undefined,
+      ratedAt,
+    };
+
     setIsFlipped(false);
-    setTimeout(() => onRate(rating), 300);
+    setTimeout(() => onRate(rating, timing), 300);
   };
 
-  const handleFlip = () => setIsFlipped((v) => !v);
+  const handleFlip = () => {
+    // mark reveal moment on first reveal
+    if (!isFlipped && !revealedAtRef.current) {
+      revealedAtRef.current = nowIso();
+    }
+    setIsFlipped((v) => !v);
+  };
 
   const handleSkip = () => {
     setIsFlipped(false);
@@ -80,6 +101,10 @@ export function StudySession({
   useEffect(() => {
     setIsFlipped(false);
     setSelectedOptionId(null);
+
+    // reset timing for new card/level
+    shownAtRef.current = nowIso();
+    revealedAtRef.current = null;
   }, [currentCard?.id, currentCard?.activeLevel]);
 
   const level =
@@ -110,6 +135,8 @@ export function StudySession({
       if (left <= 0) {
         window.clearInterval(id);
         setTimeLeftMs(0);
+        // auto reveal
+        if (!revealedAtRef.current) revealedAtRef.current = nowIso();
         setIsFlipped(true);
         return;
       }
@@ -165,6 +192,7 @@ export function StudySession({
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedOptionId(optId);
+                  if (!revealedAtRef.current) revealedAtRef.current = nowIso();
                   setIsFlipped(true);
                 }}
               >
@@ -255,7 +283,10 @@ export function StudySession({
           <FlipCard
             card={currentCard}
             isFlipped={isFlipped}
-            onFlip={() => setIsFlipped((v) => !v)}
+            onFlip={() => {
+              if (!isFlipped && !revealedAtRef.current) revealedAtRef.current = nowIso();
+              setIsFlipped((v) => !v);
+            }}
             disableFlipOnClick
             onLevelUp={onLevelUp}
             onLevelDown={onLevelDown}
