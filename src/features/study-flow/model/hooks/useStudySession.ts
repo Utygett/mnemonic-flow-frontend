@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { CardReview, DifficultyRating, StudyCard } from '@/entities/card';
+import type { CardReviewInput, DifficultyRating, StudyCard } from '@/entities/card';
 import { reviewCardWithMeta } from '@/entities/card';
 
 type Result = {
   cards: StudyCard[];
   currentIndex: number;
   isCompleted: boolean;
-  rateCard: (
-    rating: DifficultyRating,
-    timing?: { shownAt: string; revealedAt?: string; ratedAt: string }
-  ) => Promise<void>;
+  rateCard: (review: CardReviewInput) => Promise<void>;
   skipCard: () => void;
   resetSession: () => void;
 };
@@ -35,18 +32,13 @@ export function useStudySession(deckCards: StudyCard[], initialIndex: number): R
   }, []);
 
   const rateCard = useCallback(
-    async (rating: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => {
+    async (review: CardReviewInput) => {
       const card = cards[currentIndex];
       if (!card) return;
 
-      const nowIso = new Date().toISOString();
-
-      const payload: CardReview = {
-        rating,
-        shownAt: timing?.shownAt ?? nowIso,
-        revealedAt: timing?.revealedAt,
-        ratedAt: timing?.ratedAt ?? nowIso,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      const payload: CardReviewInput = {
+        ...review,
+        timezone: review.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
       // server-side rating (non-blocking for UI)

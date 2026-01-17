@@ -23,6 +23,12 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+export type ReviewTiming = {
+  shownAt: string;
+  revealedAt?: string;
+  ratedAt: string;
+};
+
 export function StudySession({
   cards,
   currentIndex,
@@ -35,7 +41,7 @@ export function StudySession({
 }: {
   cards: StudyCard[];
   currentIndex: number;
-  onRate: (rating: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => void;
+  onRate: (rating: DifficultyRating, timing: ReviewTiming) => void;
   onClose: () => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
@@ -63,7 +69,7 @@ export function StudySession({
 
   const handleRate = (rating: DifficultyRating) => {
     const ratedAt = nowIso();
-    const timing = {
+    const timing: ReviewTiming = {
       shownAt: shownAtRef.current ?? ratedAt,
       revealedAt: revealedAtRef.current ?? undefined,
       ratedAt,

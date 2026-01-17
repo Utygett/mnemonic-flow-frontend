@@ -132,8 +132,8 @@ export function StudyFlowStateContainer({ onExitToHome, onRated, children }: Pro
     skipCard();
   };
 
-  const handleRate = async (rating: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => {
-    await rateCard(rating, timing);
+  const handleRate = async (rating: DifficultyRating, timing: { shownAt: string; revealedAt?: string; ratedAt: string }) => {
+    await rateCard({ rating, ...timing });
     onRated();
   };
 

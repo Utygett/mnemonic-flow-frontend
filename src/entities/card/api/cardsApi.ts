@@ -1,7 +1,7 @@
 // Card API methods
 import { apiRequest } from '@/shared/api/request';
 import type {
-  CardReview,
+  CardReviewInput,
   DifficultyRating,
   StudyCardsResponse,
   StudyMode,
@@ -26,10 +26,11 @@ export async function getStudyCards(
 
 // Backwards-compatible helper (rating only)
 export async function reviewCard(cardId: string, rating: DifficultyRating) {
-  const payload: CardReview = {
+  const now = new Date().toISOString();
+  const payload: CardReviewInput = {
     rating,
-    shownAt: new Date().toISOString(),
-    ratedAt: new Date().toISOString(),
+    shownAt: now,
+    ratedAt: now,
   };
 
   return apiRequest(`/cards/${cardId}/review`, {
@@ -39,7 +40,7 @@ export async function reviewCard(cardId: string, rating: DifficultyRating) {
 }
 
 // New API: review with timing
-export async function reviewCardWithMeta(cardId: string, review: CardReview) {
+export async function reviewCardWithMeta(cardId: string, review: CardReviewInput) {
   return apiRequest(`/cards/${cardId}/review`, {
     method: 'POST',
     body: JSON.stringify(review),

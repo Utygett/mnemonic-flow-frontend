@@ -53,18 +53,3 @@ export interface StatsOverview {
 }
 
 export type StatsPeriod = 'week' | 'month';
-
-export interface CardReviewEventPayload {
-  cardId: string;
-
-  // timestamps in ISO format for reliable backend computation
-  shownAt: string; // ISO
-  revealedAt?: string; // ISO (optional if no explicit reveal)
-  ratedAt: string; // ISO
-
-  // the chosen difficulty/rating button
-  rating: 'again' | 'hard' | 'good' | 'easy';
-
-  // optional client metadata
-  timezone?: string;
-}

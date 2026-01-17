@@ -22,8 +22,8 @@ export type StudyCardsResponse = {
   cards: StudyCard[];
 };
 
-// Analytics / review logging payload
-export interface CardReview {
+// Analytics / review logging payload (no cardId here; cardId is in the URL)
+export interface CardReviewInput {
   rating: DifficultyRating;
 
   // timestamps in ISO for backend to compute think/grade/total

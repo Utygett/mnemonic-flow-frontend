@@ -5,7 +5,7 @@ export type {
   CardLevel,
   StudyCard,
   StudyCardsResponse,
-  CardReview,
+  CardReviewInput,
   ApiLevelIn,
   ApiReplaceLevelsRequest,
   ApiCreateCardRequest,
