@@ -14,7 +14,7 @@ type Props = {
   currentIndex: number;
   isCompleted: boolean;
 
-  onRate: (r: DifficultyRating) => void;
+  onRate: (r: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => void;
   onLevelUp: () => void;
   onLevelDown: () => void;
   onSkip: () => void;
