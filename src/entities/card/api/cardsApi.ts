@@ -1,6 +1,7 @@
 // Card API methods
 import { apiRequest } from '@/shared/api/request';
 import type {
+  CardReview,
   DifficultyRating,
   StudyCardsResponse,
   StudyMode,
@@ -23,10 +24,25 @@ export async function getStudyCards(
   return apiRequest<StudyCardsResponse>(`/decks/${deckId}/study-cards?${qs.toString()}`);
 }
 
+// Backwards-compatible helper (rating only)
 export async function reviewCard(cardId: string, rating: DifficultyRating) {
+  const payload: CardReview = {
+    rating,
+    shownAt: new Date().toISOString(),
+    ratedAt: new Date().toISOString(),
+  };
+
   return apiRequest(`/cards/${cardId}/review`, {
     method: 'POST',
-    body: JSON.stringify({ rating }),
+    body: JSON.stringify(payload),
+  });
+}
+
+// New API: review with timing
+export async function reviewCardWithMeta(cardId: string, review: CardReview) {
+  return apiRequest(`/cards/${cardId}/review`, {
+    method: 'POST',
+    body: JSON.stringify(review),
   });
 }
 

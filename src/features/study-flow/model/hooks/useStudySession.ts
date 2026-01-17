@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { DifficultyRating, StudyCard } from '@/entities/card';
-import { reviewCard } from '@/entities/card';
+import type { CardReview, DifficultyRating, StudyCard } from '@/entities/card';
+import { reviewCardWithMeta } from '@/entities/card';
 
 type Result = {
   cards: StudyCard[];
   currentIndex: number;
   isCompleted: boolean;
-  rateCard: (rating: DifficultyRating) => Promise<void>;
+  rateCard: (
+    rating: DifficultyRating,
+    timing?: { shownAt: string; revealedAt?: string; ratedAt: string }
+  ) => Promise<void>;
   skipCard: () => void;
   resetSession: () => void;
 };
@@ -32,13 +35,23 @@ export function useStudySession(deckCards: StudyCard[], initialIndex: number): R
   }, []);
 
   const rateCard = useCallback(
-    async (rating: DifficultyRating) => {
+    async (rating: DifficultyRating, timing?: { shownAt: string; revealedAt?: string; ratedAt: string }) => {
       const card = cards[currentIndex];
       if (!card) return;
 
+      const nowIso = new Date().toISOString();
+
+      const payload: CardReview = {
+        rating,
+        shownAt: timing?.shownAt ?? nowIso,
+        revealedAt: timing?.revealedAt,
+        ratedAt: timing?.ratedAt ?? nowIso,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+
       // server-side rating (non-blocking for UI)
       try {
-        await reviewCard(card.id, rating);
+        await reviewCardWithMeta(card.id, payload);
       } catch {
         // ignore: rating is best-effort
       }

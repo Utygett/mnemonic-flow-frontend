@@ -22,6 +22,19 @@ export type StudyCardsResponse = {
   cards: StudyCard[];
 };
 
+// Analytics / review logging payload
+export interface CardReview {
+  rating: DifficultyRating;
+
+  // timestamps in ISO for backend to compute think/grade/total
+  shownAt: string; // ISO
+  revealedAt?: string; // ISO
+  ratedAt: string; // ISO
+
+  // optional client metadata
+  timezone?: string;
+}
+
 // API-specific types
 export type ApiLevelIn = {
   level_index: number;
