@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Trash2 } from 'lucide-react';
 
-import { Button } from '../../../shared/ui/Button/Button';
+import { Button } from '@/shared/ui/Button/Button';
 import { apiRequest, ApiError } from '@/shared/api';
-import { useAuth } from '../../../app/providers/auth/AuthContext';
+import { useAuth } from '@/app/providers/auth/AuthContext';
 import { searchPublicDecks } from '@/entities/deck';
 import type { PublicDeckSummary } from '@/entities/deck';
 

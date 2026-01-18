@@ -1,7 +1,8 @@
 // src/shared/lib/hooks/useDecks.ts
 import { useState, useEffect, useCallback } from 'react';
-import type { PublicDeckSummary } from '../../../types';
-import { ApiClient, ApiError } from '../../api';
+import type { PublicDeckSummary } from '@/entities/deck';
+import { getGroupDecksSummary } from '@/entities/group';
+import { ApiError } from '@/shared/api/request';
 
 export type UseDecksResult = {
   decks: PublicDeckSummary[];
@@ -22,7 +23,7 @@ export function useDecks(groupId: string | null): UseDecksResult {
     setError(null);
 
     try {
-      const data = await ApiClient.getGroupDecksSummary(groupId);
+      const data = await getGroupDecksSummary(groupId);
       setDecks(data);
     } catch (e: unknown) {
       if (e instanceof ApiError) setError(e.detail ?? e.message);

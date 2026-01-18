@@ -1,5 +1,5 @@
 // src/shared/lib/utils/session-store.ts
-import type { StudyCard } from '../../../types';
+import type { StudyCard } from '@/entities/card';
 
 const STORAGE_KEY = 'mnemonicflow:sessions:v1';
 

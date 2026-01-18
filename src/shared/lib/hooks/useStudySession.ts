@@ -1,7 +1,6 @@
 // src/shared/lib/hooks/useStudySession.ts
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { StudyCard, DifficultyRating } from '../../../types';
-import { ApiClient } from '../../api';
+import { StudyCard, DifficultyRating, reviewCard } from '@/entities/card';
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
@@ -51,7 +50,7 @@ export function useStudySession(deckCards: StudyCard[] | null, initialIndex = 0)
     if (!card) return;
 
     try {
-      await ApiClient.reviewCard(card.id, rating);
+      await reviewCard(card.id, rating);
     } catch (err) {
       console.error('Failed to send rating:', err);
     }

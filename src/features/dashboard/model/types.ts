@@ -1,4 +1,6 @@
-import { Statistics, Deck, Group } from '../../../types';
+import type { Statistics } from '@/entities/statistics';
+import type { Deck } from '@/entities/deck';
+import type { Group } from '@/entities/group';
 
 export type ResumeSessionProps = {
   title: string;

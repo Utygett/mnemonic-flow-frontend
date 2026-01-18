@@ -1,6 +1,6 @@
 // src/features/cards-edit/model/useEditCardModel.ts
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../../../app/providers/auth/AuthContext';
+import { useAuth } from '@/app/providers/auth/AuthContext';
 import { getErrorMessage } from '@/shared/lib/errors/getErrorMessage';
 
 import type { Props, CardSummary, LevelDraft } from './types';

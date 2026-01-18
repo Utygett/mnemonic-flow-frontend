@@ -1,4 +1,4 @@
-import type { PublicDeckSummary } from '../../../types';
+import type { PublicDeckSummary } from '@/entities/deck';
 
 export type CardSummary = {
   card_id: string;
