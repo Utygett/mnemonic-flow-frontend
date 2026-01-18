@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { PublicDeckSummary } from '../../../types';
+import type { PublicDeckSummary } from '@/entities/deck';
 import { LAST_DECK_KEY } from './utils';
 
 export type CardType = 'flashcard' | 'multiple_choice';

@@ -1,8 +1,9 @@
 // src/shared/lib/hooks/useApi.ts
-import { useState, useEffect, useCallback } from 'react';
-import { ApiClient } from '../../api';
-import { Statistics } from '../../../types';
+import { useState, useCallback } from 'react';
 
+/**
+ * Generic hook for fetching data with loading and error states
+ */
 export function useApiData<T>() {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -24,42 +25,3 @@ export function useApiData<T>() {
 
   return { data, loading, error, fetchData };
 }
-
-export function useCards(deckId?: string) {
-  const { data, loading, error, fetchData } = useApiData<Card[]>();
-
-  const fetchCards = useCallback(async () => {
-    const cards = await ApiClient.getCards(deckId);
-    return cards.map(parseDatesInCard);
-  }, [deckId]);
-
-  useEffect(() => {
-    fetchData(fetchCards);
-  }, [deckId, fetchData, fetchCards]);
-
-  const refresh = useCallback((): Promise<void> => {
-    return fetchData(fetchCards);
-  }, [fetchData, fetchCards]);
-
-  return { cards: data || [], loading, error, refresh };
-}
-
-export function useStatistics() {
-  const { data, loading, error, fetchData } = useApiData<Statistics>();
-
-  useEffect(() => {
-    fetchData(() => ApiClient.getStatistics());
-  }, [fetchData]);
-
-  const refresh = useCallback((): Promise<void> => {
-    return fetchData(() => ApiClient.getStatistics());
-  }, [fetchData]);
-
-  return { statistics: data, loading, error, refresh };
-}
-
-const parseDatesInCard = (card: any): Card => ({
-  ...card,
-  nextReview: new Date(card.nextReview),
-  lastReviewed: card.lastReviewed ? new Date(card.lastReviewed) : undefined,
-});

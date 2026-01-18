@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { createCard } from '@/entities/card';
+import { toApiRequest } from '../lib/toApiRequest';
 
 export type CardsActionsApi = {
   onCreateCardSave: (cardData: any) => Promise<void>;
@@ -26,12 +27,7 @@ export function CardsActionsContainer({
   children,
 }: Props) {
   const onCreateCardSave = async (cardData: any) => {
-    await createCard({
-      deck_id: cardData.deckId,
-      title: cardData.term,
-      card_type: cardData.type,
-      levels: cardData.levels,
-    });
+    await createCard(toApiRequest(cardData));
 
     refreshDecks();
     refreshStats();
@@ -45,12 +41,7 @@ export function CardsActionsContainer({
     for (let i = 0; i < cards.length; i++) {
       const c = cards[i];
       try {
-        await createCard({
-          deck_id: c.deckId,
-          title: c.term,
-          card_type: c.type,
-          levels: c.levels,
-        });
+        await createCard(toApiRequest(c));
         created++;
       } catch (e: any) {
         errors.push(`${i}: ${String(e?.message ?? e)}`);

@@ -45,11 +45,21 @@ export type ApiReplaceLevelsRequest = {
   levels: ApiLevelIn[];
 };
 
+// API request for creating a card - matches backend CreateCardRequest schema
+export type ApiCreateCardLevelRequest = {
+  question: string;
+  answer?: string;  // for flashcard
+  options?: Array<{ id: string; text: string }>;  // for multiple_choice
+  correctOptionId?: string;  // for multiple_choice
+  explanation?: string;  // for multiple_choice
+  timerSec?: number;  // for multiple_choice
+};
+
 export type ApiCreateCardRequest = {
   deck_id: string;
   title: string;
-  card_type: string;
-  levels: ApiLevelIn[];
+  type: string;  // changed from card_type to match backend
+  levels: ApiCreateCardLevelRequest[];  // flat structure, not nested
 };
 
 export type ApiCreateCardResponse = {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import type { StudyMode } from '../../../types';
+import type { StudyMode } from '@/entities/card';
 import { loadSession, type PersistedSession } from '@/shared/lib/utils/session-store';
 
 import type { DeckDetailsProps } from './types';

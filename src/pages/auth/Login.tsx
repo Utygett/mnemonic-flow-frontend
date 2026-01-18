@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
-import { Input } from '../../shared/ui/Input';
-import { Button } from '../../shared/ui/Button/Button';
+import { Input } from '@/shared/ui/Input';
+import { Button } from '@/shared/ui/Button/Button';
 
-import { useAuth } from '../../app/providers/auth/AuthContext';
-import { login as loginApi } from '../../shared/api/auth-client';
+import { useAuth } from '@/app/providers/auth/AuthContext';
+import { login as loginApi } from '@/shared/api/auth-client';
 
 import styles from './Login.module.css';
 

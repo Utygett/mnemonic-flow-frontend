@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import { useDecks } from './useDecks';
-import { ApiClient } from '../../api';
-import type { Group } from '../../../types';
+import { getUserGroups, deleteGroup } from '@/entities/group';
+import type { Group } from '@/entities/group';
 
 type UseDecksReturn = ReturnType<typeof useDecks>;
 
@@ -34,7 +34,7 @@ export function useGroupsDecksController(): GroupsDecksController {
   const [groups, setGroups] = useState<Group[]>([]);
 
   const refreshGroups = useCallback(async (): Promise<void> => {
-    const gs = await ApiClient.getUserGroups();
+    const gs = await getUserGroups();
     setGroups(gs);
 
     setActiveGroupId((prev) => {
@@ -71,7 +71,7 @@ export function useGroupsDecksController(): GroupsDecksController {
     if (!ok) return;
 
     try {
-      await ApiClient.deleteGroup(activeGroupId);
+      await deleteGroup(activeGroupId);
       await refreshGroups();
     } catch (e) {
       console.error(e);
